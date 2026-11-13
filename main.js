@@ -42,6 +42,14 @@ const binder = new BinderCore({
 let engine = new DuelRogueEngine(binder, DEFAULT_CARD_CATALOG);
 const runSaves = new RunSaveStore(window.localStorage);
 
+/** index.html의 data-i18n="키" 요소를 현재 언어 사전의 문구로 바꾼다 */
+function applyStaticTranslations(root = document) {
+  root.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.getAttribute('data-i18n'));
+  });
+}
+applyStaticTranslations();
+
 /** 진행 상황을 저장한다. 런이 끝났으면 저장본을 지운다. (잦은 호출을 묶어 한 번만 쓴다) */
 let saveTimer = null;
 function scheduleRunSave() {
@@ -1129,11 +1137,11 @@ function getCardArtHtml(def) {
   if (artSrc) {
     return `<img src="${artSrc}" alt="${def.name}" />`;
   }
-  const archetype = def?.archetype || 'NEUTRAL';
+  const factionLabel = def?.faction ? t(`faction.${def.faction}`) : def?.archetype || '';
   return `
     <img src="assets/placeholders/procedural_fallback.svg" alt="${def?.name || ''}" style="width:100%; height:100%; object-fit:cover;" />
     <div class="procedural-art-overlay">
-      <span class="procedural-archetype-pill">${archetype}</span>
+      <span class="procedural-archetype-pill">${factionLabel}</span>
     </div>
   `;
 }
@@ -4303,6 +4311,30 @@ function updateBinderDossier(slot, def) {
     }
   }
 }
+
+// 바인더 보기 필터 (진영 탭 · 보유만)
+let binderFactionFilter = 'ALL';
+function applyBinderFilter() {
+  const ownedOnly = document.getElementById('binder-owned-only')?.checked;
+  binder.setFilter(
+    binderFactionFilter === 'ALL' && !ownedOnly
+      ? null
+      : (card, entry) =>
+          (binderFactionFilter === 'ALL' || card.faction === binderFactionFilter) &&
+          (!ownedOnly || (entry && entry.state >= BinderCardState.OWNED))
+  );
+  currentBinderSelectedCardId = null;
+  renderBinderPage(0);
+}
+document.querySelectorAll('.binder-filter-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    audio.playCardPickup();
+    binderFactionFilter = btn.getAttribute('data-faction');
+    document.querySelectorAll('.binder-filter-btn').forEach((b) => b.classList.toggle('is-active', b === btn));
+    applyBinderFilter();
+  });
+});
+document.getElementById('binder-owned-only')?.addEventListener('change', applyBinderFilter);
 
 document.getElementById('btn-binder-prev')?.addEventListener('click', () => {
   audio.playCardPickup();

@@ -36,16 +36,16 @@
     <section id="view-title-lobby" class="screen active">
       <div class="title-container">
         <h1 class="game-logo">DUEL ROGUE</h1>
-        <p class="subtitle">선형적 1v1 PvP 대칭 듀얼 & 3×3 콜렉션 바인더</p>
+        <p class="subtitle" data-i18n="ui.title.subtitle">덱을 키우고 운명의 보스에게 도전하는 1v1 카드 듀얼</p>
         
         <div class="menu-buttons">
-          <button id="btn-continue-run" class="btn primary-btn" hidden>이어서 하기</button>
-          <button id="btn-start-run" class="btn primary-btn">새로운 듀얼 런 개시</button>
-          <button id="btn-open-binder-menu" class="btn secondary-btn">3×3 콜렉션 바인더 열람</button>
+          <button id="btn-continue-run" class="btn primary-btn" hidden data-i18n="ui.title.continue">이어서 하기</button>
+          <button id="btn-start-run" class="btn primary-btn" data-i18n="ui.title.newRun">새로운 듀얼 런 개시</button>
+          <button id="btn-open-binder-menu" class="btn secondary-btn" data-i18n="ui.title.binder">3×3 콜렉션 바인더 열람</button>
         </div>
         
         <div class="game-info-badge">
-          <span>대칭형 1v1 PvP 엔진</span> • <span>점쟁이 3대 운명</span> • <span>4단계 바인더 수집</span>
+          <span data-i18n="ui.title.badges">카드 516종 • 3대 운명과 보스 • 성향이 바뀌는 상대</span>
         </div>
       </div>
     </section>
@@ -800,6 +800,14 @@
           <div class="binder-title-group">
             <h2>📖 3×3 TCG 컬렉션 바인더 북</h2>
             <span class="binder-page-indicator" id="binder-page-indicator">PAGE 1 / 1</span>
+          </div>
+          <div class="binder-filter-bar" id="binder-filter-bar" role="tablist" aria-label="바인더 보기">
+            <button class="binder-filter-btn is-active" data-faction="ALL" data-i18n="ui.binder.all">전체</button>
+            <button class="binder-filter-btn" data-faction="BLUE" data-i18n="faction.BLUE">정의</button>
+            <button class="binder-filter-btn" data-faction="RED" data-i18n="faction.RED">열의</button>
+            <button class="binder-filter-btn" data-faction="PURPLE" data-i18n="faction.PURPLE">혼돈</button>
+            <button class="binder-filter-btn" data-faction="NEUTRAL" data-i18n="faction.NEUTRAL">중립</button>
+            <label class="binder-owned-toggle"><input type="checkbox" id="binder-owned-only" /> <span data-i18n="ui.binder.ownedOnly">보유만</span></label>
           </div>
           <div class="binder-status-legend">
             <span class="legend-badge unk"><span class="badge-dot">●</span> 미발견 (뒷면)</span>

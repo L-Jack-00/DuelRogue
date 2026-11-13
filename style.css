@@ -7055,3 +7055,23 @@ body {
 .cpu-duelist .duelist-name { white-space: nowrap; }
 
 .dossier-personality { font-weight: 800; }
+
+.binder-filter-bar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.binder-filter-btn {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.6);
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.binder-filter-btn.is-active { border-color: #facc15; color: #fde047; background: rgba(250, 204, 21, 0.12); }
+.binder-owned-toggle { font-size: 0.72rem; color: #cbd5e1; display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; cursor: pointer; }
+.binder-book-header { flex-wrap: wrap; row-gap: 6px; }
+.binder-book-header .binder-filter-bar { order: 10; flex-basis: 100%; justify-content: flex-start; }
+.binder-filter-bar .binder-filter-btn { line-height: 1.2; min-width: 44px; }
+@media (max-width: 1100px) {
+  .binder-book-header .binder-status-legend { display: none; }
+}

@@ -150,8 +150,21 @@ export class BinderCore {
     return { ...this.getMutableEntry(cardId) };
   }
 
+  /**
+   * 바인더에 보여 줄 카드 범위를 좁힌다. (예: 진영별 보기, 보유 카드만 보기)
+   * @param {((card, entry) => boolean) | null} predicate null이면 전체
+   */
+  setFilter(predicate) {
+    this.filter = predicate || null;
+  }
+
+  viewCatalog() {
+    if (!this.filter) return this.catalog;
+    return this.catalog.filter((card) => this.filter(card, this.entries[card.id]));
+  }
+
   getTotalPages() {
-    return Math.max(1, Math.ceil(this.catalog.length / BinderCore.SLOTS_PER_PAGE));
+    return Math.max(1, Math.ceil(this.viewCatalog().length / BinderCore.SLOTS_PER_PAGE));
   }
 
   /**
@@ -164,7 +177,7 @@ export class BinderCore {
     }
 
     const startOffset = pageIndex * BinderCore.SLOTS_PER_PAGE;
-    const slice = this.catalog.slice(startOffset, startOffset + BinderCore.SLOTS_PER_PAGE);
+    const slice = this.viewCatalog().slice(startOffset, startOffset + BinderCore.SLOTS_PER_PAGE);
 
     const slots = slice.map((card, idx) => {
       const entry = this.entries[card.id];

@@ -6,10 +6,27 @@
  * setLocale()로 전환하면 된다. 키가 없으면 ko 사전, 그래도 없으면 키 자체를 돌려준다.
  *
  * 문구 안의 {name} 형태 자리표시자는 t(key, { name: '...' })의 값으로 치환된다.
+ *
+ * 다국어를 붙일 때의 순서
+ * 1) 이 파일의 ko 사전과 같은 키로 en 등 사전을 만들어 registerStrings('en', {...})로 등록
+ * 2) setLocale('en') 후 화면을 다시 그린다 (main.js의 applyStaticTranslations가 index.html의
+ *    data-i18n="키" 요소를 사전 문구로 바꾼다)
+ * 3) 아직 사전으로 옮기지 않은 화면 문구는 index.html과 main.js에 남아 있다. 옮길 때는 문구를
+ *    사전에 키로 추가하고, 요소에는 data-i18n, 코드에서는 t('키')를 쓴다.
+ * 카드 이름은 카드 데이터에, 카드 효과 설명은 효과 데이터로부터 이 사전의 문구로 자동 생성된다.
  */
 
 const ko = {
-  // ---- 키워드 이름 / 설명 ----
+  // ---- 타이틀 · 공용 화면 ----
+  'ui.title.subtitle': '덱을 키우고 운명의 보스에게 도전하는 1v1 카드 듀얼',
+  'ui.title.continue': '이어서 하기',
+  'ui.title.newRun': '새로운 듀얼 런 개시',
+  'ui.title.binder': '3×3 콜렉션 바인더 열람',
+  'ui.title.badges': '카드 516종 • 3대 운명과 보스 • 성향이 바뀌는 상대',
+  'ui.binder.all': '전체',
+  'ui.binder.ownedOnly': '보유만',
+
+
   'kw.TAUNT': '도발',
   'kw.TAUNT.desc': '상대는 도발 몬스터부터 공격해야 한다.',
   'kw.PIERCE': '관통',
