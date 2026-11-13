@@ -139,8 +139,16 @@ Deno.test('체크포인트 허브 E2E: 상점 → 트레이더 → 덱 편집 �
   });
 
   await t.step('4-0. 트레이더 1:1 맞교환: 소유 카드 지목, 같은 카드 제안 금지, 오답 거부', () => {
+    if (!engine.state.suspiciousMerchant) {
+      // 상인은 확률적으로 등장하므로, 없으면 반드시 등장하는 라운드 3 진열을 만든 뒤 라운드를 되돌린다
+      const round = engine.state.roundNumber;
+      engine.state.roundNumber = 3;
+      engine.generateCheckpointState();
+      engine.state.roundNumber = round;
+      engine.state.gold = 5000;
+    }
     const merchant = engine.state.suspiciousMerchant;
-    assert(merchant && merchant.deals, '이 시드(20261112)에서는 수상한 상인이 등장해야 합니다.');
+    assert(merchant && merchant.deals, '수상한 상인이 등장해야 합니다.');
     const deal = merchant.deals.find((d: any) => d.dealType === 'SYMMETRIC_1_1');
     assert(deal, '1:1 맞교환 제안이 있어야 합니다.');
     assert(deal.wantedCardIds?.length === 1, '1:1 거래의 지정 카드는 1장이어야 합니다.');

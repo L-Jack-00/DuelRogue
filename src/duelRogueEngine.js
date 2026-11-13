@@ -15,7 +15,25 @@
  * 9. 30장 덱 구축 룰: 몬스터 최대 3장, 마법 최대 1장(싱글톤), 시작 5장 드로우, 매턴 1장 드로우.
  */
 
-import { BinderCore } from './binderCore.js';
+import { CARD_CATALOG, CARD_MAP, COLLECTIBLE_CARDS, getCardDef as lookupCard } from './cards/catalog.js';
+import { registerCatalog, createDuel, applyCommand, checkWinner } from './duel/duelCore.js';
+import { chooseAction, createMind, shiftMood, MAX_STEPS_PER_TURN, PERSONALITIES } from './ai/duelAi.js';
+import { t } from './i18n/strings.js';
+import {
+  createStarterDeck,
+  buildDeck,
+  bossDeck,
+  BOSSES,
+  PACK_DEFS,
+  packShelfEntry,
+  openPack,
+  rollShopSingles,
+  merchantRewardPool,
+  rollEncounter,
+  FACTION_OF_DESTINY,
+} from './run/content.js';
+
+registerCatalog(lookupCard);
 
 export class SeededRng {
   constructor(seed) {
@@ -59,449 +77,12 @@ export const DESTINY_PROFILES = {
 };
 
 /**
- * [카드 카탈로그 - v2.0]
- * - 상세 카드 디자인 가이드 & 4대 역학: CARD_DESIGN_PHILOSOPHY.md 참조
- * - type: 'MONSTER' | 'SPELL'
- * - attack / defense (몬스터 필수)
- * - hierarchical tags: ' ' (루트), '#' (자식), '##' (손자)
- * - spells: spellTriggerType ('INSTANT' | 'ON_ATTACKED' | 'ON_TURN_START' | 'ON_TURN_END')
+ * 카드 카탈로그 (토큰 포함 전체). 정의는 src/cards/catalog.js 참조.
+ * BINDER_CATALOG는 바인더·상점에 쓰는 수집 가능한 카드만 담는다.
  */
-export const DEFAULT_CARD_CATALOG = [
-  // ==========================================
-  // 1. 파란색 (정의 / CONTROL)
-  // ==========================================
-  {
-    id: 'C_BLUE_01',
-    name: '성소의 방패병',
-    type: 'MONSTER',
-    archetype: 'CONTROL',
-    level: 1,
-    cost: 1,
-    attack: 4,
-    defense: 14,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    keywords: ['도발', '보호'],
-    tags: ['#성역', '#보병'],
-    condition: '일반 소환 시',
-    target: '자신 및 아군 본체',
-    effect: '상대의 직접 공격을 차단하는 높은 수비벽을 형성한다.',
-    description: '[조건] 일반 소환 시\n[효과] 상대의 직접 공격을 차단하는 높은 수비벽을 형성한다.',
-    targetPolarity: 'BENEFICIAL',
-  },
-  {
-    id: 'C_BLUE_02',
-    name: '심판의 섬광',
-    type: 'SPELL',
-    archetype: 'CONTROL',
-    level: 2,
-    cost: 2,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'INSTANT',
-    effectType: 'BOARD_WIPE',
-    effectValue: 12,
-    keywords: ['광역', '정화'],
-    tags: ['#마법', '#빛'],
-    condition: '발동 시',
-    target: '적 전체 몬스터 및 상대 본체',
-    effect: '적 전체 유닛과 상대 본체에 12의 정화 마법 피해를 준다.',
-    description: '[조건] 발동 시\n[대상] 적 전체 몬스터 및 상대 본체\n[효과] 적 전체 유닛과 본체에 12의 정화 마법 피해를 입힌다. 대상 부재 시 불발.',
-    targetPolarity: 'HARMFUL',
-  },
-  {
-    id: 'C_BLUE_03',
-    name: '아이기스 수호신',
-    type: 'MONSTER',
-    archetype: 'CONTROL',
-    level: 3,
-    cost: 3,
-    attack: 10,
-    defense: 22,
-    effectType: 'HEAL_AND_GUARD',
-    effectValue: 20,
-    keywords: ['수호', '치유'],
-    tags: ['#거신', '#성역'],
-    condition: '일반 소환 시',
-    target: '아군 본체',
-    effect: '본체에 20의 방어 결계를 형성하고 전선을 굳건히 수호한다.',
-    description: '[조건] 일반 소환 시\n[대상] 아군 본체\n[효과] 본체에 20의 방어 결계를 형성하고 전선을 굳건히 수호한다.',
-    targetPolarity: 'BENEFICIAL',
-  },
-  {
-    id: 'C_BLUE_04',
-    name: '빛의 대마법사',
-    type: 'MONSTER',
-    archetype: 'CONTROL',
-    level: 2,
-    cost: 2,
-    attack: 7,
-    defense: 16,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    keywords: ['결계', '마력'],
-    tags: ['#마법사', '#빛'],
-    condition: '일반 소환 시',
-    target: '아군 전장',
-    effect: '신성 마력 결계를 구축하여 전장의 전술적 우위를 지원한다.',
-    description: '[조건] 일반 소환 시\n[효과] 신성 마력 결계를 구축하여 전장의 전술적 우위를 지원한다.',
-    targetPolarity: 'BENEFICIAL',
-  },
-  {
-    id: 'C_BLUE_05',
-    name: '천상의 대천사 미카엘',
-    type: 'MONSTER',
-    archetype: 'CONTROL',
-    level: 6,
-    cost: 6,
-    attack: 26,
-    defense: 34,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    isGod: true,
-    keywords: ['신성', '절대수호'],
-    tags: ['#신', '#천사', '#성역'],
-    condition: '6레벨 강림 (제물 소환 또는 진화)',
-    target: '아군 전장 전체',
-    effect: '절대적인 신성 수호 권능으로 전장을 완전히 장악한다.',
-    description: '[조건] 6레벨 강림 (제물 소환/진화)\n[효과] 절대적인 신성 수호 권능으로 전장을 완전히 장악한다.',
-    targetPolarity: 'BENEFICIAL',
-  },
-  {
-    id: 'S_BLUE_01',
-    name: '신성한 반격 결계',
-    type: 'SPELL',
-    archetype: 'CONTROL',
-    level: 2,
-    cost: 2,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'ON_ATTACKED',
-    effectType: 'COUNTER_ATTACK',
-    effectValue: 10,
-    keywords: ['카운터', '반격'],
-    tags: ['#결계', '#신성'],
-    condition: '공격 피격 시',
-    target: '공격 캐릭터 (적 몬스터)',
-    effect: '공격을 차단하고 공격자에게 10 데미지 반격. 대상이 파괴되거나 존재하지 않을 경우(미아 상태) 효과는 불발된다.',
-    description: '[조건] 공격 피격 시\n[대상] 공격 캐릭터 (적 몬스터)\n[효과] 공격을 차단하고 10 데미지 반격. 대상 부재/파괴 시 불발.',
-    targetPolarity: 'BENEFICIAL',
-  },
-  {
-    id: 'S_BLUE_02',
-    name: '여명의 축복',
-    type: 'SPELL',
-    archetype: 'CONTROL',
-    level: 1,
-    cost: 1,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'ON_TURN_START',
-    effectType: 'HEAL_AND_DRAW',
-    effectValue: 15,
-    keywords: ['치유', '가속'],
-    tags: ['#마법', '#빛'],
-    condition: '턴 시작 시',
-    target: '아군 본체 및 덱',
-    effect: '본체 LP 15를 회복하고 카드 1장을 드로우한다.',
-    description: '[조건] 턴 시작 시\n[대상] 아군 본체 및 덱\n[효과] 본체 LP 15 회복 및 카드 1장 드로우.',
-    targetPolarity: 'BENEFICIAL',
-  },
+export const DEFAULT_CARD_CATALOG = CARD_CATALOG;
+export const BINDER_CATALOG = COLLECTIBLE_CARDS;
 
-  // ==========================================
-  // 2. 빨간색 (열의 / AGGRO)
-  // ==========================================
-  {
-    id: 'C_RED_01',
-    name: '선봉 돌격병',
-    type: 'MONSTER',
-    archetype: 'AGGRO',
-    level: 1,
-    cost: 1,
-    attack: 8,
-    defense: 6,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    keywords: ['돌진', '선봉'],
-    tags: ['#전사', '#돌격대'],
-    condition: '일반 소환 시',
-    target: '적 몬스터',
-    effect: '빠른 선봉 돌격으로 초반 전선을 압박한다.',
-    description: '[조건] 일반 소환 시\n[효과] 빠른 선봉 돌격으로 초반 전선을 압박한다.',
-    targetPolarity: 'HARMFUL',
-  },
-  {
-    id: 'C_RED_02',
-    name: '홍련의 화염탄',
-    type: 'SPELL',
-    archetype: 'AGGRO',
-    level: 1,
-    cost: 1,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'INSTANT',
-    effectType: 'DIRECT_DAMAGE',
-    effectValue: 16,
-    keywords: ['직타', '화염'],
-    tags: ['#마법', '#화염'],
-    condition: '발동 시',
-    target: '상대 본체',
-    effect: '상대 본체에 16 화염 피해를 직격으로 입힌다.',
-    description: '[조건] 발동 시\n[대상] 상대 본체\n[효과] 상대 본체에 16 화염 피해 직격. 대상 부재 시 불발.',
-    targetPolarity: 'HARMFUL',
-  },
-  {
-    id: 'C_RED_03',
-    name: '광전사 집행관',
-    type: 'MONSTER',
-    archetype: 'AGGRO',
-    level: 3,
-    cost: 3,
-    attack: 16,
-    defense: 10,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    keywords: ['광기', '관통'],
-    tags: ['#광전사', '#화염'],
-    condition: '전투 공격 시',
-    target: '피격 몬스터 및 상대 본체',
-    effect: '수비력을 초과한 데미지를 상대 본체 LP에 관통하여 직접 타격한다.',
-    description: '[조건] 전투 공격 시\n[효과] 관통 피해를 발동하여 수비력 초과분을 상대 본체에 입힌다.',
-    targetPolarity: 'HARMFUL',
-  },
-  {
-    id: 'C_RED_04',
-    name: '홍련의 암살단',
-    type: 'MONSTER',
-    archetype: 'AGGRO',
-    level: 2,
-    cost: 2,
-    attack: 13,
-    defense: 8,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    keywords: ['암살', '신속'],
-    tags: ['#도적', '#암살단'],
-    condition: '일반 소환 시',
-    target: '적 몬스터',
-    effect: '빠른 기습으로 적 핵심 몬스터를 암살 타격한다.',
-    description: '[조건] 일반 소환 시\n[효과] 빠른 기습으로 적 핵심 몬스터를 암살 타격한다.',
-    targetPolarity: 'HARMFUL',
-  },
-  {
-    id: 'C_RED_05',
-    name: '진홍의 화룡 이그니스',
-    type: 'MONSTER',
-    archetype: 'AGGRO',
-    level: 5,
-    cost: 5,
-    attack: 26,
-    defense: 20,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    keywords: ['화룡', '화염숨결'],
-    tags: ['#용족', '#화염'],
-    condition: '5레벨 강림 (제물 소환 또는 진화)',
-    target: '적 전장 전체',
-    effect: '최상위 고룡의 화염 숨결로 전장을 유린한다.',
-    description: '[조건] 5레벨 강림\n[효과] 최상위 고룡의 화염 숨결로 전장을 유린한다.',
-    targetPolarity: 'HARMFUL',
-  },
-  {
-    id: 'S_RED_01',
-    name: '홍련의 화염 지뢰',
-    type: 'SPELL',
-    archetype: 'AGGRO',
-    level: 1,
-    cost: 1,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'ON_ATTACKED',
-    effectType: 'MINE_EXPLODE',
-    effectValue: 16,
-    keywords: ['함정', '폭발'],
-    tags: ['#함정', '#화염'],
-    condition: '공격 피격 시',
-    target: '공격 캐릭터 (적 몬스터)',
-    effect: '공격해온 적 몬스터에게 16 폭발 데미지를 준다. 공격자가 파괴되거나 존재하지 않을 경우(미아 상태) 효과는 불발된다.',
-    description: '[조건] 공격 피격 시\n[대상] 공격 캐릭터 (적 몬스터)\n[효과] 공격해온 적에게 16 폭발 피해. 대상 부재/파괴 시 불발.',
-    targetPolarity: 'HARMFUL',
-  },
-  {
-    id: 'S_RED_02',
-    name: '전쟁의 진격 나팔',
-    type: 'SPELL',
-    archetype: 'AGGRO',
-    level: 2,
-    cost: 2,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'ON_TURN_START',
-    effectType: 'BUFF_ALL_ATK',
-    effectValue: 6,
-    keywords: ['가속', '진격'],
-    tags: ['#전술', '#화염'],
-    condition: '턴 시작 시',
-    target: '아군 전장 전체 몬스터',
-    effect: '내 모든 필드 유닛에게 공격력 +6을 부여한다. 아군 몬스터가 존재하지 않을 경우(미아 상태) 효과는 불발된다.',
-    description: '[조건] 턴 시작 시\n[대상] 아군 전장 전체 몬스터\n[효과] 내 모든 필드 유닛 공격력 +6 부여. 대상 부재 시 불발.',
-    targetPolarity: 'BENEFICIAL',
-  },
-
-  // ==========================================
-  // 3. 보라색 (혼돈 / CHAOS_RNG)
-  // ==========================================
-  {
-    id: 'C_PURP_01',
-    name: '운명의 주사위 악마',
-    type: 'MONSTER',
-    archetype: 'CHAOS_RNG',
-    level: 1,
-    cost: 1,
-    attack: 7,
-    defense: 9,
-    effectType: 'CHAOS_GAMBLE',
-    effectValue: 15,
-    keywords: ['도박', '주사위'],
-    tags: ['#악마', '#혼돈'],
-    condition: '일반 소환 시',
-    target: '상대 본체',
-    effect: '주사위를 굴려 확률에 따라 상대 본체에 혼돈 피해를 입힌다.',
-    description: '[조건] 일반 소환 시\n[대상] 상대 본체\n[효과] 주사위를 굴려 확률 기반 혼돈 피해를 가한다.',
-    targetPolarity: 'MIXED',
-  },
-  {
-    id: 'C_PURP_02',
-    name: '차원 균열의 룰렛',
-    type: 'SPELL',
-    archetype: 'CHAOS_RNG',
-    level: 2,
-    cost: 2,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'INSTANT',
-    effectType: 'CHAOS_GAMBLE',
-    effectValue: 22,
-    keywords: ['도박', '룰렛'],
-    tags: ['#마법', '#혼돈'],
-    condition: '발동 시',
-    target: '상대 본체',
-    effect: '룰렛을 굴려 11~22의 혼돈 무작위 피해를 입힌다.',
-    description: '[조건] 발동 시\n[대상] 상대 본체\n[효과] 룰렛을 굴려 11~22 무작위 피해 직격. 대상 부재 시 불발.',
-    targetPolarity: 'MIXED',
-  },
-  {
-    id: 'C_PURP_03',
-    name: '심연의 창조신 아자젤',
-    type: 'MONSTER',
-    archetype: 'CHAOS_RNG',
-    level: 6,
-    cost: 6,
-    attack: 30,
-    defense: 30,
-    effectType: 'CHAOS_GAMBLE',
-    effectValue: 28,
-    isGod: true,
-    keywords: ['혼돈의신', '현실왜곡'],
-    tags: ['#신', '#악마', '#심연'],
-    condition: '6레벨 강림 (제물 소환 또는 진화)',
-    target: '전장 전체',
-    effect: '심연의 현실 왜곡 권능으로 모든 확률과 운명을 혼돈으로 뒤흔든다.',
-    description: '[조건] 6레벨 강림 (제물 소환/진화)\n[효과] 심연의 권능으로 현실을 왜곡하여 혼돈을 강림시킨다.',
-    targetPolarity: 'MIXED',
-  },
-  {
-    id: 'C_PURP_04',
-    name: '황천의 도박사',
-    type: 'MONSTER',
-    archetype: 'CHAOS_RNG',
-    level: 2,
-    cost: 2,
-    attack: 11,
-    defense: 11,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    keywords: ['속임수', '재도전'],
-    tags: ['#인간', '#도박꾼'],
-    condition: '일반 소환 시',
-    target: '전장',
-    effect: '속임수 기교로 불리한 전황을 교란한다.',
-    description: '[조건] 일반 소환 시\n[효과] 속임수 기교로 불리한 전황을 교란한다.',
-    targetPolarity: 'MIXED',
-  },
-  {
-    id: 'S_PURP_01',
-    name: '운명의 뒤틀림 룰렛',
-    type: 'SPELL',
-    archetype: 'CHAOS_RNG',
-    level: 1,
-    cost: 1,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'ON_ATTACKED',
-    effectType: 'MIRROR_REFLECT',
-    effectValue: 0,
-    keywords: ['도박', '반전'],
-    tags: ['#비술', '#혼돈'],
-    condition: '공격 피격 시',
-    target: '공격 캐릭터 및 상대 본체',
-    effect: '50% 확률로 공격을 무효화하고 상대 본체에 15 데미지를 반사한다. 공격자 부재 시(미아 상태) 효과는 불발된다.',
-    description: '[조건] 공격 피격 시\n[대상] 공격 캐릭터 및 상대 본체\n[효과] 50% 확률로 공격 무효화 후 15 반사 피해. 대상 부재/파괴 시 불발.',
-    targetPolarity: 'MIXED',
-  },
-  {
-    id: 'S_PURP_02',
-    name: '혼돈의 소환진',
-    type: 'SPELL',
-    archetype: 'CHAOS_RNG',
-    level: 1,
-    cost: 1,
-    attack: 0,
-    defense: 0,
-    spellTriggerType: 'ON_TURN_START',
-    effectType: 'EXTRA_SUMMON',
-    effectValue: 1,
-    keywords: ['비술', '소환'],
-    tags: ['#비술', '#혼돈'],
-    condition: '턴 시작 시',
-    target: '자신 (일반 소환권)',
-    effect: '이번 턴 일반 소환권 +1을 추가 획득한다.',
-    description: '[조건] 턴 시작 시\n[대상] 자신 (일반 소환권)\n[효과] 이번 턴 일반 소환권 +1 추가 획득.',
-    targetPolarity: 'BENEFICIAL',
-  },
-
-  // ==========================================
-  // 4. 고코스트 전설 거신 (신 급)
-  // ==========================================
-  {
-    id: 'C_TITAN_01',
-    name: '천벌의 파괴신 테라',
-    type: 'MONSTER',
-    archetype: 'AGGRO',
-    level: 6,
-    cost: 6,
-    attack: 32,
-    defense: 30,
-    effectType: 'SUMMON_UNIT',
-    effectValue: 0,
-    isGod: true,
-    keywords: ['파멸', '대지진', '관통'],
-    tags: ['#신', '#태초의불', '#거신'],
-    condition: '6레벨 강림 (제물 소환 또는 진화)',
-    target: '적 전장 및 상대 본체',
-    effect: '천벌의 대지진과 관통 공격으로 상대 전장과 본체를 분쇄한다.',
-    description: '[조건] 6레벨 강림 (제물 소환/진화)\n[효과] 천벌의 대지진과 관통 공격으로 상대 전장과 본체를 분쇄한다.',
-    targetPolarity: 'HARMFUL',
-  },
-];
-
-/**
- * 30장 덱 구성 검증기
- * - 무조건 딱 30장
- * - 같은 몬스터 카드는 최대 3장
- * - 마법 카드는 최대 1장(싱글톤)
- * - 덱 마스터 몬스터 카드 1장 필수
- */
 export function validateDeckComposition(deckCardIds, catalogMap, deckMasterCardId) {
   if (!deckCardIds || deckCardIds.length !== 30) {
     return {
@@ -553,94 +134,13 @@ export function validateDeckComposition(deckCardIds, catalogMap, deckMasterCardI
  * 운명별 표준 30장 스타터 덱 빌더 (룰 100% 준수)
  */
 export function createStartingDeck(destiny) {
-  if (destiny === 'BLUE_JUSTICE') {
-    return {
-      deckMasterCardId: 'C_BLUE_01', // 성소의 방패병 (Lv 1 스타터 덱 마스터)
-      deckCardIds: [
-        'C_BLUE_01', // Deck Master (1/30)
-        // 몬스터 (19장)
-        'C_BLUE_01', 'C_BLUE_01',
-        'C_BLUE_03', 'C_BLUE_03', 'C_BLUE_03',
-        'C_BLUE_04', 'C_BLUE_04', 'C_BLUE_04',
-        'C_BLUE_05', 'C_BLUE_05',
-        'C_RED_01', 'C_RED_01', 'C_RED_01',
-        'C_RED_04', 'C_RED_04',
-        'C_PURP_01', 'C_PURP_01', 'C_PURP_01',
-        'C_PURP_04',
-        // 마법 (각 1장씩 10장)
-        'C_BLUE_02',
-        'S_BLUE_01',
-        'S_BLUE_02',
-        'C_RED_02',
-        'S_RED_01',
-        'S_RED_02',
-        'C_PURP_02',
-        'S_PURP_01',
-        'S_PURP_02',
-        'C_TITAN_01', // 몬스터 1장 보강 (총 30장)
-      ],
-    };
-  }
-
-  if (destiny === 'RED_ZEAL') {
-    return {
-      deckMasterCardId: 'C_RED_01', // 선봉 돌격병 (Lv 1 스타터 덱 마스터)
-      deckCardIds: [
-        'C_RED_01', // Deck Master (1/30)
-        // 몬스터 (20장)
-        'C_RED_01', 'C_RED_01',
-        'C_RED_03', 'C_RED_03', 'C_RED_03',
-        'C_RED_04', 'C_RED_04', 'C_RED_04',
-        'C_RED_05', 'C_RED_05',
-        'C_BLUE_01', 'C_BLUE_01', 'C_BLUE_01',
-        'C_PURP_01', 'C_PURP_01', 'C_PURP_01',
-        'C_PURP_04', 'C_PURP_04', 'C_PURP_04',
-        'C_TITAN_01',
-        // 마법 (각 1장씩 9장)
-        'C_RED_02',
-        'S_RED_01',
-        'S_RED_02',
-        'C_BLUE_02',
-        'S_BLUE_01',
-        'S_BLUE_02',
-        'C_PURP_02',
-        'S_PURP_01',
-        'S_PURP_02',
-      ],
-    };
-  }
-
-  // PURPLE_CHAOS 기본
-  return {
-    deckMasterCardId: 'C_PURP_01', // 운명의 주사위 악마 (Lv 1 스타터 덱 마스터)
-    deckCardIds: [
-      'C_PURP_01', // Deck Master (1/30)
-      // 몬스터 (20장)
-      'C_PURP_01', 'C_PURP_01',
-      'C_PURP_03', 'C_PURP_03', 'C_PURP_03',
-      'C_PURP_04', 'C_PURP_04', 'C_PURP_04',
-      'C_BLUE_01', 'C_BLUE_01', 'C_BLUE_01',
-      'C_BLUE_04', 'C_BLUE_04', 'C_BLUE_04',
-      'C_RED_01', 'C_RED_01', 'C_RED_01',
-      'C_RED_03', 'C_RED_03', 'C_RED_03',
-      // 마법 (각 1장씩 9장)
-      'C_PURP_02',
-      'S_PURP_01',
-      'S_PURP_02',
-      'C_BLUE_02',
-      'S_BLUE_01',
-      'S_BLUE_02',
-      'C_RED_02',
-      'S_RED_01',
-      'S_RED_02',
-    ],
-  };
+  return createStarterDeck(destiny);
 }
 
 export class DuelRogueEngine {
   constructor(binder, catalog = DEFAULT_CARD_CATALOG, initialSeed = 20261015) {
     this.binder = binder;
-    this.catalogMap = new Map(catalog.map((c) => [c.id, c]));
+    this.catalogMap = catalog === DEFAULT_CARD_CATALOG ? CARD_MAP : new Map(catalog.map((c) => [c.id, c]));
     this.rng = new SeededRng(initialSeed);
     this.instanceSeq = 1;
     this.state = this.createEmptyRunState('RUN_INIT', initialSeed);
@@ -778,81 +278,22 @@ export class DuelRogueEngine {
   generateCheckpointState() {
     const round = this.state.roundNumber || 1;
 
-    // 1. 2000년대 초 정통 유희왕 500원 원화 가격 고증 팩 풀 정의
-    const allPackDefs = [
-      {
-        id: 'PACK_BLUE',
-        name: '푸른 성역의 결계 (정의 팩)',
-        type: 'CONTROL',
-        price: 500,
-        description: '신성 수호벽과 반격 결계, 정화 마법이 담긴 방어 특화 팩',
-        cards: ['C_BLUE_01', 'C_BLUE_02', 'C_BLUE_03', 'C_BLUE_04', 'S_BLUE_01', 'S_BLUE_02', 'C_BLUE_05'],
-        color: '#38bdf8',
-        tag: '방어/카운터',
-      },
-      {
-        id: 'PACK_RED',
-        name: '진홍빛 화룡의 돌격 (열의 팩)',
-        type: 'AGGRO',
-        price: 500,
-        description: '선봉 돌격, 관통 광전사, 화염탄 및 최상위 화룡이 담긴 돌격 팩',
-        cards: ['C_RED_01', 'C_RED_02', 'C_RED_03', 'C_RED_04', 'C_RED_05', 'S_RED_01', 'S_RED_02'],
-        color: '#f87171',
-        tag: '돌격/관통',
-      },
-      {
-        id: 'PACK_PURPLE',
-        name: '심연의 도박과 룰렛 (혼돈 팩)',
-        type: 'CHAOS_RNG',
-        price: 500,
-        description: '주사위와 룰렛, 반전 비술과 소환진이 담긴 변수 창출 팩',
-        cards: ['C_PURP_01', 'C_PURP_02', 'C_PURP_03', 'C_PURP_04', 'S_PURP_01', 'S_PURP_02'],
-        color: '#c084fc',
-        tag: '도박/변수',
-      },
-      {
-        id: 'PACK_LEGEND',
-        name: '태초의 신과 거신 (신화 팩)',
-        type: 'LEGEND',
-        price: 1000,
-        description: '3대 신(미카엘, 테라, 아자젤)과 화룡 이그니스가 담긴 전설 팩',
-        cards: ['C_BLUE_05', 'C_TITAN_01', 'C_PURP_03', 'C_RED_05', 'S_BLUE_01', 'S_RED_01', 'S_PURP_01'],
-        color: '#facc15',
-        tag: '신/고위력',
-      },
-    ];
-
-    // 매 체크포인트마다 어떤 팩을 얼만큼 판매할지 무작위 결정
-    const shopPacks = [];
-    const shuffledNormals = [...allPackDefs.slice(0, 3)].sort(() => this.rng.nextFloat() - 0.5);
+    // 1. 부스터 팩 진열: 진영 팩 2~3종 + (라운드 2 이상) 신화 팩
+    const normals = PACK_DEFS.filter((p) => p.faction !== 'ALL').sort(() => this.rng.nextFloat() - 0.5);
     const normalCount = this.rng.nextFloat() < 0.4 ? 2 : 3;
+    const shopPacks = [];
     for (let i = 0; i < normalCount; i++) {
-      const p = shuffledNormals[i];
-      const stock = Math.floor(this.rng.nextFloat() * 3) + 1; // 1~3개 재고
-      shopPacks.push({ ...p, stock, maxStock: stock });
+      const stock = Math.floor(this.rng.nextFloat() * 3) + 1;
+      shopPacks.push({ ...packShelfEntry(normals[i], this.rng), stock, maxStock: stock });
     }
-    // 전설 신화 팩: 1,000원 (라운드 2 이상이거나 40% 확률로 1개 재고 출현)
     if (round >= 2 && this.rng.nextFloat() < 0.65) {
-      shopPacks.push({ ...allPackDefs[3], stock: 1, maxStock: 1 });
+      shopPacks.push({ ...packShelfEntry(PACK_DEFS.find((p) => p.faction === 'ALL'), this.rng), stock: 1, maxStock: 1 });
     }
     this.state.checkpointShopStock = shopPacks;
 
-    // 1-2. 상점 낱장 카드 진열대 (Single Cards Showcase)
-    const singleCardPool = [
-      { cardId: 'C_BLUE_05', price: 2500, reason: '정의의 신 천상의 미카엘 (초희귀 단품)' },
-      { cardId: 'C_TITAN_01', price: 2500, reason: '파괴의 신 파괴신 테라 (초희귀 단품)' },
-      { cardId: 'C_PURP_03', price: 2500, reason: '혼돈의 신 창조신 아자젤 (초희귀 단품)' },
-      { cardId: 'C_RED_05', price: 1800, reason: '최상위 화룡 진홍의 이그니스 (정예 낱장)' },
-      { cardId: 'C_RED_03', price: 1200, reason: '관통의 대가 광전사 집행관 (인기 낱장)' },
-      { cardId: 'S_BLUE_01', price: 900, reason: '신성한 반격 결계 (필수 방어 스펠)' },
-      { cardId: 'S_RED_01', price: 900, reason: '홍련의 화염 지뢰 (카운터 폭발 스펠)' },
-      { cardId: 'C_BLUE_03', price: 900, reason: '아이기스 수호신 (고수비력 결계)' },
-      { cardId: 'C_PURP_01', price: 700, reason: '주사위 도박꾼 (변수 창출 몬스터)' },
-      { cardId: 'S_PURP_01', price: 800, reason: '카오스 룰렛 (역전의 마법)' },
-    ];
-    const shuffledSingles = [...singleCardPool].sort(() => this.rng.nextFloat() - 0.5);
+    // 1-2. 상점 낱장 카드 진열대
     const singleCount = this.rng.nextFloat() < 0.5 ? 3 : 2;
-    this.state.checkpointShopSingles = shuffledSingles.slice(0, singleCount).map((item) => {
+    this.state.checkpointShopSingles = rollShopSingles(this.rng, round, singleCount).map((item) => {
       const def = this.getCardDef(item.cardId);
       return {
         cardId: item.cardId,
@@ -862,6 +303,7 @@ export class DuelRogueEngine {
         attack: def.attack,
         defense: def.defense,
         type: def.type,
+        rarity: def.rarity,
         price: item.price,
         reason: item.reason,
         purchased: false,
@@ -874,7 +316,7 @@ export class DuelRogueEngine {
       const deals = [];
 
       // 1) 1:1 대칭 맞교환 제안 (정예/고급 카드)
-      const pool1to1 = ['C_BLUE_03', 'S_BLUE_01', 'S_RED_01', 'C_PURP_01', 'S_PURP_01', 'C_BLUE_02'];
+      const pool1to1 = merchantRewardPool('1_1').map((c) => c.id);
       const pick1to1 = pool1to1[Math.floor(this.rng.nextFloat() * pool1to1.length)];
       const def1 = this.getCardDef(pick1to1);
       const wanted1 = this.sampleOwnedCardsForTrade(1, [pick1to1]);
@@ -898,7 +340,7 @@ export class DuelRogueEngine {
       });
 
       // 2) 2:1 비대칭 희귀 교환 제안 (최상위 에이스 몬스터)
-      const pool2to1 = ['C_RED_05', 'C_RED_03', 'C_BLUE_04', 'C_PURP_02'];
+      const pool2to1 = merchantRewardPool('2_1').map((c) => c.id);
       const pick2to1 = pool2to1[Math.floor(this.rng.nextFloat() * pool2to1.length)];
       const def2 = this.getCardDef(pick2to1);
       const wanted2 = this.sampleOwnedCardsForTrade(2, [pick2to1]);
@@ -923,7 +365,7 @@ export class DuelRogueEngine {
 
       // 3) 3:1 비대칭 신화/전설 교환 제안 (라운드 2 이상이거나 70% 확률로 3대 신 카드 등장)
       if (round >= 2 && this.rng.nextFloat() < 0.70) {
-        const pool3to1 = ['C_BLUE_05', 'C_TITAN_01', 'C_PURP_03'];
+        const pool3to1 = merchantRewardPool('3_1').map((c) => c.id);
         const pick3to1 = pool3to1[Math.floor(this.rng.nextFloat() * pool3to1.length)];
         const def3 = this.getCardDef(pick3to1);
         const wanted3 = this.sampleOwnedCardsForTrade(3, [pick3to1]);
@@ -970,89 +412,7 @@ export class DuelRogueEngine {
   }
 
   generateScaledEncounter(round) {
-    if (round === 1) {
-      return {
-        round,
-        duelistId: 'CPU_ROOKIE_ROKI',
-        name: '초심 듀얼리스트 로키',
-        opponentName: '초심 듀얼리스트 로키',
-        title: '신예 도전자',
-        opponentTitle: '신예 도전자',
-        stars: '★☆☆☆☆',
-        difficultyLabel: '하 (EASY)',
-        difficultyColor: '#4ade80',
-        deckArchetype: 'RED_ZEAL',
-        luckBias: 0.0,
-        rewardGold: 500,
-        description: '기본적인 전개 위주로 덱을 운용하는 입문 듀얼리스트입니다.',
-      };
-    }
-    if (round === 2) {
-      return {
-        round,
-        duelistId: 'CPU_WANDERER_RICK',
-        name: '방랑 카드 수집가 릭',
-        opponentName: '방랑 카드 수집가 릭',
-        title: '골목의 승부사',
-        opponentTitle: '골목의 승부사',
-        stars: '★★☆☆☆',
-        difficultyLabel: '중 (NORMAL)',
-        difficultyColor: '#38bdf8',
-        deckArchetype: 'CHAOS_RNG',
-        luckBias: 0.08,
-        rewardGold: 650,
-        description: '운과 도박수를 시험하며 허를 찌르는 변칙 듀얼리스트입니다.',
-      };
-    }
-    if (round === 3) {
-      return {
-        round,
-        duelistId: 'CPU_VETERAN_VEGA',
-        name: '숙련 듀얼리스트 베가',
-        opponentName: '숙련 듀얼리스트 베가',
-        title: '성소의 수호 기사',
-        opponentTitle: '성소의 수호 기사',
-        stars: '★★★☆☆',
-        difficultyLabel: '상 (HARD)',
-        difficultyColor: '#f59e0b',
-        deckArchetype: 'BLUE_JUSTICE',
-        luckBias: 0.12,
-        rewardGold: 800,
-        description: '수호벽과 반격 결계를 능숙하게 다루는 노련한 실력자입니다.',
-      };
-    }
-    if (round === 4) {
-      return {
-        round,
-        duelistId: 'CPU_KNIGHT_ALLEN',
-        name: '홍련의 용기사 알렌',
-        opponentName: '홍련의 용기사 알렌',
-        title: '진홍의 학살자',
-        opponentTitle: '진홍의 학살자',
-        stars: '★★★★☆',
-        difficultyLabel: '극상 (EXPERT)',
-        difficultyColor: '#fb7185',
-        deckArchetype: 'RED_ZEAL',
-        luckBias: 0.16,
-        rewardGold: 950,
-        description: '관통 공격과 고위력 화룡으로 전장을 순식간에 불태웁니다.',
-      };
-    }
-    return {
-      round,
-      duelistId: `CPU_MASTER_ZERO_${round}`,
-      name: `심연의 심판관 제로 (Lv ${round})`,
-      opponentName: `심연의 심판관 제로 (Lv ${round})`,
-      title: '마스터 듀얼리스트',
-      opponentTitle: '마스터 듀얼리스트',
-      stars: '★★★★★',
-      difficultyLabel: '지옥 (HELL)',
-      difficultyColor: '#a855f7',
-      deckArchetype: round % 2 === 0 ? 'BLUE_JUSTICE' : 'CHAOS_RNG',
-      luckBias: Math.min(0.35, 0.20 + (round - 5) * 0.03),
-      rewardGold: 1000 + (round - 5) * 200,
-      description: '극한의 덱 파워와 신 급 카드를 서슴없이 구사하는 궁극의 상대입니다.',
-    };
+    return rollEncounter(round, this.rng);
   }
 
   /**
@@ -1068,11 +428,12 @@ export class DuelRogueEngine {
       throw new Error('다음 인카운터 정보가 생성되지 않았습니다.');
     }
 
-    const cpuDeck = createStartingDeck(encounter.deckArchetype);
-    if (encounter.round >= 4) {
-      cpuDeck.deckCardIds.push('C_RED_05');
-      cpuDeck.deckCardIds.push('C_TITAN_01');
-    }
+    const deckRng = new SeededRng(encounter.deckSeed || this.rng.nextInt(1, 1e9));
+    const cpuDeck = buildDeck({
+      faction: encounter.faction || FACTION_OF_DESTINY[encounter.deckArchetype] || 'RED',
+      tier: encounter.tier || Math.min(5, encounter.round),
+      rng: deckRng,
+    });
 
     this.state.phase = 'DUEL_ENCOUNTER';
     this.state.activeDuel = this.createSymmetricDuel(
@@ -1081,7 +442,8 @@ export class DuelRogueEngine {
       encounter.name,
       cpuDeck.deckCardIds,
       cpuDeck.deckMasterCardId,
-      encounter.luckBias
+      encounter.luckBias,
+      { personality: encounter.personality, volatility: encounter.volatility }
     );
     return this.getSnapshot();
   }
@@ -1094,32 +456,8 @@ export class DuelRogueEngine {
     if (this.state.playerDeckCardIds.length !== 30) {
       throw new Error(`덱이 정확히 30장이어야 결전에 나설 수 있습니다. (현재: ${this.state.playerDeckCardIds.length}장)`);
     }
-    const bossId = this.state.assignedFinalBoss || 'BOSS_RED_UNSTOPPABLE_AGGRO';
     this.state.phase = 'STAGE_5_FINAL_BOSS';
-
-    let bossName = '종언의 어그로 군주 볼카';
-    let bossDeckType = 'RED_ZEAL';
-    let bossLuckBias = 0.15;
-
-    if (bossId === 'BOSS_BLUE_FORTRESS_CONTROL') {
-      bossName = '절대방벽의 집행관 실피드';
-      bossDeckType = 'BLUE_JUSTICE';
-      bossLuckBias = 0.15;
-    } else if (bossId === 'BOSS_PURPLE_RIGGED_FATE') {
-      bossName = '사기적 행운의 지배자 조커';
-      bossDeckType = 'PURPLE_CHAOS';
-      bossLuckBias = 0.35;
-    }
-
-    const bossDeck = createStartingDeck(bossDeckType);
-    this.state.activeDuel = this.createSymmetricDuel(
-      'DUEL_STAGE_5_BOSS',
-      bossId,
-      bossName,
-      bossDeck.deckCardIds,
-      bossDeck.deckMasterCardId,
-      bossLuckBias
-    );
+    this.state.activeDuel = this.createBossDuel();
     return this.getSnapshot();
   }
 
@@ -1139,15 +477,11 @@ export class DuelRogueEngine {
     pack.stock -= 1;
 
     // 팩에서 3장 카드 추첨 및 가방(트렁크)에 즉시 지급
-    const choices = [];
-    const pool = [...pack.cards];
     if (!this.state.playerTrunkCardIds) {
       this.state.playerTrunkCardIds = [];
     }
-    for (let i = 0; i < 3; i++) {
-      const idx = Math.floor(this.rng.nextFloat() * pool.length);
-      const drawnId = pool[idx];
-      choices.push(drawnId);
+    const choices = openPack(pack, this.rng, this.state.roundNumber || 1);
+    for (const drawnId of choices) {
       this.state.playerTrunkCardIds.push(drawnId);
       this.binder.recordCardSeen(drawnId);
       this.binder.recordCardAcquired(drawnId);
@@ -1413,863 +747,140 @@ export class DuelRogueEngine {
   /**
    * 대칭형 1v1 PvP 듀얼 생성기 (마나 제거, 1턴 1회 소환권 및 Lv 1 스타터 덱 마스터 필드 배치)
    */
-  createSymmetricDuel(duelId, cpuId, cpuName, cpuDeckCardIds, cpuDeckMasterCardId, cpuLuckBias) {
-    const playerDeckMasterId = this.state.playerDeckMasterCardId || this.state.playerDeckCardIds[0];
-    const cpuDeckMasterId = cpuDeckMasterCardId || cpuDeckCardIds[0];
-
-    const playerDmDef = this.getCardDef(playerDeckMasterId);
-    const cpuDmDef = this.getCardDef(cpuDeckMasterId);
-
-    // 1. 덱 마스터를 덱 목록에서 1장 분리하여 시작 전장용으로 사용
-    const playerDeckPool = [...this.state.playerDeckCardIds];
-    const pDmIdx = playerDeckPool.indexOf(playerDeckMasterId);
-    if (pDmIdx !== -1) playerDeckPool.splice(pDmIdx, 1);
-
-    const cpuDeckPool = [...cpuDeckCardIds];
-    const cDmIdx = cpuDeckPool.indexOf(cpuDeckMasterId);
-    if (cDmIdx !== -1) cpuDeckPool.splice(cDmIdx, 1);
-
-    const seat0Deck = this.shuffleArray(playerDeckPool.map((cid) => this.instantiateCard(cid, 0)));
-    const seat1Deck = this.shuffleArray(cpuDeckPool.map((cid) => this.instantiateCard(cid, 1)));
-
-    // 2. 덱 마스터 인스턴스화 & 필드 배치 (게임 시작하자마자 필드에 전개된 단 하나의 '씨앗')
-    const playerDmUnit = this.instantiateCard(playerDeckMasterId, 0);
-    playerDmUnit.isDeckMaster = true;
-    const cpuDmUnit = this.instantiateCard(cpuDeckMasterId, 1);
-    cpuDmUnit.isDeckMaster = true;
-
-    // 3. 선/후 결정: 양쪽 모두 Lv 1 스타터이므로 50:50 코인토스로 공평하게 선공 결정
-    const playerLevel = playerDmDef?.level ?? playerDmDef?.cost ?? 1;
-    const cpuLevel = cpuDmDef?.level ?? cpuDmDef?.cost ?? 1;
-    let activeSeat = 0;
-    let turnDecisionReason = '';
-
-    if (playerLevel < cpuLevel) {
-      activeSeat = 0;
-      turnDecisionReason = `플레이어 덱 마스터 레벨(★${playerLevel})이 상대(★${cpuLevel})보다 낮아 선공을 가져갑니다.`;
-    } else if (cpuLevel < playerLevel) {
-      activeSeat = 1;
-      turnDecisionReason = `상대 덱 마스터 레벨(★${cpuLevel})이 플레이어(★${playerLevel})보다 낮아 상대가 선공을 가져갑니다.`;
-    } else {
-      const coin = this.rng.nextFloat() < 0.5 ? 0 : 1;
-      activeSeat = coin;
-      turnDecisionReason = `양쪽 덱 마스터가 Lv 1 스타터이므로 코인토스로 ${coin === 0 ? '플레이어' : '상대'}가 선공이 되었습니다.`;
-    }
-
-    // 소환 턴 번호 부여 (각 플레이어의 첫 번째 액티브 턴 번호로 정렬)
-    playerDmUnit.summonedTurnNumber = activeSeat === 0 ? 1 : 2;
-    cpuDmUnit.summonedTurnNumber = activeSeat === 1 ? 1 : 2;
-
-    const seat0 = {
-      seatIndex: 0,
-      duelistId: 'PLAYER_LOCAL',
-      duelistName: '플레이어',
-      isCpu: false,
-      rngLuckBias: 0.0,
-      lp: 100,
-      maxLp: 100,
-      normalSummonsRemaining: 1, // 턴당 1회 일반 소환권
-      deck: seat0Deck,
-      hand: [],
-      board: [playerDmUnit],
-      setSpells: [], // [{ instanceId, cardId, slotType, targetMonsterInstanceId, triggerTiming }]
-      graveyard: [],
-      deckMasterId: playerDeckMasterId,
-    };
-
-    const seat1 = {
-      seatIndex: 1,
-      duelistId: cpuId,
-      duelistName: cpuName,
-      isCpu: true,
-      rngLuckBias: cpuLuckBias,
-      lp: 100,
-      maxLp: 100,
-      normalSummonsRemaining: 1, // 턴당 1회 일반 소환권
-      deck: seat1Deck,
-      hand: [],
-      board: [cpuDmUnit],
-      setSpells: [],
-      graveyard: [],
-      deckMasterId: cpuDeckMasterId,
-    };
-
-    // 5. 시작 시 카드 5장 드로우
-    for (let i = 0; i < 5; i++) {
-      this.drawCard(seat0);
-      this.drawCard(seat1);
-    }
-
-    // [규칙] 첫 1바퀴(1~2턴)는 공격 불가 (전개 및 탐색)
-    playerDmUnit.canAttack = false;
-    cpuDmUnit.canAttack = false;
-
-    return {
-      duelId,
-      seed: this.state.seed,
-      turnNumber: 1,
-      activeSeat,
-      firstPlayerSeat: activeSeat,
-      round1NoAttack: true,
-      turnDecisionReason,
-      status: 'ONGOING',
-      seats: [seat0, seat1],
-      fieldSetSlots: {
-        left: null,
-        right: null,
-      },
-      lastAttackResult: null,
-      lastSpellTriggerResult: null,
-    };
-  }
-
-  shuffleArray(arr) {
-    const copy = [...arr];
-    for (let i = copy.length - 1; i > 0; i--) {
-      const j = Math.floor(this.rng.nextFloat() * (i + 1));
-      [copy[i], copy[j]] = [copy[j], copy[i]];
-    }
-    return copy;
-  }
-
-  instantiateCard(cardId, ownerSeat) {
-    const def = this.getCardDef(cardId);
-    return {
-      instanceId: `INST_${this.instanceSeq++}_${cardId}`,
-      cardId: def.id,
-      name: def.name,
-      ownerSeat,
-      type: def.type || (def.attack > 0 ? 'MONSTER' : 'SPELL'),
-      level: def.level ?? def.cost ?? 1,
-      cost: def.cost ?? def.level ?? 1,
-      currentAttack: def.attack,
-      currentDefense: def.defense ?? def.health ?? 10,
-      maxDefense: def.defense ?? def.health ?? 10,
-      canAttack: true, // 몬스터 낸 턴 즉시 공격 가능 (Turn 1~2 라운드1 선공/후공 제외)
-      keywords: [...(def.keywords || [])],
-      tags: [...(def.tags || [])],
-      isGod: def.isGod || def.level === 6,
-      condition: def.condition || '',
-      target: def.target || '',
-      effect: def.effect || '',
-      isDeckMaster: false,
-      summonedTurnNumber: 1,
-    };
-  }
-
-  drawCard(seat) {
-    const next = seat.deck.shift();
-    if (next) {
-      seat.hand.push(next);
-    }
-  }
-
   /**
-   * 듀얼 커맨드 처리기 (노마나 소환권 & 계단식/합산 릴리스 시스템 탑재)
+   * 플레이어(0번 좌석) 대 CPU(1번 좌석) 듀얼 생성.
+   * @param {object} [cpuProfile] { personality, volatility } — 상대 AI 성향
    */
+  createSymmetricDuel(duelId, cpuId, cpuName, cpuDeckCardIds, cpuDeckMasterCardId, cpuLuckBias, cpuProfile = {}) {
+    const duel = createDuel({
+      duelId,
+      seed: this.rng.nextInt(1, 2147483646),
+      seats: [
+        {
+          duelistId: 'PLAYER_LOCAL',
+          duelistName: t('who.player'),
+          isCpu: false,
+          deckCardIds: [...this.state.playerDeckCardIds],
+          deckMasterCardId: this.state.playerDeckMasterCardId || this.state.playerDeckCardIds[0],
+        },
+        {
+          duelistId: cpuId,
+          duelistName: cpuName,
+          isCpu: true,
+          deckCardIds: [...cpuDeckCardIds],
+          deckMasterCardId: cpuDeckMasterCardId || cpuDeckCardIds[0],
+          luckBias: cpuLuckBias || 0,
+        },
+      ],
+    });
+    duel.cpuMind = createMind(cpuProfile);
+    return duel;
+  }
+
+  createBossDuel() {
+    const bossId = this.state.assignedFinalBoss || 'BOSS_RED_UNSTOPPABLE_AGGRO';
+    const boss = BOSSES[bossId] || BOSSES.BOSS_RED_UNSTOPPABLE_AGGRO;
+    const deck = bossDeck(bossId, new SeededRng(this.rng.nextInt(1, 1e9)));
+    return this.createSymmetricDuel('DUEL_STAGE_5_BOSS', bossId, boss.name, deck.deckCardIds, deck.deckMasterCardId, boss.luckBias, {
+      personality: boss.personality,
+      volatility: boss.volatility,
+    });
+  }
+
+  /** 듀얼 명령 처리 (규칙은 duel/duelCore.js) */
   dispatchDuelCommand(cmd) {
     const duel = this.state.activeDuel;
     if (!duel || duel.status !== 'ONGOING') {
       throw new Error('진행 중인 듀얼이 없습니다.');
     }
-    if (cmd.seat !== duel.activeSeat) {
-      throw new Error(`턴 순서 불일치: 현재 ${duel.activeSeat}번 시트의 턴입니다.`);
+    const handCard = cmd.type === 'PLAY_CARD' ? duel.seats[cmd.seat]?.hand.find((c) => c.instanceId === cmd.cardInstanceId) : null;
+    applyCommand(duel, cmd);
+    if (cmd.type === 'ATTACK') this.lastAttackResult = duel.lastAttackResult;
+    if (handCard) {
+      if (cmd.seat === 0) this.binder.recordCardPlayed(handCard.cardId, 35);
+      else this.binder.recordCardSeen(handCard.cardId);
     }
-
-    const actor = duel.seats[cmd.seat];
-    const opponentSeat = cmd.seat === 0 ? 1 : 0;
-    const opponent = duel.seats[opponentSeat];
-
-    // ==========================================
-    // 1. 카드 손패에서 즉시 발동/소환 (PLAY_CARD)
-    // ==========================================
-    if (cmd.type === 'PLAY_CARD') {
-      const handIdx = actor.hand.findIndex((c) => c.instanceId === cmd.cardInstanceId);
-      if (handIdx === -1) {
-        throw new Error(`손패에서 카드 ${cmd.cardInstanceId}를 찾을 수 없습니다.`);
-      }
-      const cardInst = actor.hand[handIdx];
-      const def = this.getCardDef(cardInst.cardId);
-      const cardLevel = def.level ?? def.cost ?? 1;
-
-      // 1-1. 몬스터 소환 (소환권 1회 소모 + 1레벨 계단식 진화 / 합산 릴리스)
-      if (def.type === 'MONSTER' || def.effectType === 'SUMMON_UNIT') {
-        if ((actor.normalSummonsRemaining ?? 0) <= 0) {
-          throw new Error('이번 턴 일반 소환권을 이미 모두 사용했습니다. (소환권: 0/1)');
-        }
-
-        // [Lv 1 몬스터] 제물 없이 필드 빈자리(최대 5마리)에 바로 소환
-        if (cardLevel === 1) {
-          if (actor.board.length >= 5) {
-            throw new Error('필드가 가득 차 더 이상 몬스터를 소환할 수 없습니다. (최대 5마리)');
-          }
-          actor.hand.splice(handIdx, 1);
-          actor.normalSummonsRemaining -= 1;
-          cardInst.canAttack = duel.turnNumber >= 3;
-          cardInst.summonedTurnNumber = duel.turnNumber;
-          actor.board.push(cardInst);
-        } else {
-          // [Lv 2+ 몬스터] 제물(Tribute) 필수!
-          const tributeIds = cmd.tributeInstanceIds || [];
-          if (tributeIds.length === 0) {
-            throw new Error(`★Lv.${cardLevel} 몬스터를 소환하려면 필드의 몬스터를 제물로 바쳐야 합니다.`);
-          }
-
-          const tributeUnits = [];
-          for (const tid of tributeIds) {
-            const unit = actor.board.find((u) => u.instanceId === tid);
-            if (!unit) {
-              throw new Error(`지정된 제물 몬스터(${tid})가 필드에 존재하지 않습니다.`);
-            }
-            tributeUnits.push(unit);
-          }
-
-          // [규칙 1] 단일 제물 릴리스: 1단계 높은 레벨 소환(계단식 진화) 허용 (cardLevel - sacLevel <= 1)
-          if (tributeUnits.length === 1) {
-            const sacLevel = tributeUnits[0].level || 1;
-            if (cardLevel - sacLevel > 1) {
-              throw new Error(
-                `단일 제물로는 1단계 높은 레벨(★Lv.${sacLevel + 1})까지만 진화 소환할 수 있습니다. ★Lv.${cardLevel} 소환에는 제물 레벨 합산(${sacLevel}/${cardLevel})이 부족합니다.`
-              );
-            }
-          } else {
-            // [규칙 2] 2장 이상 제물 릴리스: 제물 레벨 합산이 소환 대상 레벨 이상이어야 함
-            const sumLevels = tributeUnits.reduce((acc, u) => acc + (u.level || 1), 0);
-            if (sumLevels < cardLevel) {
-              throw new Error(
-                `제물 몬스터들의 레벨 합산(★Lv.${sumLevels})이 소환 대상 레벨(★Lv.${cardLevel})보다 부족합니다.`
-              );
-            }
-          }
-
-          // 제물 몬스터 필드에서 묘지로 이동
-          for (const tUnit of tributeUnits) {
-            const bIdx = actor.board.findIndex((u) => u.instanceId === tUnit.instanceId);
-            if (bIdx !== -1) {
-              actor.board.splice(bIdx, 1);
-              actor.graveyard.push(tUnit);
-            }
-            // 제물 몬스터 앞에 세트되어 있던 마법이 있었다면 반응 불발 처리
-            this.checkAndTriggerSetSpells(
-              duel,
-              'ON_MONSTER_DESTROYED',
-              cmd.seat,
-              tUnit.instanceId,
-              null
-            );
-          }
-
-          actor.hand.splice(handIdx, 1);
-          actor.normalSummonsRemaining -= 1;
-          cardInst.canAttack = duel.turnNumber >= 3;
-          cardInst.summonedTurnNumber = duel.turnNumber;
-          actor.board.push(cardInst);
-        }
-      } else {
-        // 1-2. 마법 카드 발동 (코스트 없이 자유 발동)
-        actor.hand.splice(handIdx, 1);
-        this.resolveCardEffect(def, cardInst, actor, opponent);
-      }
-
-      if (cmd.seat === 0) {
-        this.binder.recordCardPlayed(def.id, 35);
-      } else {
-        this.binder.recordCardSeen(def.id);
-      }
-    }
-
-    // ==========================================
-    // 2. 마법 카드 세트 (SET_SPELL)
-    // - slotType: 'MONSTER_FRONT' | 'FIELD_LEFT' | 'FIELD_RIGHT'
-    // - 모든 마법 카드는 위치 제약 없이 자유롭게 세트 가능!
-    // ==========================================
-    else if (cmd.type === 'SET_SPELL') {
-      const handIdx = actor.hand.findIndex((c) => c.instanceId === cmd.cardInstanceId);
-      if (handIdx === -1) {
-        throw new Error(`손패에서 카드 ${cmd.cardInstanceId}를 찾을 수 없습니다.`);
-      }
-      const cardInst = actor.hand[handIdx];
-      const def = this.getCardDef(cardInst.cardId);
-
-      if (def.type !== 'SPELL') {
-        throw new Error('마법 카드만 세트할 수 있습니다.');
-      }
-
-      if (cmd.slotType === 'FIELD_LEFT' && duel.fieldSetSlots.left) {
-        throw new Error('필드 중앙 좌측 슬롯에 이미 세트된 마법이 있습니다.');
-      }
-      if (cmd.slotType === 'FIELD_RIGHT' && duel.fieldSetSlots.right) {
-        throw new Error('필드 중앙 우측 슬롯에 이미 세트된 마법이 있습니다.');
-      }
-      if (cmd.slotType === 'MONSTER_FRONT') {
-        if (!cmd.targetMonsterInstanceId) {
-          throw new Error('몬스터 앞 세트를 위한 대상 몬스터가 지정되지 않았습니다.');
-        }
-        const monsterExists = actor.board.some((u) => u.instanceId === cmd.targetMonsterInstanceId);
-        if (!monsterExists) {
-          throw new Error('세트할 대상 몬스터가 내 필드에 존재하지 않습니다.');
-        }
-        const alreadyHasFrontSpell = actor.setSpells.some(
-          (s) => s.slotType === 'MONSTER_FRONT' && s.targetMonsterInstanceId === cmd.targetMonsterInstanceId
-        );
-        if (alreadyHasFrontSpell) {
-          throw new Error('해당 몬스터 앞에는 이미 세트된 마법이 존재합니다.');
-        }
-      }
-
-      actor.hand.splice(handIdx, 1);
-
-      const setSpellItem = {
-        instanceId: cardInst.instanceId,
-        cardId: def.id,
-        name: def.name,
-        level: def.level || 1,
-        cost: def.cost || 1,
-        ownerSeat: cmd.seat,
-        slotType: cmd.slotType,
-        targetMonsterInstanceId: cmd.targetMonsterInstanceId || null,
-        triggerTiming: def.spellTriggerType || 'ON_ATTACKED',
-        effectType: def.effectType,
-        effectValue: def.effectValue,
-        keywords: def.keywords || [],
-        tags: def.tags || [],
-        target: def.target || '',
-        effect: def.effect || '',
-        isFlipped: false,
-      };
-
-      if (cmd.slotType === 'FIELD_LEFT') {
-        duel.fieldSetSlots.left = setSpellItem;
-      } else if (cmd.slotType === 'FIELD_RIGHT') {
-        duel.fieldSetSlots.right = setSpellItem;
-      } else {
-        // 내 몬스터 앞 세트
-        actor.setSpells.push(setSpellItem);
-      }
-    }
-
-    // ==========================================
-    // 3. 공격 선언 (ATTACK)
-    // - 첫 1바퀴(1~2턴) 공격 봉인 (전개 및 세트 단계), 3턴부터 전투 공격 전면 해금
-    // - 유희왕식 직접 공격 제한: 상대 필드에 몬스터가 1마리라도 있으면 본체 직접 공격 불가
-    // - 상대 필드가 완전히 비어있을 때는 본체 직접 공격 가능
-    // - 기본 관통 피해 없음: 오직 '관통' 보유 몬스터만 ATK - DEF 초과 피해를 본체에 관통
-    // ==========================================
-    else if (cmd.type === 'ATTACK') {
-      if (duel.turnNumber <= 2) {
-        throw new Error('첫 1바퀴(1~2턴)는 전개 및 세트 단계로 공격할 수 없습니다. 본격적인 전투는 3턴부터 가능합니다.');
-      }
-
-      const attacker = actor.board.find((u) => u.instanceId === cmd.attackerInstanceId);
-      if (!attacker || !attacker.canAttack) {
-        throw new Error(`해당 유닛(${cmd.attackerInstanceId})은 지금 공격할 수 없습니다.`);
-      }
-
-      const attackerDef = this.getCardDef(attacker.cardId);
-
-      // 유희왕식 직접 공격 제한: 상대 필드에 몬스터가 1마리라도 존재하면 본체 직접 공격 불가
-      const canDirectAttack =
-        (attackerDef?.keywords || []).includes('직접공격') ||
-        (attacker.keywords || []).includes('직접공격') ||
-        (attackerDef?.tags || []).some((t) => t.includes('직접공격')) ||
-        (attacker.tags || []).some((t) => t.includes('직접공격')) ||
-        attackerDef?.effectType === 'DIRECT_ATTACK';
-
-      if (!cmd.targetInstanceId && opponent.board.length > 0 && !canDirectAttack) {
-        throw new Error('상대 필드에 몬스터가 존재할 때는 본체를 직접 공격할 수 없습니다. 상대 몬스터를 먼저 공격해야 합니다.');
-      }
-
-      attacker.canAttack = false;
-
-      const attackResult = {
-        attackerInstanceId: attacker.instanceId,
-        attackerCardId: attacker.cardId,
-        attackerLevel: attackerDef?.level || 1,
-        attackerCost: attackerDef?.cost || 1,
-        attackerAttack: attacker.currentAttack,
-        targetInstanceId: cmd.targetInstanceId || null,
-        targetType: cmd.targetInstanceId ? 'UNIT' : 'HERO',
-        defenderDied: false,
-        attackerDied: false,
-        pierceDamage: 0,
-        recoilDamage: 0,
-        damageDealt: attacker.currentAttack,
-        triggeredSpell: null,
-      };
-
-      // 3-1. 피격 시 트리거 마법 발동 확인 (ON_ATTACKED)
-      const triggeredSpell = this.checkAndTriggerSetSpells(
-        duel,
-        'ON_ATTACKED',
-        opponentSeat,
-        cmd.targetInstanceId,
-        attacker
-      );
-      if (triggeredSpell) {
-        attackResult.triggeredSpell = triggeredSpell;
-      }
-
-      // 3-2. 대상 유닛 공격 판정 (공격력 > 수비력이면 파괴)
-      if (cmd.targetInstanceId) {
-        const targetIdx = opponent.board.findIndex((u) => u.instanceId === cmd.targetInstanceId);
-        if (targetIdx === -1) {
-          throw new Error(`공격 대상 유닛을 상대 전장에서 찾을 수 없습니다.`);
-        }
-        const defender = opponent.board[targetIdx];
-        const isDestroyed = attacker.currentAttack > defender.currentDefense;
-
-        if (isDestroyed) {
-          attackResult.defenderDied = true;
-          attackResult.defenderCardId = defender.cardId;
-          attackResult.defenderInstanceId = defender.instanceId;
-          opponent.board.splice(targetIdx, 1);
-          opponent.graveyard.push(defender);
-
-          // 관통 데미지 룰: 오직 '관통' 보유 유닛만 초과분 본체 관통 피해
-          const overkill = attacker.currentAttack - defender.currentDefense;
-          const hasPierce =
-            (attackerDef?.keywords || []).includes('관통') ||
-            (attacker.keywords || []).includes('관통') ||
-            (attackerDef?.tags || []).some((t) => t.includes('관통')) ||
-            (attacker.tags || []).some((t) => t.includes('관통')) ||
-            attackerDef?.effectType === 'PIERCE_ATTACK';
-
-          if (hasPierce && overkill > 0) {
-            attackResult.pierceDamage = overkill;
-            opponent.lp = Math.max(0, opponent.lp - overkill);
-          } else {
-            attackResult.pierceDamage = 0;
-          }
-
-          // 파괴된 수호 몬스터 앞 세트 마법이 남아있다면 반응 격발 (불발 처리)
-          this.checkAndTriggerSetSpells(
-            duel,
-            'ON_MONSTER_DESTROYED',
-            opponentSeat,
-            defender.instanceId,
-            null
-          );
-        } else {
-          attackResult.defenderDied = false; // 수비력 이하이면 유닛 생존
-
-          // ★ 수비 반사 데미지 (유희왕 룰): 수비 몬스터의 수비력이 공격력보다 높으면 그 차이(DEF - ATK)만큼 공격 플레이어가 직접 반사 피해를 입음!
-          const recoilDamage = defender.currentDefense - attacker.currentAttack;
-          if (recoilDamage > 0) {
-            attackResult.recoilDamage = recoilDamage;
-            actor.lp = Math.max(0, actor.lp - recoilDamage);
-          } else {
-            attackResult.recoilDamage = 0;
-          }
-        }
-      } else {
-        // 상대 본체 직접 타격
-        opponent.lp = Math.max(0, opponent.lp - attacker.currentAttack);
-      }
-
-      this.lastAttackResult = attackResult;
-    }
-
-    // ==========================================
-    // 4. 턴 종료 (END_TURN)
-    // ==========================================
-    else if (cmd.type === 'END_TURN') {
-      // 턴 종료 시 트리거 마법 (ON_TURN_END)
-      this.checkAndTriggerSetSpells(duel, 'ON_TURN_END', cmd.seat);
-
-      // 턴 전환
-      duel.activeSeat = opponentSeat;
-      duel.turnNumber += 1;
-
-      // 소환권 재충전 (매 턴 1회)
-      opponent.normalSummonsRemaining = 1;
-
-      // 3턴부터 공격 활성화
-      for (const unit of opponent.board) {
-        unit.canAttack = duel.turnNumber >= 3;
-      }
-
-      // 턴 시작 시 1장 드로우
-      this.drawCard(opponent);
-
-      // 턴 시작 시 트리거 마법 (ON_TURN_START)
-      this.checkAndTriggerSetSpells(duel, 'ON_TURN_START', opponentSeat);
-    }
-
     this.evaluateDuelOutcome(duel);
     return this.getSnapshot();
   }
 
+  /** 현재 CPU 성향 정보 (화면 표시용) */
+  getCpuMood() {
+    const mind = this.state.activeDuel?.cpuMind;
+    if (!mind) return null;
+    return {
+      id: mind.current,
+      base: mind.base,
+      name: t(`mood.${mind.current}.name`),
+      desc: t(`mood.${mind.current}.desc`),
+      line: mind.line,
+      history: [...mind.history],
+    };
+  }
+
   /**
-   * 세트 마법 트리거 감지 및 격발기 (어디에 세트하더라도 발동 가능 & 엄격한 대상 존재/미아 불발 룰링 탑재)
-   * - 몬스터 앞 / 필드 중앙 슬롯 무관하게 발동 조건(timing) 충족 시 격발
-   * - 대상이 소멸·파괴되거나 존재하지 않을 경우(미아 상태) 효과는 즉시 불발(fizzled) 처리되어 묘지로 소멸
+   * CPU 행동 1개를 실행한다. 화면이 한 수씩 연출할 수 있도록 턴을 잘게 나눈다.
+   * @returns {{ action: object|null, moodShift: object|null, done: boolean }}
    */
-  checkAndTriggerSetSpells(duel, timing, defenderSeat, targetMonsterInstanceId = null, attacker = null, sourceEffect = null) {
-    const defender = duel.seats[defenderSeat];
-    const attackerSeat = defenderSeat === 0 ? 1 : 0;
-    const attackerPlayer = duel.seats[attackerSeat];
-
-    // 1. 내 몬스터 앞 세트 마법 검사 (MONSTER_FRONT)
-    if (targetMonsterInstanceId) {
-      const idx = defender.setSpells.findIndex(
-        (s) => s.slotType === 'MONSTER_FRONT' && s.targetMonsterInstanceId === targetMonsterInstanceId
-      );
-      if (idx !== -1) {
-        const spell = defender.setSpells.splice(idx, 1)[0];
-        defender.graveyard.push(spell);
-
-        let isValidTrigger = false;
-        let fizzleReason = '';
-
-        if (spell.triggerTiming === 'ON_ATTACKED') {
-          // 피격 시 발동 마법 (반격 결계, 지뢰 등): 반드시 전투 공격자(attacker)가 유효하게 존재해야 함
-          if (timing === 'ON_ATTACKED' && attacker) {
-            const attackerAlive = attackerPlayer.board.some((u) => u.instanceId === attacker.instanceId);
-            if (attackerAlive || attacker.currentAttack > 0) {
-              isValidTrigger = true;
-            } else {
-              isValidTrigger = false;
-              fizzleReason = '공격자가 이미 파괴되어 대상이 없으므로(미아 상태) 불발';
-            }
-          } else {
-            isValidTrigger = false;
-            fizzleReason = '전투 공격 피격이 아니므로 공격 대상이 없어(미아 상태) 불발';
-          }
-        } else if (spell.triggerTiming === timing) {
-          isValidTrigger = true;
-        } else {
-          isValidTrigger = false;
-          fizzleReason = `발동 타이밍(${spell.triggerTiming}) 불일치로 불발`;
-        }
-
-        if (isValidTrigger) {
-          spell.fizzled = false;
-          this.resolveTriggerEffect(spell, defender, attackerPlayer, attacker);
-          duel.narrativeLog = `🔮 「${spell.name}」 발동! 효과가 정상 격발되었습니다.`;
-        } else {
-          spell.fizzled = true;
-          spell.fizzleReason = fizzleReason;
-          duel.narrativeLog = `⚠️ [효과 불발] 대상이 존재하지 않거나 이미 파괴되어(미아 상태) 「${spell.name}」 효과가 불발되었습니다.`;
-        }
-
-        duel.lastSpellTriggerResult = spell;
-        return spell;
-      }
-    }
-
-    // 2. 필드 중앙 세트 마법 검사 (FIELD_LEFT, FIELD_RIGHT) - 어디에 세트하든 자유롭게 반응
-    for (const slotKey of ['left', 'right']) {
-      const spell = duel.fieldSetSlots[slotKey];
-      if (spell && spell.ownerSeat === defenderSeat) {
-        let matchesTiming = false;
-        if (timing === 'ON_ATTACKED' && spell.triggerTiming === 'ON_ATTACKED') {
-          matchesTiming = true;
-        } else if (spell.triggerTiming === timing) {
-          matchesTiming = true;
-        }
-
-        if (matchesTiming) {
-          duel.fieldSetSlots[slotKey] = null;
-          defender.graveyard.push(spell);
-
-          let isValidTrigger = false;
-          let fizzleReason = '';
-
-          if (spell.triggerTiming === 'ON_ATTACKED') {
-            if (attacker) {
-              const attackerAlive = attackerPlayer.board.some((u) => u.instanceId === attacker.instanceId);
-              if (attackerAlive || attacker.currentAttack > 0) {
-                isValidTrigger = true;
-              } else {
-                isValidTrigger = false;
-                fizzleReason = '공격 대상이 존재하지 않거나 이미 파괴되어(미아 상태) 불발';
-              }
-            } else {
-              isValidTrigger = false;
-              fizzleReason = '전투 공격 피격이 아니므로 반격 대상이 없어(미아 상태) 불발';
-            }
-          } else if (spell.effectType === 'BUFF_ALL_ATK' && defender.board.length === 0) {
-            isValidTrigger = false;
-            fizzleReason = '버프를 받을 아군 몬스터가 전장에 없어(미아 상태) 불발';
-          } else {
-            isValidTrigger = true;
-          }
-
-          if (isValidTrigger) {
-            spell.fizzled = false;
-            this.resolveTriggerEffect(spell, defender, attackerPlayer, attacker);
-            duel.narrativeLog = `🔮 「${spell.name}」 발동! 효과가 정상 격발되었습니다.`;
-          } else {
-            spell.fizzled = true;
-            spell.fizzleReason = fizzleReason;
-            duel.narrativeLog = `⚠️ [효과 불발] 대상이 존재하지 않거나 이미 파괴되어(미아 상태) 「${spell.name}」 효과가 불발되었습니다.`;
-          }
-
-          duel.lastSpellTriggerResult = spell;
-          return spell;
-        }
-      }
-    }
-    return null;
-  }
-
-  resolveTriggerEffect(spell, owner, opponent, attacker) {
-    if (spell.effectType === 'COUNTER_ATTACK') {
-      if (attacker) attacker.currentAttack = Math.max(0, attacker.currentAttack - spell.effectValue);
-      opponent.lp = Math.max(0, opponent.lp - spell.effectValue);
-    } else if (spell.effectType === 'MINE_EXPLODE') {
-      if (attacker) {
-        attacker.currentDefense = Math.max(0, attacker.currentDefense - spell.effectValue);
-        if (attacker.currentDefense <= 0) {
-          const idx = opponent.board.findIndex((u) => u.instanceId === attacker.instanceId);
-          if (idx !== -1) {
-            opponent.board.splice(idx, 1);
-            opponent.graveyard.push(attacker);
-          }
-        }
-      }
-    } else if (spell.effectType === 'HEAL_AND_DRAW') {
-      owner.lp = Math.min(100, owner.lp + spell.effectValue);
-      this.drawCard(owner);
-    } else if (spell.effectType === 'BUFF_ALL_ATK') {
-      for (const u of owner.board) {
-        u.currentAttack += spell.effectValue;
-      }
-    } else if (spell.effectType === 'EXTRA_SUMMON') {
-      owner.normalSummonsRemaining = (owner.normalSummonsRemaining || 0) + spell.effectValue;
-    } else if (spell.effectType === 'MANA_BURST') {
-      owner.normalSummonsRemaining = (owner.normalSummonsRemaining || 0) + 1;
-    } else if (spell.effectType === 'MIRROR_REFLECT') {
-      opponent.lp = Math.max(0, opponent.lp - 15);
-    }
-  }
-
-  resolveCardEffect(def, cardInst, actor, opponent) {
-    const duel = this.state.activeDuel;
-    if (def.effectType === 'DIRECT_DAMAGE') {
-      opponent.lp = Math.max(0, opponent.lp - def.effectValue);
-      actor.graveyard.push(cardInst);
-      return;
-    }
-
-    if (def.effectType === 'BOARD_WIPE') {
-      for (const unit of [...opponent.board]) {
-        // 광역기 피격에 반응하여 몬스터 앞 세트 마법 발동 시도 (조건 불일치 시 불발 처리)
-        if (duel) {
-          this.checkAndTriggerSetSpells(
-            duel,
-            'AFFECTED_BY_EFFECT',
-            opponent.seatIndex,
-            unit.instanceId,
-            null,
-            def
-          );
-        }
-        unit.currentDefense -= def.effectValue;
-        if (unit.currentDefense <= 0) {
-          const idx = opponent.board.indexOf(unit);
-          if (idx !== -1) opponent.board.splice(idx, 1);
-          opponent.graveyard.push(unit);
-        }
-      }
-      opponent.lp = Math.max(0, opponent.lp - def.effectValue);
-      actor.graveyard.push(cardInst);
-      return;
-    }
-
-    if (def.effectType === 'CHAOS_GAMBLE') {
-      const roll = Math.min(1.0, this.rng.nextFloat() + actor.rngLuckBias);
-      const damage = roll >= 0.4 ? def.effectValue : Math.ceil(def.effectValue / 2);
-      opponent.lp = Math.max(0, opponent.lp - damage);
-      actor.graveyard.push(cardInst);
-    }
-  }
-
-  executeCpuTurn() {
+  executeCpuStep() {
     const duel = this.state.activeDuel;
     if (!duel || duel.status !== 'ONGOING' || duel.activeSeat !== 1) {
-      return this.getSnapshot();
+      return { action: null, moodShift: null, done: true };
     }
-
-    const cpu = duel.seats[1];
-
-    // 1. CPU 마법 카드 자유 발동 및 세트
-    for (const cardInst of [...cpu.hand]) {
-      if (duel.status !== 'ONGOING') break;
-      const def = this.getCardDef(cardInst.cardId);
-      if (def.type === 'SPELL') {
-        const allowed = def.allowedSlots || ['MONSTER_FRONT', 'FIELD_LEFT', 'FIELD_RIGHT'];
-        if (def.spellTriggerType === 'INSTANT') {
-          try {
-            this.dispatchDuelCommand({
-              type: 'PLAY_CARD',
-              seat: 1,
-              cardInstanceId: cardInst.instanceId,
-            });
-          } catch (e) {}
-        } else if (allowed.includes('MONSTER_FRONT') && cpu.board.length > 0) {
-          // 몬스터 앞 세트 우선 시도 (피격 반응 마법 등)
-          const targetUnit = cpu.board.find(
-            (u) => !cpu.setSpells.some((s) => s.slotType === 'MONSTER_FRONT' && s.targetMonsterInstanceId === u.instanceId)
-          );
-          if (targetUnit) {
-            try {
-              this.dispatchDuelCommand({
-                type: 'SET_SPELL',
-                seat: 1,
-                cardInstanceId: cardInst.instanceId,
-                slotType: 'MONSTER_FRONT',
-                targetMonsterInstanceId: targetUnit.instanceId,
-              });
-              continue;
-            } catch (e) {}
-          }
-        } else if (allowed.includes('FIELD_LEFT') && !duel.fieldSetSlots.left) {
-          try {
-            this.dispatchDuelCommand({
-              type: 'SET_SPELL',
-              seat: 1,
-              cardInstanceId: cardInst.instanceId,
-              slotType: 'FIELD_LEFT',
-            });
-            continue;
-          } catch (e) {}
-        } else if (allowed.includes('FIELD_RIGHT') && !duel.fieldSetSlots.right) {
-          try {
-            this.dispatchDuelCommand({
-              type: 'SET_SPELL',
-              seat: 1,
-              cardInstanceId: cardInst.instanceId,
-              slotType: 'FIELD_RIGHT',
-            });
-            continue;
-          } catch (e) {}
-        }
+    if (!duel.cpuMind) duel.cpuMind = createMind({});
+    const mind = duel.cpuMind;
+    let moodShift = null;
+    if (mind.turnPlanned !== duel.turnNumber) {
+      mind.turnPlanned = duel.turnNumber;
+      mind.stepsThisTurn = 0;
+      const shift = shiftMood(duel, 1, mind);
+      if (shift.changed) {
+        moodShift = shift;
+        duel.events.push({
+          key: 'event.mood',
+          params: { who: duel.seats[1].duelistName, line: shift.line },
+          kind: 'mood',
+          seat: 1,
+          mood: shift.to,
+        });
       }
     }
-
-    // 2. CPU 몬스터 소환 (소환권 1회 활용)
-    if (cpu.normalSummonsRemaining > 0 && duel.status === 'ONGOING') {
-      const monsterCards = cpu.hand
-        .map((c) => ({ inst: c, def: this.getCardDef(c.cardId) }))
-        .filter((item) => item.def.type === 'MONSTER' || item.def.effectType === 'SUMMON_UNIT');
-
-      let summonSuccess = false;
-
-      // 2-1. 계단식 진화 소환 우선 탐색 (1단계 높은 레벨 몬스터로 단일 제물 릴리스)
-      for (const m of monsterCards) {
-        const targetLevel = m.def.level ?? m.def.cost ?? 1;
-        if (targetLevel >= 2) {
-          // 필드에서 레벨 차이가 1 이하인 제물 후보 탐색
-          const stepUpCandidate = cpu.board.find((u) => targetLevel - (u.level || 1) <= 1);
-          if (stepUpCandidate) {
-            try {
-              this.dispatchDuelCommand({
-                type: 'PLAY_CARD',
-                seat: 1,
-                cardInstanceId: m.inst.instanceId,
-                tributeInstanceIds: [stepUpCandidate.instanceId],
-              });
-              summonSuccess = true;
-              break;
-            } catch (e) {}
-          }
-        }
-      }
-
-      // 2-2. 합산 릴리스 소환 탐색 (필드 2마리 이상일 때 고레벨 거신 소환)
-      if (!summonSuccess && cpu.board.length >= 2) {
-        for (const m of monsterCards) {
-          const targetLevel = m.def.level ?? m.def.cost ?? 1;
-          if (targetLevel >= 3) {
-            const sortedBoard = [...cpu.board].sort((a, b) => (a.level || 1) - (b.level || 1));
-            let currentSum = 0;
-            const tributes = [];
-            for (const u of sortedBoard) {
-              currentSum += u.level || 1;
-              tributes.push(u.instanceId);
-              if (currentSum >= targetLevel) break;
-            }
-            if (currentSum >= targetLevel && tributes.length < cpu.board.length + 1) {
-              try {
-                this.dispatchDuelCommand({
-                  type: 'PLAY_CARD',
-                  seat: 1,
-                  cardInstanceId: m.inst.instanceId,
-                  tributeInstanceIds: tributes,
-                });
-                summonSuccess = true;
-                break;
-              } catch (e) {}
-            }
-          }
-        }
-      }
-
-      // 2-3. Lv 1 일반 소환 (빈자리 필드 전개)
-      if (!summonSuccess && cpu.board.length < 5) {
-        const lv1Monster = monsterCards.find((m) => (m.def.level ?? m.def.cost ?? 1) === 1);
-        if (lv1Monster) {
-          try {
-            this.dispatchDuelCommand({
-              type: 'PLAY_CARD',
-              seat: 1,
-              cardInstanceId: lv1Monster.inst.instanceId,
-            });
-            summonSuccess = true;
-          } catch (e) {}
-        }
-      }
-    }
-
-    // 3. CPU 공격 수행 (3턴 이상일 때만 공격 수행)
-    if (duel.status === 'ONGOING' && duel.turnNumber >= 3) {
-      const playerSeat = duel.seats[0];
-      for (const unit of [...cpu.board]) {
-        if (unit.canAttack && duel.status === 'ONGOING') {
-          let targetUnit = null;
-          if (playerSeat.board.length > 0) {
-            // 처치 가능한 유닛 중 가장 수비력이 높은 유닛 우선 타격
-            const killable = playerSeat.board.filter((u) => unit.currentAttack > u.currentDefense);
-            if (killable.length > 0) {
-              targetUnit = killable.sort((a, b) => b.currentDefense - a.currentDefense)[0];
-            } else {
-              // 처치할 수 있는 몬스터가 없다면:
-              // 반사 데미지(DEF > ATK)를 받지 않는 유닛(DEF === ATK)이 있는 경우에만 타격하고,
-              // DEF > ATK인 몬스터는 본체 반사 피해를 피하기 위해 공격하지 않고 보드를 수비
-              const safeEqual = playerSeat.board.find((u) => unit.currentAttack === u.currentDefense);
-              if (safeEqual) {
-                targetUnit = safeEqual;
-              } else {
-                continue; // 반사 데미지 자해 방지
-              }
-            }
-          }
-
-          try {
-            this.dispatchDuelCommand({
-              type: 'ATTACK',
-              seat: 1,
-              attackerInstanceId: unit.instanceId,
-              targetInstanceId: targetUnit ? targetUnit.instanceId : undefined,
-            });
-          } catch (e) {}
-        }
-      }
-    }
-
-    // 4. CPU 턴 종료
-    if (duel.status === 'ONGOING') {
+    const personality = PERSONALITIES[mind.current] || PERSONALITIES.CALCULATING;
+    let action =
+      mind.stepsThisTurn >= MAX_STEPS_PER_TURN
+        ? { type: 'END_TURN', seat: 1 }
+        : chooseAction(duel, 1, personality, (id) => this.getCardDef(id));
+    mind.stepsThisTurn += 1;
+    try {
+      this.dispatchDuelCommand(action);
+    } catch (_e) {
+      action = { type: 'END_TURN', seat: 1 };
       try {
-        this.dispatchDuelCommand({ type: 'END_TURN', seat: 1 });
-      } catch (e) {}
+        this.dispatchDuelCommand(action);
+      } catch (_e2) {
+        /* 듀얼이 이미 끝난 경우 */
+      }
+    }
+    const done = action.type === 'END_TURN' || this.state.activeDuel?.status !== 'ONGOING';
+    return { action, moodShift, done };
+  }
+
+  /** CPU 턴 전체를 한 번에 실행 (테스트·시뮬레이션용) */
+  executeCpuTurn() {
+    let guard = 0;
+    while (guard++ < MAX_STEPS_PER_TURN + 2) {
+      const { done } = this.executeCpuStep();
+      if (done) break;
     }
     return this.getSnapshot();
   }
 
   evaluateDuelOutcome(duel) {
     const [seat0, seat1] = duel.seats;
-    if (seat1.lp <= 0) {
+    if (duel.status === 'ONGOING') checkWinner(duel);
+    if (duel.outcomeApplied) return this.getSnapshot();
+    if (duel.status === 'SEAT_0_WIN' || seat1.lp <= 0) {
+      duel.outcomeApplied = true;
       duel.status = 'SEAT_0_WIN';
       if (this.state.phase === 'DUEL_ENCOUNTER') {
         const reward = this.state.nextEncounterInfo?.rewardGold || 500;
@@ -2281,7 +892,8 @@ export class DuelRogueEngine {
       } else {
         this.advanceRunAfterDuelVictory();
       }
-    } else if (seat0.lp <= 0) {
+    } else if (duel.status === 'SEAT_1_WIN' || seat0.lp <= 0) {
+      duel.outcomeApplied = true;
       duel.status = 'SEAT_1_WIN';
       this.state.phase = 'RUN_FAILED'; // 인카운터든 보스든 패배 시 즉시 런 실패 (영구 사망)
     }
@@ -2370,32 +982,8 @@ export class DuelRogueEngine {
     this.state.currentMerchantOffer = null;
 
     // 운명 대응 최종 보스전 개시 (30장 정규 덱)
-    const bossId = this.state.assignedFinalBoss || 'BOSS_RED_UNSTOPPABLE_AGGRO';
     this.state.phase = 'STAGE_5_FINAL_BOSS';
-
-    let bossName = '종언의 어그로 군주 볼카';
-    let bossDeckType = 'RED_ZEAL';
-    let bossLuckBias = 0.1;
-
-    if (bossId === 'BOSS_BLUE_FORTRESS_CONTROL') {
-      bossName = '절대방벽의 집행관 실피드';
-      bossDeckType = 'BLUE_JUSTICE';
-      bossLuckBias = 0.1;
-    } else if (bossId === 'BOSS_PURPLE_RIGGED_FATE') {
-      bossName = '사기적 행운의 지배자 조커';
-      bossDeckType = 'PURPLE_CHAOS';
-      bossLuckBias = 0.35;
-    }
-
-    const bossDeck = createStartingDeck(bossDeckType);
-    this.state.activeDuel = this.createSymmetricDuel(
-      'DUEL_STAGE_5_BOSS',
-      bossId,
-      bossName,
-      bossDeck.deckCardIds,
-      bossDeck.deckMasterCardId,
-      bossLuckBias
-    );
+    this.state.activeDuel = this.createBossDuel();
     return this.getSnapshot();
   }
 

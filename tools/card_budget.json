@@ -1,0 +1,18 @@
+{
+  "BLUE": {
+    "low": -4.1,
+    "high": 1
+  },
+  "RED": {
+    "low": 1.6,
+    "high": 1.2
+  },
+  "PURPLE": {
+    "low": 2.4,
+    "high": -2.3
+  },
+  "NEUTRAL": {
+    "low": 0,
+    "high": 0
+  }
+}
