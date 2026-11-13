@@ -2326,43 +2326,6 @@ body {
   user-select: none;
 }
 
-.card-back-inner {
-  width: 90%;
-  height: 92%;
-  border: 1.5px solid #475569;
-  border-radius: 5px;
-  background: radial-gradient(circle, #1a2234 0%, #0d121d 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.card-back-rim {
-  width: 84%;
-  height: 86%;
-  border: 1px dashed #64748b;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.card-back-emblem {
-  width: 58%;
-  height: 58%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-back-svg {
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
-}
-
 .cpu-card-back {
   width: 44px;
   height: auto;
@@ -2551,27 +2514,17 @@ body {
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid #a855f7;
   border-radius: 4px;
-  padding: 1px 6px;
-  font-size: 0.62rem;
-  font-weight: 800;
-  color: #f3e8ff;
-  white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
-  z-index: 10;
-}
-  border: 1px solid #a855f7;
-  border-radius: 4px;
   padding: 2px 6px;
   font-size: 0.68rem;
   font-weight: 800;
-  color: #d8b4fe;
+  color: #f3e8ff;
   max-width: 90%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
   pointer-events: none;
-  z-index: 3;
+  z-index: 10;
 }
 
 .empty-set-slot-frame {
@@ -2582,116 +2535,6 @@ body {
   gap: 4px;
   color: #64748b;
   pointer-events: none;
-}
-
-/* --- [스케치 1 좌측]: "평소" 카드 프레임 (Card Idle Frame) --- */
-.card-idle-frame {
-  width: 190px !important;
-  height: 266px !important;
-  border-radius: 10px !important;
-  padding: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85) !important;
-  position: relative !important;
-  user-select: none !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
-  margin: 0 auto !important;
-  background: transparent !important;
-  border: none !important;
-}
-
-/* 상단 이름 박스 */
-.card-idle-name-box {
-  background: rgba(30, 41, 59, 0.95) !important;
-  border: 1.5px solid #64748b !important;
-  border-radius: 6px !important;
-  padding: 4px 8px !important;
-  font-size: 0.82rem !important;
-  font-weight: 900 !important;
-  color: #f8fafc !important;
-  text-align: center !important;
-  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  letter-spacing: 0.5px !important;
-}
-
-/* 중앙 일러스트 박스 */
-.card-idle-art-box {
-  flex: 1 !important;
-  background: radial-gradient(circle at center, #1e293b 25%, #080d1a 100%) !important;
-  border: 1.5px solid #334155 !important;
-  border-radius: 6px !important;
-  margin: 6px 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-.card-idle-art-box .art-icon-big {
-  font-size: 3.4rem !important;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85)) !important;
-}
-
-.card-idle-art-box .art-archetype-tag {
-  position: absolute !important;
-  top: 4px !important;
-  right: 4px !important;
-  font-size: 0.62rem !important;
-  font-weight: 800 !important;
-  padding: 2px 5px !important;
-  border-radius: 4px !important;
-  background: rgba(15, 23, 42, 0.85) !important;
-  color: #38bdf8 !important;
-  border: 1px solid #334155 !important;
-}
-
-/* 평소 카드 프레임 내부 배지 크기 확대 */
-.card-idle-frame .card-bottom-stats-bar {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  width: 100% !important;
-  height: 34px !important;
-}
-
-.card-idle-frame .card-stat-badge.badge-atk {
-  width: 36px !important;
-  height: 36px !important;
-  font-size: 1rem !important;
-  border-width: 2px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-.card-idle-frame .card-stat-badge.badge-atk .sword-icon {
-  font-size: 0.95rem !important;
-  top: -8px !important;
-  left: -8px !important;
-}
-.card-idle-frame .card-stat-badge.badge-def {
-  width: 36px !important;
-  height: 36px !important;
-  font-size: 1rem !important;
-  border-width: 2px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-.card-idle-frame .card-stat-tag-bar {
-  height: 24px !important;
-  font-size: 0.7rem !important;
-  margin: 0 -5px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 }
 
 /* --- [스케치 1 우측]: "인게임" 필드 몬스터 유닛 카드 (Unit Field Card - 시인성 강화를 위해 확대) --- */
@@ -2729,27 +2572,6 @@ body {
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
   backface-visibility: hidden;
-}
-
-/* 상단 이름 바가 제거되고 시원하게 상단을 채우는 인게임 일러스트 윈도우 */
-.unit-field-art-window {
-  flex: 1;
-  width: 100%;
-  background: radial-gradient(circle at center, #1e293b 15%, #080d1a 100%);
-  border: 1px solid #334155;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-  margin-bottom: 3px;
-}
-
-.unit-field-art-window .unit-field-icon {
-  font-size: 2.3rem;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.85));
 }
 
 /* 바닥 평면 접지 그림자 (가독성을 해치지 않는 은은한 그림자) */
@@ -2950,83 +2772,6 @@ body {
   --fan-ty: 0px !important;
   --card-ry: 0deg !important; /* 좌우 뒤틀림 없음: 항상 정면을 응시 */
   transition: none !important;
-}
-
-.card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-  transform: translateZ(24px);
-}
-
-.cost-pill {
-  width: 20px;
-  height: 20px;
-  background: #2563eb;
-  border-radius: 50%;
-  font-size: 0.75rem;
-  font-weight: 800;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  transform: translateZ(32px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.8);
-  text-align: center;
-  line-height: 20px;
-}
-
-.level-pill {
-  min-width: 44px;
-  height: 20px;
-  background: linear-gradient(135deg, #d97706, #92400e);
-  border: 1px solid #fbbf24;
-  border-radius: 10px;
-  font-size: 0.65rem;
-  font-weight: 800;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  transform: translateZ(32px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 6px rgba(251, 191, 36, 0.4);
-  padding: 0 5px;
-  white-space: nowrap;
-}
-
-.spell-pill {
-  min-width: 38px;
-  height: 20px;
-  background: linear-gradient(135deg, #7c3aed, #5b21b6);
-  border: 1px solid #c084fc;
-  border-radius: 10px;
-  font-size: 0.65rem;
-  font-weight: 800;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #fff;
-  transform: translateZ(32px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 6px rgba(192, 132, 252, 0.4);
-  padding: 0 5px;
-  white-space: nowrap;
-}
-
-.unit-level-badge {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  background: linear-gradient(135deg, #d97706, #78350f);
-  border: 1.5px solid #fbbf24;
-  color: #fef08a;
-  font-size: 0.68rem;
-  font-weight: 900;
-  padding: 1px 6px;
-  border-radius: 8px;
-  z-index: 6;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(245, 158, 11, 0.5);
-  pointer-events: none;
 }
 
 .unit-field-card.aura-tribute-ready {

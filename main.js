@@ -21,6 +21,22 @@ import { SoundBank } from './src/audio/soundBank.js';
 import { CanvasJuiceEngine } from './src/canvasJuiceEngine.js';
 import { svgIcon, keywordIcon, magicCircleSvg, hydrateVectorIcons } from './src/ui/vectorIcons.js';
 import {
+  configureAppDialog,
+  openAppDialog,
+  showGameAlert,
+  showGameConfirm,
+} from './src/ui/appDialog.js';
+import {
+  configureCardRenderer,
+  generateClawLevelHtml,
+  generateCardBackHtml,
+  getCardArtHtml,
+  formatCardNameHtml,
+  generateCompositeCardHtml,
+  generateIdleCardHtml,
+  updateCardInspector,
+} from './src/ui/cardRenderer.js';
+import {
   RARITY_TIERS,
   RARITY_LABELS_KO,
   RARITY_PRESET_INFO,
@@ -33,6 +49,9 @@ import {
 
 let rarityConfig = loadRarityConfig();
 applyRarityConfigToRoot(rarityConfig);
+configureCardRenderer({
+  rarityPresetResolver: (rarityKey) => rarityConfig[rarityKey]?.preset || 'NONE',
+});
 
 // 1. 브라우저 개입 원천 차단기 (우클릭, F5, Ctrl+R, 줌 차단)
 installBrowserInterferenceGuard(window);
@@ -41,6 +60,10 @@ installBrowserInterferenceGuard(window);
 // 효과음 파일이 있으면 파일을, 없으면 합성음을 재생한다 (src/audio/soundBank.js)
 const audio = new SoundBank(new ProceduralAudioHarness());
 audio.load();
+configureAppDialog({
+  playOkSound: () => audio.playCardPickup(),
+  playCancelSound: () => audio.playLightTap(),
+});
 
 // 2-1. [LJack 60FPS Game FX Canvas] 전용 캔버스 2D 주스 엔진 인스턴스화
 const fxCanvas = document.getElementById('game-fx-canvas');
@@ -394,103 +417,6 @@ function switchView(viewKey) {
     veil?.classList.remove('is-active');
     applySwitch();
   }
-}
-
-// ============================================================================
-// 게임 내 공통 알림/확인 다이얼로그 (window.alert / window.confirm 대체)
-// ============================================================================
-let activeAppDialogResolver = null;
-
-function openAppDialog({ title = '알림', message = '', confirmText = '확인', cancelText = null, icon = 'bulb', danger = false }) {
-  const modal = document.getElementById('modal-app-dialog');
-  const card = modal?.querySelector('.app-dialog-card');
-  const titleEl = document.getElementById('app-dialog-title');
-  const msgEl = document.getElementById('app-dialog-message');
-  const iconEl = document.getElementById('app-dialog-icon');
-  const okBtn = document.getElementById('btn-app-dialog-ok');
-  const cancelBtn = document.getElementById('btn-app-dialog-cancel');
-  const closeBtn = document.getElementById('btn-app-dialog-close');
-
-  if (!modal || !okBtn) return Promise.resolve(false);
-
-  if (activeAppDialogResolver) {
-    activeAppDialogResolver(false);
-    activeAppDialogResolver = null;
-  }
-
-  if (titleEl) titleEl.textContent = title;
-  if (msgEl) msgEl.textContent = message;
-  if (iconEl) iconEl.innerHTML = svgIcon(icon);
-  if (card) card.classList.toggle('is-danger', Boolean(danger));
-  okBtn.textContent = confirmText;
-  okBtn.className = danger ? 'btn btn-abandon-danger' : 'btn primary-btn';
-
-  if (cancelBtn) {
-    if (cancelText) {
-      cancelBtn.textContent = cancelText;
-      cancelBtn.style.display = '';
-    } else {
-      cancelBtn.style.display = 'none';
-    }
-  }
-
-  modal.classList.add('active');
-  okBtn.focus();
-
-  return new Promise((resolve) => {
-    const finish = (val) => {
-      modal.classList.remove('active');
-      okBtn.onclick = null;
-      if (cancelBtn) cancelBtn.onclick = null;
-      if (closeBtn) closeBtn.onclick = null;
-      modal.onclick = null;
-      document.removeEventListener('keydown', onKeyDown);
-      activeAppDialogResolver = null;
-      resolve(val);
-    };
-
-    const onKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        finish(false);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        finish(true);
-      }
-    };
-
-    activeAppDialogResolver = finish;
-    okBtn.onclick = () => {
-      audio.playCardPickup();
-      finish(true);
-    };
-    if (cancelBtn) {
-      cancelBtn.onclick = () => {
-        audio.playLightTap();
-        finish(false);
-      };
-    }
-    if (closeBtn) {
-      closeBtn.onclick = () => {
-        audio.playLightTap();
-        finish(false);
-      };
-    }
-    modal.onclick = (e) => {
-      if (e.target === modal) {
-        finish(false);
-      }
-    };
-    document.addEventListener('keydown', onKeyDown);
-  });
-}
-
-function showGameAlert(message, { title = '안내', icon = 'warn', danger = false } = {}) {
-  return openAppDialog({ title, message, confirmText: '확인', cancelText: null, icon, danger });
-}
-
-function showGameConfirm(message, { title = '확인', confirmText = '확인', cancelText = '취소', icon = 'warn', danger = false } = {}) {
-  return openAppDialog({ title, message, confirmText, cancelText, icon, danger });
 }
 
 // ============================================================================
@@ -1734,329 +1660,6 @@ function appendCombatLog(category, message) {
   });
 }
 
-/**
- * [할퀸 자국 레벨 렌더러] 5진법 탤리 마크 생성기 (우측 ➔ 좌측 정렬)
- */
-function generateClawLevelHtml(level) {
-  if (!level || level <= 0) return '';
-  const bundles = Math.ceil(level / 5);
-  let remaining = level;
-  let html = '';
-
-  for (let b = 0; b < bundles; b++) {
-    const strokesInThisBundle = Math.min(remaining, 5);
-    const verticalStrokes = Math.min(strokesInThisBundle, 4);
-
-    let strokesHtml = '';
-    for (let s = 0; s < verticalStrokes; s++) {
-      strokesHtml += `<img src="assets/badges/level_claw_single.svg" class="claw-stroke" alt="claw" />`;
-    }
-
-    let crossHtml = '';
-    if (strokesInThisBundle === 5) {
-      crossHtml = `<img src="assets/badges/level_claw_cross.svg" class="claw-cross" alt="claw cross" />`;
-    }
-
-    html += `<div class="claw-tally-bundle">${strokesHtml}${crossHtml}</div>`;
-    remaining -= strokesInThisBundle;
-  }
-  return `<div class="overlay-claw-level" title="레벨 ${level}">${html}</div>`;
-}
-
-/**
- * [카드 뒷면 (Card Back) HTML 생성기]
- * - 정교한 다크 그레이/메탈릭 아케인 슬레이트 프레임과 기하학 림
- * - CPU 패, 덱 더미, 세트된 마법 카드 등에 일관 적용
- */
-function generateCardBackHtml(scaleFont = 1.0) {
-  return `
-    <div class="card-composite-wrapper card-back-wrapper" style="--card-scale-font: ${scaleFont};">
-      <div class="card-back-inner">
-        <img src="assets/ui/card_back.svg" class="card-back-svg-img" alt="" draggable="false" />
-      </div>
-    </div>
-  `;
-}
-
-/**
- * [카드 원화 Layer 1 HTML 생성기]
- * - 실제 고화질 원화(WebP)가 있는 경우 이를 표시하고,
- * - 없는 경우 기하학적 아케인 소환진(Procedural Fallback SVG) + 아키타입 태그만 깔끔하게 표시합니다 (임시 이모지 전면 제거).
- */
-function getCardArtHtml(def) {
-  const customArtMap = {
-    'C_BLUE_01': 'assets/cards/abyssal_golem_art.webp',
-    'C_PURP_02': 'assets/cards/neon_overload_art.webp',
-  };
-  const artSrc = customArtMap[def?.id];
-  if (artSrc) {
-    return `<img src="${artSrc}" alt="${def.name}" onerror="this.onerror=null; this.src='assets/placeholders/procedural_fallback.svg';" />`;
-  }
-  const factionLabel = def?.faction ? t(`faction.${def.faction}`) : def?.archetype || '';
-  return `
-    <img src="assets/placeholders/procedural_fallback.svg" alt="${def?.name || ''}" style="width:100%; height:100%; object-fit:cover;" />
-    <div class="procedural-art-overlay">
-      <span class="procedural-archetype-pill">${factionLabel}</span>
-    </div>
-  `;
-}
-
-/**
- * [카드 이름 렌더러] 상단 바 전 영역 활용 및 글씨 좌우 폭 동적 압축(scaleX) 우겨넣기
- * - 레벨 표시 영역을 포함한 전체 가로폭(85.6%)을 활용
- * - ... 말줄임표 축약 없이 긴 텍스트 발생 시 scaleX를 계산하여 좌우 폭을 압축해 100% 온전하게 노출
- */
-function formatCardNameHtml(name, isMonster, level = 1) {
-  if (!name) return '';
-  // 글자별 유닛 계산 (한글/전각 = 1.0, 영문/숫자 = 0.55, 공백 = 0.3)
-  const charUnits = Array.from(name).reduce((acc, ch) => {
-    if (ch === ' ') return acc + 0.3;
-    return acc + (ch.charCodeAt(0) > 255 ? 1.0 : 0.55);
-  }, 0);
-
-  // 몬스터 카드는 우측 발톱자국 레벨 영역을 제외한 가로폭 기준 동적 압축
-  const baseUnits = isMonster ? (level >= 5 ? 4.8 : 5.7) : 8.2;
-  let scaleX = 1.0;
-  let letterSpacing = 0.2;
-  if (charUnits > baseUnits) {
-    scaleX = Math.max(0.45, baseUnits / charUnits);
-    letterSpacing = Math.max(-1.1, 0.2 - (charUnits - baseUnits) * 0.18);
-  }
-
-  const squeezerStyle = scaleX < 1.0 || letterSpacing < 0.2
-    ? `display:inline-block; transform:scaleX(${scaleX.toFixed(3)}); transform-origin:left center; letter-spacing:${letterSpacing.toFixed(1)}px; white-space:nowrap;`
-    : `display:inline-block; letter-spacing:0.2px; white-space:nowrap;`;
-
-  const levelClass = isMonster ? (level >= 5 ? 'has-level-wide' : 'has-level') : 'spell';
-  return `
-    <div class="overlay-name ${levelClass}" title="${name}">
-      <span class="card-name-text" style="${squeezerStyle}">${name}</span>
-    </div>
-  `;
-}
-
-/**
- * [3계층 카드 컴포지트 HTML 생성기]
- * - isBattlefield = true: 손패 및 필드용 (하단 좌측 공격력, 하단 우측 수비력 큼직하게 분리 표기)
- * - isBattlefield = false: 좌측 카드 상세 정보 인스펙터용 (기존 정통 프레임 및 공/수 양식 100% 유지)
- */
-function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicDef = null, scaleFont = 1.0, isBattlefield = false) {
-  if (!cardOrDef) return '<div class="card-idle-placeholder" style="color:#64748b; font-size:0.85rem; padding:20px; text-align:center;">카드를 선택하세요</div>';
-  const def = cardOrDef.cardId ? lookupCardDef(cardOrDef.cardId) || cardOrDef : cardOrDef;
-  const isMonster = def.type === 'MONSTER' || (def.attack > 0 && def.type !== 'SPELL');
-  const atk = dynamicAtk ?? cardOrDef.currentAttack ?? def.attack ?? 0;
-  const defense = dynamicDef ?? cardOrDef.currentDefense ?? def.defense ?? (def.health ?? 0);
-  const level = cardOrDef.level ?? def.level ?? def.cost ?? 1;
-  const rarityKey = normalizeRarityKey(def.rarity);
-  const rarityPreset = rarityConfig[rarityKey]?.preset || 'NONE';
-
-  const frameSvg = isMonster ? 'assets/frames/card_frame_unit_blank.svg' : 'assets/frames/card_frame_spell_blank.svg';
-
-  let bottomContentHtml = '';
-  if (isBattlefield) {
-    // [손패 & 필드 모드]: 하단 좌측 공격력, 하단 우측 수비력 대형 배지 표기 (마법 카드는 하단 효과 영역 공백 유지)
-    if (isMonster) {
-      bottomContentHtml = `
-        <div class="overlay-stat-badge atk-badge" title="공격력 ${atk}">
-          <span class="stat-badge-num">${atk}</span>
-        </div>
-        <div class="overlay-stat-badge def-badge" title="수비력 ${defense}">
-          <span class="stat-badge-num">${defense}</span>
-        </div>
-      `;
-    } else {
-      // 마법 카드가 패 또는 필드에 있을 때는 요청대로 하단 효과 영역을 비워둠 (양피지 여백 유지)
-      bottomContentHtml = '';
-    }
-  } else {
-    // [상세 정보 모드]: 기존 정통 프레임 및 공/수 양식 100% 유지 (프레임 양각 박스에 맞춘 고정밀 정렬)
-    if (isMonster) {
-      const kwIds = def.kw || [];
-      const allLabels = [
-        ...(def.keywords || []).map((k, i) => `<span class="frame-tag-pill keyword-pill">${keywordIcon(kwIds[i] || k)}${k}</span>`),
-        ...(def.tags || []).map((t) => `<span class="frame-tag-pill tag-pill">${t.startsWith('#') ? t : `#${t}`}</span>`),
-      ];
-      const formattedTagsHtml = allLabels.length > 0
-        ? allLabels.join(' ')
-        : '<span class="frame-tag-pill">#몬스터</span>';
-      bottomContentHtml = `
-        <div class="overlay-tags" title="${[...(def.keywords || []), ...(def.tags || [])].join(', ')}">${formattedTagsHtml}</div>
-        <div class="overlay-attack-group" title="공격력">
-          <span class="stat-label-atk">공 / </span><span>${atk}</span>
-        </div>
-        <div class="overlay-defense-group" title="수비력">
-          <span class="stat-label-def">수 / </span><span>${defense}</span>
-        </div>
-      `;
-    } else {
-      const triggerHtml = def.spellTriggerType
-        ? `<div style="font-size:calc(var(--card-unit, 0.5cqw) * 9); color:#047857; font-weight:800; margin-bottom:2px;">[${def.spellTriggerType}]</div>`
-        : '';
-      const spellSummary = def.target ? `[대상: ${def.target}] ${def.effect || def.description}` : (def.effect || def.description || def.effectType);
-      bottomContentHtml = `
-        <div class="overlay-spell-effect" title="${def.description || def.effectType}">
-          ${triggerHtml}
-          <div>${spellSummary}</div>
-        </div>
-      `;
-    }
-  }
-
-  const wrapperClass = isBattlefield ? 'card-composite-wrapper battlefield-view' : 'card-composite-wrapper';
-
-  return `
-    <div class="${wrapperClass}" data-rarity="${rarityKey}" data-rarity-preset="${rarityPreset}" style="--card-scale-font: ${scaleFont};">
-      <!-- LAYER 1: 원화 + 레어도 이펙트 오버레이 -->
-      <div class="layer-1-art">
-        ${getCardArtHtml(def)}
-        <div class="rarity-art-fx-layer"></div>
-      </div>
-      <!-- LAYER 2: 프레임 (SVG 벡터) -->
-      <div class="layer-2-frame">
-        <img src="${frameSvg}" alt="${isMonster ? 'Monster Frame' : 'Spell Frame'}" />
-      </div>
-      <!-- LAYER 3: 동적 데이터 & 카드 이름 & 발톱자국 레벨 & 하단 스탯 -->
-      <div class="layer-3-dynamic-labels">
-        ${formatCardNameHtml(def.name, isMonster, level)}
-        ${isMonster ? generateClawLevelHtml(level) : ''}
-        ${bottomContentHtml}
-      </div>
-    </div>
-  `;
-}
-
-/** 스케치 1: "평소" 카드 프레임 HTML 생성 헬퍼 (상세 정보 인스펙터용: isBattlefield = false) */
-function generateIdleCardHtml(cardOrDef, dynamicAtk = null, dynamicDef = null) {
-  return generateCompositeCardHtml(cardOrDef, dynamicAtk, dynamicDef, 1.0, false);
-}
-
-/** 스케치 2: 좌측 카드 상세 & 효과 확인창 동기화 (듀얼 인게임 + 덱 편집기 공용 렌더링) */
-function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = null, options = {}) {
-  if (!cardOrDef) return;
-  const previewTargets = document.querySelectorAll('[data-inspector-preview]');
-  const tagsTargets = document.querySelectorAll('[data-inspector-tags]');
-  const effectTargets = document.querySelectorAll('[data-inspector-effect]');
-
-  // 상대 세트 카드는 마법 카드가 아닌 '카드 뒷면'을 프리뷰로 렌더링하고 정보 은닉
-  if (cardOrDef.isOpponentSecret || cardOrDef.isFacedown) {
-    const backHtml = generateCardBackHtml(1.0);
-    previewTargets.forEach((el) => { el.innerHTML = backHtml; });
-    const secretEffectHtml = `
-        <div class="rule-block secret-block">
-          <span class="rule-badge-condition">[비공개 세트 카드]</span>
-          <div class="rule-content-condition" style="margin-top: 4px;">상대 듀얼리스트가 전장에 뒤집어 세트한 비밀 카드입니다. 조건 충족 시 앞면으로 뒤집히며 효과가 발동됩니다.</div>
-        </div>
-      `;
-    effectTargets.forEach((el) => { el.innerHTML = secretEffectHtml; });
-    const secretTagsHtml = '<span class="badge-keyword">비공개</span> <span class="badge-race-tag">#세트카드</span>';
-    tagsTargets.forEach((el) => { el.innerHTML = secretTagsHtml; });
-    return;
-  }
-
-  const def = cardOrDef.cardId ? lookupCardDef(cardOrDef.cardId) || cardOrDef : cardOrDef;
-  const atk = dynamicAtk ?? cardOrDef.currentAttack ?? def.attack ?? 0;
-  const defense = dynamicDef ?? cardOrDef.currentDefense ?? def.defense ?? (def.health ?? 0);
-  const keywords = def.keywords || [];
-  const tags = def.tags || [];
-  const isGod = def.isGod || def.level === 6;
-
-  // 1. 상단 평소 카드 실물 프리뷰
-  const idleCardHtml = generateIdleCardHtml(def, atk, defense);
-  previewTargets.forEach((el) => {
-    el.innerHTML = idleCardHtml;
-    requestAnimationFrame(() => {
-      const wEl = el.querySelector('.card-composite-wrapper');
-      const w = wEl?.getBoundingClientRect().width;
-      if (w && w > 10) {
-        wEl.style.setProperty('--card-scale-font', (w / 200).toFixed(3));
-      }
-    });
-  });
-
-  // 2. 키워드(# 없음) 및 종족/소속표 태그(# 있음) 배지 렌더링
-  let pillsHtml = '';
-  if (options.isDeckMaster || cardOrDef.isDeckMaster) {
-    pillsHtml += `<span class="badge-god-tier">${svgIcon('crown')} 덱 마스터</span> `;
-  }
-  if (isGod) {
-    pillsHtml += `<span class="badge-god-tier">${svgIcon('crown')} 6성 신(神)</span> `;
-  }
-
-  const kwIds = cardOrDef.kw || def.kw || [];
-  if (keywords.length > 0) {
-    pillsHtml += keywords
-      .map((kw, i) => `<span class="badge-keyword" title="${kwIds[i] ? keywordDesc(kwIds[i]) : '핵심 기능 키워드'}">${keywordIcon(kwIds[i] || kw)}${kw}</span>`)
-      .join(' ') + ' ';
-  }
-  if (def.rarity) {
-    pillsHtml += `<span class="badge-rarity rarity-${def.rarity}">${t(`rarity.${def.rarity}`)}</span> `;
-  }
-  if (tags.length > 0) {
-    pillsHtml += tags
-      .map((t) => {
-        const formatted = t.startsWith('#') ? t : `#${t}`;
-        return `<span class="badge-race-tag" title="종족 / 소속 표기">${formatted}</span>`;
-      })
-      .join(' ');
-  }
-  if (!pillsHtml.trim()) {
-    pillsHtml = '<span class="badge-keyword">기본</span>';
-  }
-  tagsTargets.forEach((el) => { el.innerHTML = pillsHtml; });
-
-  // 3. 하단 카드 상세 효과 (규칙 잡음 없이 오직 [대상], [조건], [효과]만 정갈하게 표기)
-  let contentHtml = '';
-  if (def.target) {
-    contentHtml += `
-      <div class="rule-block target-block">
-        <span class="rule-badge-target">[대상]</span>
-        <span class="rule-content-target">${def.target}</span>
-      </div>
-    `;
-  }
-
-  const kwList = cardOrDef.kw || def.kw || [];
-  if (kwList.length > 0) {
-    contentHtml += `
-      <div class="rule-block keyword-block">
-        <span class="rule-badge-condition">[키워드]</span>
-        <span class="rule-content-condition">${kwList.map((id) => `${keywordIcon(id)}<strong>${t(`kw.${id}`)}</strong> — ${keywordDesc(id)}`).join('<br>')}</span>
-      </div>
-    `;
-  }
-  if (cardOrDef.silenced) {
-    contentHtml += `<div class="rule-block"><span class="rule-badge-condition">[침묵]</span> <span class="rule-content-condition">키워드와 효과가 지워진 상태입니다.</span></div>`;
-  }
-
-  if (def.condition || def.effect) {
-    contentHtml += `
-      <div class="rule-block condition-block">
-        <span class="rule-badge-condition">[조건]</span>
-        <span class="rule-content-condition">${def.condition}</span>
-      </div>
-      <div class="rule-block effect-block">
-        <span class="rule-badge-effect">[효과]</span>
-        <span class="rule-content-effect">${def.effect}</span>
-      </div>
-    `;
-  } else if (kwList.length === 0) {
-    contentHtml += `<div class="rule-block effect-block"><span class="rule-content-effect">특수 효과가 없는 몬스터입니다.</span></div>`;
-  }
-
-  if (def.type === 'SPELL' && def.spellTriggerType && def.spellTriggerType !== 'INSTANT') {
-    contentHtml += `<div class="rule-block"><span class="rule-badge-target">[사용법]</span> <span class="rule-content-target">필드에 세트해 두면 조건이 맞을 때 자동으로 발동합니다.</span></div>`;
-  }
-  if (def.type === 'SPELL') {
-    contentHtml += `
-      <div class="rule-fizzle-clause">
-        <span class="fizzle-icon">${svgIcon('warn')}</span> 대상이 소멸·파괴되거나 존재하지 않을 경우(미아 상태) 대상 부재로 효과는 <strong>불발</strong> 처리되어 묘지로 보내집니다.
-      </div>
-    `;
-  }
-
-  effectTargets.forEach((el) => { el.innerHTML = contentHtml; });
-}
-
 // ============================================================================
 // 5. [Canvas 2D Engine 연동] 방향별 직접 타격 / 역경직 / 파편 / 영혼 / 관통 시퀀스
 // ============================================================================
@@ -2873,18 +2476,8 @@ function renderDuelArena(snap) {
     cardEl.style.setProperty('--card-z', `${cardDepth}`);
     cardEl.style.setProperty('--fan-tz', `${fanDepthZ}px`);
 
-    const tags = def.tags || [];
-    const initialTagHtml = tags.length > 0 ? formatTagHtml(tags[0]) : '';
     const isMonster = def.type === 'MONSTER' || def.effectType === 'SUMMON_UNIT';
     const cardLevel = def.level ?? def.cost ?? 1;
-
-    const badgeHtml = isMonster
-      ? `<span class="level-pill" title="레벨 ${cardLevel}">★ Lv.${cardLevel}</span>`
-      : `<span class="spell-pill" title="마법 카드">마법</span>`;
-
-    const descText = isMonster
-      ? `⚔️ ${def.attack} / 🛡️ ${def.defense ?? def.health ?? 10}`
-      : `[마법] ${def.description || def.effectType}`;
 
     cardEl.innerHTML = `
       <div class="card-holo-foil"></div>
@@ -4387,19 +3980,6 @@ function renderCheckpointDeckEditorSubpage(snap) {
   if (initialPreviewDef) {
     updateCardInspector(initialPreviewDef, null, null, { isDeckMaster: initialPreviewDef.id === deckMasterId });
   }
-
-  // 덱/가방 카드 실제 렌더링 폭 기반 --card-scale-font 정밀 보정
-  requestAnimationFrame(() => {
-    [deckGrid, bagGrid].forEach((grid) => {
-      if (!grid) return;
-      grid.querySelectorAll('.card-composite-wrapper').forEach((wEl) => {
-        const w = wEl.getBoundingClientRect().width;
-        if (w > 10) {
-          wEl.style.setProperty('--card-scale-font', (w / 200).toFixed(3));
-        }
-      });
-    });
-  });
 }
 
 // ============================================================================
@@ -4736,7 +4316,6 @@ function renderBinderPage(pageIndex, focusCardId = null) {
     slotEl.setAttribute('data-slot-idx', String(idx));
 
     let cardContentHtml = '';
-    let statusPillHtml = '';
 
     if (slot.state === BinderCardState.UNKNOWN) {
       cardContentHtml = `
@@ -4793,16 +4372,6 @@ function renderBinderPage(pageIndex, focusCardId = null) {
     });
 
     gridEl.appendChild(slotEl);
-  });
-
-  // 3×3 바인더 카드 실제 폭 기준 --card-scale-font 정밀 보정
-  requestAnimationFrame(() => {
-    gridEl.querySelectorAll('.binder-slot .card-composite-wrapper').forEach((wEl) => {
-      const w = wEl.getBoundingClientRect().width;
-      if (w > 10) {
-        wEl.style.setProperty('--card-scale-font', (w / 200).toFixed(3));
-      }
-    });
   });
 
   // 전체 바인더 통계
