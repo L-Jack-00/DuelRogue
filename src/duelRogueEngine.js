@@ -177,6 +177,22 @@ export class DuelRogueEngine {
     return JSON.parse(JSON.stringify(this.state));
   }
 
+  /** 이어 하기용 저장 데이터 (런 상태 + 난수 위치) */
+  exportSave() {
+    return { state: this.getSnapshot(), rngState: this.rng.state };
+  }
+
+  /** exportSave() 결과로 런을 복원한다 */
+  importSave(data) {
+    if (!data || !data.state || !data.state.phase) throw new Error('저장 데이터가 올바르지 않습니다.');
+    this.state = JSON.parse(JSON.stringify(data.state));
+    this.rng = new SeededRng(1);
+    this.rng.state = data.rngState >>> 0;
+    // 진행 중이던 CPU 턴 계획은 다시 세운다
+    if (this.state.activeDuel?.cpuMind) this.state.activeDuel.cpuMind.turnPlanned = null;
+    return this.getSnapshot();
+  }
+
   startNewRun(runId, seed) {
     this.rng = new SeededRng(seed);
     this.state = this.createEmptyRunState(runId, seed);

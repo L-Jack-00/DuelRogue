@@ -9,7 +9,12 @@
 
 import { BinderCardState } from './src/types.js';
 import { BinderCore, LocalStorageBinderAdapter } from './src/binderCore.js';
-import { DuelRogueEngine, DEFAULT_CARD_CATALOG } from './src/duelRogueEngine.js';
+import { DuelRogueEngine, DEFAULT_CARD_CATALOG, BINDER_CATALOG } from './src/duelRogueEngine.js';
+import { getCardDef as lookupCardDef } from './src/cards/catalog.js';
+import { t } from './src/i18n/strings.js';
+import { keywordDesc } from './src/duel/keywords.js';
+import { attackableTargets, canAttackHero } from './src/duel/duelCore.js';
+import { RunSaveStore } from './src/runSave.js';
 import { installBrowserInterferenceGuard, SafeCardPointerController } from './src/desktopHarness.js';
 import { ProceduralAudioHarness } from './src/audioHarness.js';
 import { CanvasJuiceEngine } from './src/canvasJuiceEngine.js';
@@ -30,11 +35,40 @@ if (fxCanvas) {
 // 3. 순수 도메인 바인더 및 듀얼 엔진 인스턴스화
 const binderStorage = new LocalStorageBinderAdapter('duel_rogue_persistent_binder_v1');
 const binder = new BinderCore({
-  catalog: DEFAULT_CARD_CATALOG,
+  catalog: BINDER_CATALOG,
   storage: binderStorage,
   masteryThreshold: 100,
 });
 let engine = new DuelRogueEngine(binder, DEFAULT_CARD_CATALOG);
+const runSaves = new RunSaveStore(window.localStorage);
+
+/** 진행 상황을 저장한다. 런이 끝났으면 저장본을 지운다. (잦은 호출을 묶어 한 번만 쓴다) */
+let saveTimer = null;
+function scheduleRunSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const phase = engine.state.phase;
+    if (phase === 'IDLE') return;
+    if (phase === 'RUN_VICTORY' || phase === 'RUN_FAILED') {
+      runSaves.clear();
+    } else {
+      runSaves.save(engine.exportSave());
+    }
+    refreshContinueButton();
+  }, 250);
+}
+
+function refreshContinueButton() {
+  const btn = document.getElementById('btn-continue-run');
+  if (!btn) return;
+  const saved = runSaves.load();
+  btn.hidden = !saved;
+  if (saved) {
+    const st = saved.data.state;
+    const when = new Date(saved.savedAt);
+    btn.title = `라운드 ${st.roundNumber || 1} · ${when.toLocaleString()}`;
+  }
+}
 
 // 4. 화면(View) 맵핑 (SPEC.md 3)
 const views = {
@@ -291,10 +325,31 @@ document.getElementById('btn-close-binder')?.addEventListener('click', () => {
 // 1. VIEW_TITLE_LOBBY
 // ============================================================================
 document.getElementById('btn-start-run')?.addEventListener('click', () => {
+  if (runSaves.hasSave() && !confirm('이어서 할 수 있는 런이 있습니다. 새로 시작하면 저장된 진행 상황이 사라집니다. 계속할까요?')) return;
+  runSaves.clear();
   audio.playCardPickup();
   engine.startNewRun(`RUN_${Date.now()}`, Date.now());
   switchView('VIEW_FORTUNE_TELLER');
 });
+
+document.getElementById('btn-continue-run')?.addEventListener('click', () => {
+  const saved = runSaves.load();
+  if (!saved) {
+    refreshContinueButton();
+    return;
+  }
+  try {
+    audio.playCardPickup();
+    engine.importSave(saved.data);
+    syncRunPhaseView();
+  } catch (err) {
+    console.error('[Continue Error]', err);
+    alert('저장된 진행 상황을 불러오지 못했습니다. 새 런을 시작해 주세요.');
+    runSaves.clear();
+    refreshContinueButton();
+  }
+});
+refreshContinueButton();
 
 document.getElementById('btn-open-binder-menu')?.addEventListener('click', () => {
   audio.playCardPickup();
@@ -460,7 +515,7 @@ function openGraveyardViewer(seatIndex) {
     // 파괴된 카드들을 역순 (가장 최근에 파괴된 카드부터 먼저)으로 정렬
     const reversedGy = [...gy].reverse();
     reversedGy.forEach((cardInst, idx) => {
-      const def = DEFAULT_CARD_CATALOG.find((c) => c.id === cardInst.cardId) || cardInst;
+      const def = lookupCardDef(cardInst.cardId) || cardInst;
       const orderNum = gy.length - idx; // 원래 파괴된 순번
       const cardRow = document.createElement('div');
       cardRow.className = 'gy-card-entry';
@@ -573,20 +628,85 @@ function scheduleCpuTurnIfNeeded(snap) {
   if (isCpuTurnScheduled) return;
   isCpuTurnScheduled = true;
 
-  setTimeout(() => {
+  // 상대는 한 수씩 둔다: 행동 하나 → 화면 갱신 → 잠시 대기 → 다음 행동
+  const step = () => {
+    let result = { done: true };
     try {
-      engine.executeCpuTurn();
+      result = engine.executeCpuStep();
     } catch (e) {
       console.error('[CPU Turn Error]', e);
-    } finally {
-      isCpuTurnScheduled = false;
     }
+    if (result.moodShift) showCpuMoodBubble(result.moodShift);
     syncRunPhaseView();
-  }, 750);
+    const live = engine.getSnapshot().activeDuel;
+    if (!result.done && live && live.status === 'ONGOING' && live.activeSeat === 1) {
+      const delay = result.action?.type === 'ATTACK' ? 900 : 650;
+      setTimeout(step, delay);
+    } else {
+      isCpuTurnScheduled = false;
+      syncRunPhaseView();
+    }
+  };
+  setTimeout(step, 750);
+}
+
+/** 상대 성향 변화 말풍선 */
+function showCpuMoodBubble(shift) {
+  const bubble = document.getElementById('cpu-mood-bubble');
+  if (!bubble) return;
+  bubble.innerHTML = `<span class="mood-bubble-tag mood-${shift.to}">${t(`mood.${shift.to}.name`)}</span> “${shift.line}”`;
+  bubble.classList.remove('is-visible');
+  void bubble.offsetWidth;
+  bubble.classList.add('is-visible');
+  clearTimeout(showCpuMoodBubble.timer);
+  showCpuMoodBubble.timer = setTimeout(() => bubble.classList.remove('is-visible'), 3600);
+  audio.playCardPickup?.();
+}
+
+/** 상대 성향 배지 갱신 */
+function renderCpuMoodBadge() {
+  const badge = document.getElementById('cpu-mood-badge');
+  if (!badge) return;
+  const mood = engine.getCpuMood();
+  if (!mood) {
+    badge.textContent = '';
+    return;
+  }
+  badge.className = `cpu-mood-badge mood-${mood.id}`;
+  badge.textContent = `성향: ${mood.name}`;
+  badge.title = mood.desc;
+}
+
+// 듀얼 이벤트(효과 발동·파괴·피해 등)를 전투 로그로 옮긴다
+let lastEventDuelId = null;
+let lastEventIndex = 0;
+const EVENT_LOG_CATEGORY = {
+  attack: 'attack',
+  destroy: 'destroy',
+  spell: 'spell',
+  trigger: 'spell',
+  fizzle: 'spell',
+  set: 'spell',
+  mood: 'turn',
+};
+const COMBAT_KINDS = new Set(['attack', 'destroy', 'damage']);
+function flushDuelEventsToLog(duel, { skipCombat = false } = {}) {
+  if (!duel || !Array.isArray(duel.events)) return;
+  if (lastEventDuelId !== duel.duelId + duel.seed) {
+    lastEventDuelId = duel.duelId + duel.seed;
+    lastEventIndex = 0;
+  }
+  for (let i = lastEventIndex; i < duel.events.length; i++) {
+    const ev = duel.events[i];
+    if (skipCombat && COMBAT_KINDS.has(ev.kind)) continue;
+    appendCombatLog(EVENT_LOG_CATEGORY[ev.kind] || 'system', t(ev.key, ev.params));
+  }
+  lastEventIndex = duel.events.length;
 }
 
 function syncRunPhaseView() {
   const snap = engine.getSnapshot();
+  scheduleRunSave();
 
   switch (snap.phase) {
     case 'STAGE_0_FORTUNE':
@@ -1059,7 +1179,7 @@ function formatCardNameHtml(name, isMonster) {
  */
 function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicDef = null, scaleFont = 1.0, isBattlefield = false) {
   if (!cardOrDef) return '<div class="card-idle-placeholder" style="color:#64748b; font-size:0.85rem; padding:20px; text-align:center;">카드를 선택하세요</div>';
-  const def = cardOrDef.cardId ? DEFAULT_CARD_CATALOG.find((c) => c.id === cardOrDef.cardId) || cardOrDef : cardOrDef;
+  const def = cardOrDef.cardId ? lookupCardDef(cardOrDef.cardId) || cardOrDef : cardOrDef;
   const isMonster = def.type === 'MONSTER' || (def.attack > 0 && def.type !== 'SPELL');
   const atk = dynamicAtk ?? cardOrDef.currentAttack ?? def.attack ?? 0;
   const defense = dynamicDef ?? cardOrDef.currentDefense ?? def.defense ?? (def.health ?? 0);
@@ -1168,7 +1288,7 @@ function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = null) {
     return;
   }
 
-  const def = cardOrDef.cardId ? DEFAULT_CARD_CATALOG.find((c) => c.id === cardOrDef.cardId) || cardOrDef : cardOrDef;
+  const def = cardOrDef.cardId ? lookupCardDef(cardOrDef.cardId) || cardOrDef : cardOrDef;
   const atk = dynamicAtk ?? cardOrDef.currentAttack ?? def.attack ?? 0;
   const defense = dynamicDef ?? cardOrDef.currentDefense ?? def.defense ?? (def.health ?? 0);
   const keywords = def.keywords || [];
@@ -1192,10 +1312,14 @@ function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = null) {
     }
 
     // 기능 키워드 (# 미포함: 도발, 돌진, 관통, 반격, 광역 등)
+    const kwIds = cardOrDef.kw || def.kw || [];
     if (keywords.length > 0) {
       pillsHtml += keywords
-        .map((kw) => `<span class="badge-keyword" title="핵심 기능 키워드">${kw}</span>`)
+        .map((kw, i) => `<span class="badge-keyword" title="${kwIds[i] ? keywordDesc(kwIds[i]) : '핵심 기능 키워드'}">${kw}</span>`)
         .join(' ') + ' ';
+    }
+    if (def.rarity) {
+      pillsHtml += `<span class="badge-rarity rarity-${def.rarity}">${t(`rarity.${def.rarity}`)}</span> `;
     }
 
     // 종족 / 소속표 태그 (# 포함: #성역, #보병, #용족, #신 등)
@@ -1230,26 +1354,41 @@ function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = null) {
       `;
     }
 
-    // [조건]
-    const conditionText = def.condition || (def.type === 'MONSTER' ? '일반 소환 또는 전장 출전 시' : '발동 시');
-    contentHtml += `
-      <div class="rule-block condition-block">
-        <span class="rule-badge-condition">[조건]</span>
-        <span class="rule-content-condition">${conditionText}</span>
-      </div>
-    `;
+    // [키워드] 기능 설명
+    const kwList = cardOrDef.kw || def.kw || [];
+    if (kwList.length > 0) {
+      contentHtml += `
+        <div class="rule-block keyword-block">
+          <span class="rule-badge-condition">[키워드]</span>
+          <span class="rule-content-condition">${kwList.map((id) => `<strong>${t(`kw.${id}`)}</strong> — ${keywordDesc(id)}`).join('<br>')}</span>
+        </div>
+      `;
+    }
+    if (cardOrDef.silenced) {
+      contentHtml += `<div class="rule-block"><span class="rule-badge-condition">[침묵]</span> <span class="rule-content-condition">키워드와 효과가 지워진 상태입니다.</span></div>`;
+    }
 
-    // [효과]
-    const effectText = def.effect || def.description || '효과를 발휘한다.';
-    contentHtml += `
-      <div class="rule-block effect-block">
-        <span class="rule-badge-effect">[효과]</span>
-        <span class="rule-content-effect">${effectText}</span>
-      </div>
-    `;
+    // [조건] / [효과] — 카드 능력 데이터에서 만든 문장
+    if (def.condition || def.effect) {
+      contentHtml += `
+        <div class="rule-block condition-block">
+          <span class="rule-badge-condition">[조건]</span>
+          <span class="rule-content-condition">${def.condition}</span>
+        </div>
+        <div class="rule-block effect-block">
+          <span class="rule-badge-effect">[효과]</span>
+          <span class="rule-content-effect">${def.effect}</span>
+        </div>
+      `;
+    } else if (kwList.length === 0) {
+      contentHtml += `<div class="rule-block effect-block"><span class="rule-content-effect">특수 효과가 없는 몬스터입니다.</span></div>`;
+    }
 
     // 마법 또는 대상 카드의 불발 룰링 (미아 상태 불발 안내)
-    if (def.type === 'SPELL' || def.target) {
+    if (def.type === 'SPELL' && def.spellTriggerType && def.spellTriggerType !== 'INSTANT') {
+      contentHtml += `<div class="rule-block"><span class="rule-badge-target">[사용법]</span> <span class="rule-content-target">필드에 세트해 두면 조건이 맞을 때 자동으로 발동합니다.</span></div>`;
+    }
+    if (def.type === 'SPELL') {
       contentHtml += `
         <div class="rule-fizzle-clause">
           <span class="fizzle-icon">⚠️</span> 대상이 소멸·파괴되거나 존재하지 않을 경우(미아 상태) 대상 부재로 효과는 <strong>불발</strong> 처리되어 묘지로 보내집니다.
@@ -1264,8 +1403,32 @@ function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = null) {
 // ============================================================================
 // 5. [Canvas 2D Engine 연동] 방향별 직접 타격 / 역경직 / 파편 / 영혼 / 관통 시퀀스
 // ============================================================================
+/** 공격이 규칙상 가능한지 미리 확인한다. 불가능하면 사유를 돌려준다. */
+function attackBlockReason(attacker, targetUnit) {
+  const duel = engine.state.activeDuel;
+  if (!duel) return '진행 중인 듀얼이 없습니다.';
+  if (duel.turnNumber <= 2) return '첫 1바퀴(1~2턴)는 공격할 수 없습니다. 3턴부터 전투가 시작됩니다.';
+  const live = duel.seats[0].board.find((u) => u.instanceId === attacker.instanceId);
+  if (!live || !live.canAttack || live.attacksLeft <= 0) return '이 몬스터는 지금 공격할 수 없습니다.';
+  if (!targetUnit) {
+    return canAttackHero(duel, live) ? null : '🛡️ [수호벽] 상대 필드에 몬스터가 존재하여 본체를 직접 공격할 수 없습니다. 적 몬스터를 먼저 처치하세요!';
+  }
+  const legal = attackableTargets(duel, 0);
+  if (legal.some((u) => u.instanceId === targetUnit.instanceId)) return null;
+  if (legal.some((u) => u.kw.includes('TAUNT'))) return '🛡️ [도발] 상대의 도발 몬스터부터 공격해야 합니다.';
+  return '🌫️ [은신] 은신한 몬스터는 공격 대상으로 지정할 수 없습니다.';
+}
+
 function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, onComplete) {
   if (isAttackAnimating) return;
+  const blocked = attackBlockReason(attacker, targetUnit);
+  if (blocked) {
+    const logEl = document.getElementById('duel-narrative-log');
+    if (logEl) logEl.textContent = blocked;
+    appendCombatLog('system', blocked);
+    onComplete?.();
+    return;
+  }
   isAttackAnimating = true;
 
   // 1. 공격자 카드가 드래그 중이었다면 즉시 홈 슬롯 위치로 강제 스냅 (트랜지션 없이 좌표 정렬)
@@ -1278,7 +1441,7 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
   void attackerEl.offsetHeight; // 강제 DOM 리플로우로 즉시 (0, 0) 홈 슬롯 좌표 확정
   attackerEl.style.transition = '';
 
-  const attackerDef = DEFAULT_CARD_CATALOG.find((c) => c.id === attacker.cardId);
+  const attackerDef = lookupCardDef(attacker.cardId);
   const atk = attacker.currentAttack ?? attacker.attack ?? 10;
 
   // 2. 홈 슬롯 공격자 및 피격 타겟의 정확한 상대 좌표 및 타격 방향 회전각(theta) 계산
@@ -1359,8 +1522,12 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
             attackerInstanceId: attacker.instanceId,
             targetInstanceId: targetUnit ? targetUnit.instanceId : undefined,
           });
+          // 공격 연출이 전투 결과를 직접 기록하므로, 그 밖의 효과(함정·능력 발동 등)만 로그로 옮긴다
+          flushDuelEventsToLog(engine.getSnapshot().activeDuel, { skipCombat: true });
         } catch (err) {
           console.error(err);
+          const logEl = document.getElementById('duel-narrative-log');
+          if (logEl) logEl.textContent = `[알림] ${err.message}`;
         }
       }
 
@@ -1420,7 +1587,7 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
 
       // ★ 4. 카드 파괴 시퀀스 (Canvas 크리스탈 물리 Shatter + 3차 베지에 영혼 Wisp)
       if (res.defenderDied) {
-        const defenderDef = DEFAULT_CARD_CATALOG.find((c) => c.id === res.defenderCardId);
+        const defenderDef = lookupCardDef(res.defenderCardId);
         targetEl.classList.add('card-whiteout');
         audio.playCardShatter();
         appendCombatLog('destroy', `💀 [전투 파괴!] 공격력이 수비력을 상회하여 「${defenderDef?.name || targetUnit?.name || '적 유닛'}」이(가) 파괴되어 묘지로 이송되었습니다!`);
@@ -1590,7 +1757,7 @@ function renderDuelArena(snap) {
   const previewBox = document.getElementById('inspector-card-preview');
   if (previewBox && (!previewBox.firstElementChild || previewBox.querySelector('.card-idle-placeholder'))) {
     const defaultUnit = player.board.find((u) => u.isDeckMaster) || player.board[0];
-    const defaultCard = defaultUnit || (player.hand[0] ? DEFAULT_CARD_CATALOG.find((c) => c.id === player.hand[0].cardId) : null);
+    const defaultCard = defaultUnit || (player.hand[0] ? lookupCardDef(player.hand[0].cardId) : null);
     if (defaultCard) {
       updateCardInspector(defaultCard);
     }
@@ -1620,6 +1787,8 @@ function renderDuelArena(snap) {
   if (playerDestinyEl) playerDestinyEl.textContent = `운명: ${snap.selectedDestiny || '-'}`;
 
   document.getElementById('cpu-name').textContent = cpu.duelistName;
+  renderCpuMoodBadge();
+  flushDuelEventsToLog(duel);
   document.getElementById('cpu-lp').textContent = cpuHp;
   const cpuSummonEl = document.getElementById('cpu-summon');
   if (cpuSummonEl) cpuSummonEl.textContent = `${cpu.normalSummonsRemaining ?? 0}/1`;
@@ -1917,8 +2086,8 @@ function renderDuelArena(snap) {
           const targetMonsterCard = targetEl.closest('#cpu-board .unit-field-card') || (targetEl.classList?.contains('unit-field-card') ? targetEl : null);
           const isDirectTarget = !targetMonsterCard && (targetEl.id === 'cpu-seat' || targetEl.id === 'cpu-meta' || targetEl.closest('#cpu-seat') || targetEl.closest('#cpu-meta') || targetEl.id === 'cpu-board');
 
-          // 유희왕식 수호벽: 필드에 적 몬스터가 있으면 본체 직접 공격 차단
-          if (hasCpuMonsters && isDirectTarget) {
+          // 유희왕식 수호벽: 필드에 적 몬스터가 있으면 본체 직접 공격 차단 (직접공격 키워드 예외)
+          if (hasCpuMonsters && isDirectTarget && !(unit.kw || []).includes('DIRECT')) {
             const logEl = document.getElementById('duel-narrative-log');
             if (logEl) logEl.textContent = '🛡️ [수호벽] 상대 필드에 몬스터가 존재하여 본체를 직접 공격할 수 없습니다. 적 몬스터를 먼저 처치하세요!';
             unitEl.style.transition = 'transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1)';
@@ -2015,7 +2184,7 @@ function renderDuelArena(snap) {
   }
 
   player.hand.forEach((cardInst, idx) => {
-    const def = DEFAULT_CARD_CATALOG.find((c) => c.id === cardInst.cardId);
+    const def = lookupCardDef(cardInst.cardId);
     if (!def) return;
 
     // 부채꼴 비스듬함 각도 및 아치 높이 계산
@@ -2262,16 +2431,18 @@ function showSpellActionMenu(cardEl, cardInst, def, duel, player) {
   const popover = document.createElement('div');
   popover.className = 'spell-action-popover';
 
-  // 1. 즉시 발동 옵션 (모든 마법 카드 자유 발동 지원)
-  const btnInstant = document.createElement('button');
-  btnInstant.className = 'spell-popover-btn';
-  btnInstant.innerHTML = '⚡ 즉시 발동';
-  btnInstant.onclick = (e) => {
-    e.stopPropagation();
-    closeSpellPopovers();
-    handlePlayCard(cardInst.instanceId);
-  };
-  popover.appendChild(btnInstant);
+  // 1. 즉시 발동 옵션 (즉시 발동형 마법만)
+  if (def.spellTriggerType === 'INSTANT') {
+    const btnInstant = document.createElement('button');
+    btnInstant.className = 'spell-popover-btn';
+    btnInstant.innerHTML = '⚡ 즉시 발동';
+    btnInstant.onclick = (e) => {
+      e.stopPropagation();
+      closeSpellPopovers();
+      handlePlayCard(cardInst.instanceId);
+    };
+    popover.appendChild(btnInstant);
+  }
 
   // 2. 내 몬스터 앞 세트 옵션 (내 필드에 몬스터가 존재할 때)
   if (player.board.length > 0) {
@@ -2331,7 +2502,7 @@ function showSpellActionMenu(cardEl, cardInst, def, duel, player) {
 }
 
 function createUnitElement(unit, isPlayer, setSpells = []) {
-  const def = DEFAULT_CARD_CATALOG.find((c) => c.id === unit.cardId);
+  const def = lookupCardDef(unit.cardId);
   const el = document.createElement('div');
   el.className = 'unit-field-card';
   el.setAttribute('data-instance-id', unit.instanceId);
@@ -2723,12 +2894,21 @@ function renderCheckpointEncounterSubpage(snap) {
     if (starsEl) starsEl.textContent = `${enc.stars || '★☆☆☆☆'} (${enc.difficultyLabel || '하'})`;
     if (titleEl) titleEl.textContent = enc.opponentTitle || enc.title || '도전자';
     if (nameEl) nameEl.textContent = enc.opponentName || enc.name || '상대 듀얼리스트';
-    if (descEl) descEl.textContent = enc.description || '대결을 기다리는 상대입니다.';
+    if (descEl) {
+      const base = enc.description || '대결을 기다리는 상대입니다.';
+      if (enc.personality) {
+        const vol = enc.volatility ?? 0.5;
+        const temper = vol >= 0.65 ? '기분이 자주 바뀝니다' : vol >= 0.45 ? '상황에 따라 태도가 바뀝니다' : '좀처럼 흔들리지 않습니다';
+        descEl.innerHTML = `${base}<br><span class="dossier-personality mood-${enc.personality}">성향: ${t(`mood.${enc.personality}.name`)}</span> — ${t(`mood.${enc.personality}.desc`)} (${temper})`;
+      } else {
+        descEl.textContent = base;
+      }
+    }
     if (rewardEl) rewardEl.textContent = `+${(enc.rewardGold || 500).toLocaleString()}원`;
     if (archEl) {
       let archText = '열의 (RED ZEAL)';
-      if (enc.deckArchetype === 'BLUE_JUSTICE') archText = '정의 (BLUE JUSTICE)';
-      else if (enc.deckArchetype === 'CHAOS_RNG') archText = '혼돈 (PURPLE CHAOS)';
+      if (enc.deckArchetype === 'BLUE_JUSTICE' || enc.faction === 'BLUE') archText = '정의 (BLUE JUSTICE)';
+      else if (enc.deckArchetype === 'PURPLE_CHAOS' || enc.deckArchetype === 'CHAOS_RNG' || enc.faction === 'PURPLE') archText = '혼돈 (PURPLE CHAOS)';
       archEl.textContent = archText;
     }
 
@@ -2835,7 +3015,7 @@ function renderCheckpointShopSubpage(snap) {
     singlesContainer.innerHTML = '';
     const singles = snap.checkpointShopSingles || [];
     singles.forEach((item) => {
-      const cardDef = DEFAULT_CARD_CATALOG.find((c) => c.id === item.cardId);
+      const cardDef = lookupCardDef(item.cardId);
       if (!cardDef) return;
 
       const isMonster = cardDef.type === 'MONSTER' || (cardDef.attack > 0 && cardDef.type !== 'SPELL');
@@ -2886,7 +3066,7 @@ function displayPackOpeningResultBanner(choices) {
 
   cardsContainer.innerHTML = '';
   choices.forEach((cardId) => {
-    const def = DEFAULT_CARD_CATALOG.find((c) => c.id === cardId);
+    const def = lookupCardDef(cardId);
     if (!def) return;
 
     const cardEl = document.createElement('div');
@@ -2926,7 +3106,7 @@ function openTradeSelectModal(deal) {
 
   const targetPreviewEl = document.getElementById('trade-target-preview');
   if (targetPreviewEl) {
-    const rDef = deal.rewardDef || DEFAULT_CARD_CATALOG.find((c) => c.id === deal.rewardCardId);
+    const rDef = deal.rewardDef || lookupCardDef(deal.rewardCardId);
     const isMonster = rDef ? (rDef.type === 'MONSTER' || (rDef.attack > 0 && rDef.type !== 'SPELL')) : false;
     const reqCount = deal.wantedCardIds ? deal.wantedCardIds.length : (deal.requiredCardCount || 1);
 
@@ -3008,7 +3188,7 @@ function renderTradeTrunkCards(snap) {
   });
 
   candidates.forEach((cand) => {
-    const cardDef = DEFAULT_CARD_CATALOG.find((c) => c.id === cand.cardId);
+    const cardDef = lookupCardDef(cand.cardId);
     if (!cardDef) return;
 
     const isWanted = wantedList.includes(cand.cardId);
@@ -3105,7 +3285,7 @@ function updateTradeModalState(snap) {
         const item = selectedCopy.splice(matchIdx, 1)[0];
         sourceTag = item.source === 'trunk' ? ' [가방]' : ' [출전 덱]';
       }
-      const wDef = DEFAULT_CARD_CATALOG.find((c) => c.id === wId);
+      const wDef = lookupCardDef(wId);
       return `
         <div class="modal-wanted-item ${isSatisfied ? 'is-satisfied' : 'is-pending'}">
           <span>${isSatisfied ? '✔' : '⏳'} ${wDef?.name || wId}</span>
@@ -3149,7 +3329,7 @@ function updateTradeModalState(snap) {
           hintEl.innerHTML = `<span style="color:#f87171; font-weight:700;">⚠️ ${planError}</span>`;
         } else if (plan.refillCardIds.length > 0) {
           const names = plan.refillCardIds
-            .map((id) => `「${DEFAULT_CARD_CATALOG.find((c) => c.id === id)?.name || id}」`)
+            .map((id) => `「${lookupCardDef(id)?.name || id}」`)
             .join(', ');
           hintEl.innerHTML = `<span style="color:#4ade80; font-weight:700;">✅ 지정 카드 충족! 출전 덱 빈 슬롯은 획득 카드와 가방의 ${names}로 자동 보충되어 30장 정규 규격이 유지됩니다.</span>`;
         } else if (plan.deckConsumed > 0) {
@@ -3209,7 +3389,7 @@ function renderCheckpointMerchantSubpage(snap) {
     const deckCards = (snap.playerDeckCardIds || []).filter((id) => id !== snap.playerDeckMasterCardId);
 
     merchant.deals.forEach((deal) => {
-      const cardDef = deal.rewardDef || DEFAULT_CARD_CATALOG.find((c) => c.id === deal.rewardCardId);
+      const cardDef = deal.rewardDef || lookupCardDef(deal.rewardCardId);
       if (!cardDef) return;
 
       const isMonster = cardDef.type === 'MONSTER' || (cardDef.attack > 0 && cardDef.type !== 'SPELL');
@@ -3228,7 +3408,7 @@ function renderCheckpointMerchantSubpage(snap) {
         const tempDeck = [...deckCards];
 
         const chipsHtml = deal.wantedCardIds.map((wId) => {
-          const wDef = DEFAULT_CARD_CATALOG.find((c) => c.id === wId);
+          const wDef = lookupCardDef(wId);
           const tIdx = tempTrunk.indexOf(wId);
           let inTrunk = false;
           let inDeck = false;
@@ -3307,7 +3487,7 @@ function renderCheckpointMerchantSubpage(snap) {
   } else if (merchant.items && merchant.items.length > 0) {
     // 2) 하위 호환: 기존 낱장 판매 목록
     merchant.items.forEach((item) => {
-      const cardDef = DEFAULT_CARD_CATALOG.find((c) => c.id === item.cardId);
+      const cardDef = lookupCardDef(item.cardId);
       if (!cardDef) return;
 
       const isMonster = cardDef.type === 'MONSTER' || (cardDef.attack > 0 && cardDef.type !== 'SPELL');
@@ -3395,7 +3575,7 @@ function renderCheckpointDeckEditorSubpage(snap) {
   if (deckGrid) {
     deckGrid.innerHTML = '';
     deckCards.forEach((cardId) => {
-      const def = DEFAULT_CARD_CATALOG.find((c) => c.id === cardId);
+      const def = lookupCardDef(cardId);
       if (!def) return;
 
       const isDeckMaster = cardId === deckMasterId;
@@ -3444,7 +3624,7 @@ function renderCheckpointDeckEditorSubpage(snap) {
       `;
     } else {
       trunkCards.forEach((cardId) => {
-        const def = DEFAULT_CARD_CATALOG.find((c) => c.id === cardId);
+        const def = lookupCardDef(cardId);
         if (!def) return;
 
         const tileEl = document.createElement('div');
@@ -3635,7 +3815,7 @@ function renderPackOpening(snap) {
   claimBtn.disabled = true;
 
   snap.currentRewardPackChoices.forEach((cardId) => {
-    const def = DEFAULT_CARD_CATALOG.find((c) => c.id === cardId);
+    const def = lookupCardDef(cardId);
     if (!def) return;
 
     const cardEl = document.createElement('div');
@@ -3669,8 +3849,8 @@ function renderMerchantEvent(snap) {
   const offer = snap.currentMerchantOffer;
   if (!offer) return;
 
-  const cardDef = DEFAULT_CARD_CATALOG.find((c) => c.id === offer.offerCardId);
-  const masteryCardDef = DEFAULT_CARD_CATALOG.find((c) => c.id === offer.bonusMasteryCardId);
+  const cardDef = lookupCardDef(offer.offerCardId);
+  const masteryCardDef = lookupCardDef(offer.bonusMasteryCardId);
 
   const previewEl = document.getElementById('merchant-card-preview');
   previewEl.innerHTML = generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.85);
@@ -3714,7 +3894,7 @@ function renderRunSummary(snap, isVictory) {
 
   deckListEl.innerHTML = '';
   snap.playerDeckCardIds.forEach((cardId) => {
-    const def = DEFAULT_CARD_CATALOG.find((c) => c.id === cardId);
+    const def = lookupCardDef(cardId);
     const li = document.createElement('li');
     li.textContent = def ? def.name : cardId;
     deckListEl.appendChild(li);
@@ -3768,7 +3948,7 @@ function renderBinderPage(pageIndex, focusCardId = null) {
   let cardToFocus = null;
 
   pageView.slots.forEach((slot, idx) => {
-    const def = DEFAULT_CARD_CATALOG.find((c) => c.id === slot.cardId) || {
+    const def = lookupCardDef(slot.cardId) || {
       id: slot.cardId,
       name: slot.cardName,
       cost: slot.cost,

@@ -39,6 +39,7 @@
         <p class="subtitle">선형적 1v1 PvP 대칭 듀얼 & 3×3 콜렉션 바인더</p>
         
         <div class="menu-buttons">
+          <button id="btn-continue-run" class="btn primary-btn" hidden>이어서 하기</button>
           <button id="btn-start-run" class="btn primary-btn">새로운 듀얼 런 개시</button>
           <button id="btn-open-binder-menu" class="btn secondary-btn">3×3 콜렉션 바인더 열람</button>
         </div>
@@ -507,7 +508,9 @@
             <div class="duelist-info">
               <div class="name-line">
                 <span class="duelist-name" id="cpu-name">상대 듀얼리스트</span>
+                <span class="cpu-mood-badge" id="cpu-mood-badge"></span>
               </div>
+              <div class="cpu-mood-bubble" id="cpu-mood-bubble" aria-live="polite"></div>
               <div class="stat-pills">
                 <div class="lp-container">
                   <div class="lp-bar-track">
