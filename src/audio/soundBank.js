@@ -85,11 +85,11 @@ export class SoundBank {
       return; // 목록이 없으면 합성음만 쓴다
     }
     for (const entry of manifest.audio || []) {
-      if (entry.type === 'audio_bgm') {
+      if (entry.type === 'audio_bgm' && entry.ready === true) {
         this.bgmTracks.set(entry.id, { path: entry.path, loop: entry.audioMeta?.loop !== false, volume: entry.audioMeta?.volume ?? 0.5 });
       }
     }
-    const sfx = (manifest.audio || []).filter((e) => e.type === 'audio_sfx' && e.cue);
+    const sfx = (manifest.audio || []).filter((e) => e.type === 'audio_sfx' && e.cue && e.ready === true);
     await Promise.all(sfx.map((e) => this.loadSample(e)));
   }
 

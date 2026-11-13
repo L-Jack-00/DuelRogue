@@ -4,6 +4,35 @@
   padding: 0;
 }
 
+/* [LJack Custom Vector Scrollbar] OS 기본 회색 스크롤바 완전 대체 */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(7, 11, 20, 0.85);
+  border-radius: 6px;
+  border: 1px solid rgba(51, 65, 85, 0.35);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+  border-radius: 6px;
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
+  box-shadow: inset 0 0 4px rgba(56, 189, 248, 0.25);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%);
+  border-color: rgba(125, 211, 252, 0.85);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.45);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 :root {
   --bg-dark: #0b0e14;
   --bg-panel: #131722;
@@ -21,7 +50,10 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
   background: var(--bg-dark);
   color: var(--text-main);
+  width: 100vw;
   height: 100vh;
+  margin: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -30,10 +62,13 @@ body {
 }
 
 #game-app {
-  width: 1280px;
-  height: 800px;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
   background: radial-gradient(circle at 50% 30%, #151a28 0%, #080a0f 100%);
   border: 1px solid #1e293b;
+  box-sizing: border-box;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
   position: relative;
   overflow: hidden;
@@ -66,6 +101,7 @@ body {
   font-weight: 700;
   letter-spacing: 1.5px;
   color: #94a3b8;
+  pointer-events: none;
 }
 
 .titlebar-controls {
@@ -258,6 +294,8 @@ body {
 }
 
 .tarot-card {
+  position: relative;
+  overflow: hidden;
   width: 260px;
   height: 400px;
   border-radius: 14px;
@@ -439,9 +477,10 @@ body {
   flex-shrink: 0 !important;
 }
 
-#inspector-card-preview .card-composite-wrapper {
-  width: 100% !important;
-  max-width: 100% !important;
+#inspector-card-preview .card-composite-wrapper,
+#editor-inspector-card-preview .card-composite-wrapper {
+  width: min(100%, calc(42vh * 400 / 560)) !important;
+  max-width: 240px !important;
   height: auto !important;
   aspect-ratio: 400 / 560 !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75) !important;
@@ -1101,12 +1140,13 @@ body {
 .player-duelist {
   position: relative;
   border-top: 1px solid #1e293b;
-  height: 215px;
+  height: auto;
+  min-height: clamp(160px, 23vh, 215px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 8px 24px;
+  padding: 6px 24px;
 }
 
 /* ============================================================================
@@ -1231,7 +1271,8 @@ body {
   align-items: flex-end;
   position: relative;
   z-index: 10;
-  height: 165px;
+  height: auto;
+  min-height: clamp(124px, 18vh, 165px);
 }
 
 /* ============================================================================
@@ -1256,8 +1297,9 @@ body {
 
 .deck-stack {
   position: relative;
-  width: 72px;
-  height: 102px;
+  width: clamp(54px, 8vh, 72px);
+  height: auto;
+  aspect-ratio: 400 / 560;
 }
 
 .deck-card-layer {
@@ -1469,8 +1511,9 @@ body {
 }
 
 .gy-card-mini-preview {
-  width: 48px;
-  height: 68px;
+  width: 76px;
+  height: auto;
+  aspect-ratio: 400 / 560;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -1684,12 +1727,13 @@ body {
 .board-zone {
   width: 100%;
   max-width: 920px;
-  height: 156px;
+  height: auto;
+  min-height: clamp(114px, 17.5vh, 156px);
   display: flex;
   justify-content: center;
   align-items: flex-end;
   gap: 20px;
-  padding-bottom: 6px;
+  padding: 4px 0 6px;
   border: 1px dashed rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   perspective: 1200px;
@@ -1825,14 +1869,21 @@ body {
 .card-composite-wrapper {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: 100%;
   aspect-ratio: 400 / 560;
-  border-radius: 8px;
+  container-type: inline-size;
+  border-radius: 4% / 2.85%;
   overflow: hidden;
   user-select: none;
   background: #090d16;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-composite-wrapper .layer-1-art,
+.card-composite-wrapper .layer-3-dynamic-labels {
+  --card-unit: 0.5cqw;
 }
 
 .layer-1-art {
@@ -1869,22 +1920,23 @@ body {
 }
 
 .procedural-art-icon {
-  font-size: calc(var(--card-scale-font, 1) * 44px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 44);
   filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.95));
 }
 
 .procedural-archetype-pill {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  font-size: calc(var(--card-scale-font, 1) * 9.5px);
+  top: 4%;
+  right: 4%;
+  font-size: calc(var(--card-unit, 0.5cqw) * 9.5);
   font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: calc(var(--card-unit, 0.5cqw) * 2) calc(var(--card-unit, 0.5cqw) * 6);
+  border-radius: calc(var(--card-unit, 0.5cqw) * 4);
   background: rgba(15, 23, 42, 0.88);
   color: #38bdf8;
   border: 1px solid #334155;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  line-height: 1.2;
 }
 
 .layer-2-frame {
@@ -1900,6 +1952,7 @@ body {
 .layer-2-frame img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
   display: block;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: high-quality;
@@ -1916,23 +1969,23 @@ body {
   pointer-events: none;
 }
 
-/* 카드 이름 (상단 바 전체 영역 활용 & 레벨 영역 포함 & 글씨 좌우 압축 우겨넣기) */
+/* 카드 이름 (SVG 이름 양각 박스 y:14..64 / x:22..378 정밀 일치) */
 .overlay-name {
   position: absolute;
-  top: 3.2%;
-  left: 7.2%;
-  width: 85.6%;
-  height: 7.8%;
+  top: 2.5%;
+  left: 6.8%;
+  width: 86.4%;
+  height: 8.93%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   font-family: 'Cinzel', 'Noto Serif KR', serif;
   font-weight: 900;
-  font-size: calc(var(--card-scale-font, 1) * 14.5px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 14.5);
   color: #1a0f05;
-  -webkit-text-stroke: calc(var(--card-scale-font, 1) * 2.2px) #ffffff;
+  -webkit-text-stroke: calc(var(--card-unit, 0.5cqw) * 2.0) #ffffff;
   paint-order: stroke fill;
-  text-shadow: 0 0 2px #ffffff, 0 1px 3px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 0 2px #ffffff, 0 1px 2px rgba(0, 0, 0, 0.4);
   white-space: nowrap;
   overflow: visible; /* ... 축약 제거 */
   line-height: 1;
@@ -1942,10 +1995,18 @@ body {
 
 .overlay-name.spell {
   color: #064e3b;
-  -webkit-text-stroke: calc(var(--card-scale-font, 1) * 2.2px) #ffffff;
+  -webkit-text-stroke: calc(var(--card-unit, 0.5cqw) * 2.0) #ffffff;
   paint-order: stroke fill;
-  text-shadow: 0 0 2px #ffffff, 0 1px 3px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 0 2px #ffffff, 0 1px 2px rgba(0, 0, 0, 0.4);
   z-index: 25 !important;
+}
+
+.overlay-name.has-level {
+  width: 60.5%;
+}
+
+.overlay-name.has-level-wide {
+  width: 50.5%;
 }
 
 .overlay-name .card-name-text {
@@ -1954,9 +2015,21 @@ body {
   transform-origin: left center;
 }
 
-/* 상단 바 전체가 카드 이름 전용 영역으로 확장됨에 따른 레벨 할퀸 자국 숨김 처리 */
+/* [복구/확대] 몬스터 카드 우측 상단 5진법 발톱자국 레벨 (이름 양각 박스 전체 높이 커버) */
 .overlay-claw-level {
-  display: none !important;
+  position: absolute;
+  top: 2.5%;
+  right: 6.2%;
+  height: 8.93%;
+  padding: 0.45% 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-start;
+  gap: calc(var(--card-unit, 0.5cqw) * 3);
+  pointer-events: none;
+  z-index: 26 !important;
 }
 
 .claw-tally-bundle {
@@ -1972,8 +2045,8 @@ body {
   height: 100%;
   width: auto;
   display: block;
-  margin-left: -2px;
-  filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, 0.85));
+  margin-left: calc(var(--card-unit, 0.5cqw) * -2);
+  filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, 0.88));
 }
 
 .claw-cross {
@@ -1981,64 +2054,94 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 108%;
+  width: 110%;
   height: auto;
   pointer-events: none;
   filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, 0.95));
 }
 
-/* 하단 태그 (프레임 좌측 양각 박스 정렬 및 유연한 래핑) */
+/* 하단 태그 (상세 보기 전용: 양각 박스 내 키워드는 볼드체·일반 태그는 레귤러, 모두 검정색) */
 .overlay-tags {
   position: absolute;
-  top: 77.2%;
-  left: 7.0%;
-  width: 41%;
-  height: 18.8%;
+  top: 76.8%;
+  left: 6.2%;
+  width: 41.6%;
+  height: 19.9%;
   font-family: 'Noto Sans KR', sans-serif;
-  font-weight: 800;
-  font-size: calc(var(--card-scale-font, 1) * 11px);
-  color: #2c1d0c;
-  letter-spacing: -0.2px;
+  font-weight: 400;
+  font-size: calc(var(--card-unit, 0.5cqw) * 10.5);
+  color: #111111;
+  letter-spacing: -0.25px;
   line-height: 1.3;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+  text-shadow: none;
   display: flex;
   flex-wrap: wrap;
   align-content: center;
   justify-content: center;
   align-items: center;
-  gap: 3px 6px;
-  padding: 4px 6px;
+  gap: calc(var(--card-unit, 0.5cqw) * 3) calc(var(--card-unit, 0.5cqw) * 6);
+  padding: calc(var(--card-unit, 0.5cqw) * 3) calc(var(--card-unit, 0.5cqw) * 5);
   box-sizing: border-box;
   text-align: center;
   overflow: hidden;
 }
 
 .overlay-tags .frame-tag-pill {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(var(--card-unit, 0.5cqw) * 2);
   white-space: nowrap;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #111111 !important;
+  text-shadow: none !important;
+}
+
+.overlay-tags .frame-tag-pill.keyword-pill {
+  font-weight: 800 !important;
+  font-size: calc(var(--card-unit, 0.5cqw) * 10.5) !important;
+  color: #000000 !important;
+}
+
+.overlay-tags .frame-tag-pill.keyword-pill .vicon,
+.overlay-tags .frame-tag-pill .vicon {
+  color: #000000 !important;
+}
+
+.overlay-tags .frame-tag-pill.tag-pill {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-weight: 400 !important;
+  font-size: calc(var(--card-unit, 0.5cqw) * 9.8) !important;
+  line-height: 1.2 !important;
+  color: #111111 !important;
+  border-radius: 0 !important;
 }
 
 /* 하단 공격력 (프레임 우측 상단 분할 박스 정중앙 배치) */
 .overlay-attack-group {
   position: absolute;
-  top: 77.0%;
-  left: 52.5%;
-  width: 41%;
-  height: 9.4%;
+  top: 76.6%;
+  left: 51.8%;
+  width: 42.4%;
+  height: 10.1%;
   font-family: 'Cinzel', 'Noto Serif KR', serif;
   font-weight: 900;
-  font-size: calc(var(--card-scale-font, 1) * 18px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 18);
   color: #1a0f05;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: calc(var(--card-unit, 0.5cqw) * 4);
 }
 
 .stat-label-atk {
   font-family: 'Cinzel', 'Noto Sans KR', sans-serif;
-  font-size: calc(var(--card-scale-font, 1) * 11px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 11);
   font-weight: 900;
   color: #8c252a;
   letter-spacing: 0.5px;
@@ -2048,24 +2151,24 @@ body {
 /* 하단 수비력 (프레임 우측 하단 분할 박스 정중앙 배치) */
 .overlay-defense-group {
   position: absolute;
-  top: 87.2%;
-  left: 52.5%;
-  width: 41%;
-  height: 9.4%;
+  top: 86.9%;
+  left: 51.8%;
+  width: 42.4%;
+  height: 10.1%;
   font-family: 'Cinzel', 'Noto Serif KR', serif;
   font-weight: 900;
-  font-size: calc(var(--card-scale-font, 1) * 18px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 18);
   color: #1a0f05;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: calc(var(--card-unit, 0.5cqw) * 4);
 }
 
 .stat-label-def {
   font-family: 'Cinzel', 'Noto Sans KR', sans-serif;
-  font-size: calc(var(--card-scale-font, 1) * 11px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 11);
   font-weight: 900;
   color: #1d4e89;
   letter-spacing: 0.5px;
@@ -2075,24 +2178,25 @@ body {
 /* 마법 효과문 (마법 프레임 하단 광폭 양각 박스 정중앙 배치) */
 .overlay-spell-effect {
   position: absolute;
-  top: 77.2%;
-  left: 7.0%;
-  width: 86%;
-  height: 18.8%;
+  top: 76.8%;
+  left: 6.2%;
+  width: 87.6%;
+  height: 19.9%;
   font-family: 'Noto Serif KR', serif;
   font-weight: 700;
-  font-size: calc(var(--card-scale-font, 1) * 10.5px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 10.2);
   color: #064e3b;
-  line-height: 1.4;
+  line-height: 1.35;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 4px 8px;
+  padding: calc(var(--card-unit, 0.5cqw) * 4) calc(var(--card-unit, 0.5cqw) * 8);
   box-sizing: border-box;
   overflow: hidden;
+  word-break: keep-all;
 }
 
 /* ============================================================================
@@ -2102,8 +2206,10 @@ body {
  * ============================================================================ */
 .card-composite-wrapper.battlefield-view {
   width: 100%;
-  height: 100%;
-  border-radius: 8px;
+  height: auto;
+  max-height: 100%;
+  aspect-ratio: 400 / 560;
+  border-radius: 4% / 2.85%;
   -webkit-font-smoothing: antialiased;
   image-rendering: -webkit-optimize-contrast;
 }
@@ -2141,7 +2247,7 @@ body {
 
 .stat-badge-num {
   font-family: 'Cinzel', 'Noto Serif KR', serif;
-  font-size: calc(var(--card-scale-font, 1) * 64px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 64);
   line-height: 1;
   font-weight: 900;
   letter-spacing: -1.5px;
@@ -2152,14 +2258,14 @@ body {
 
 .overlay-stat-badge.atk-badge .stat-badge-num {
   color: #8c1d22;
-  -webkit-text-stroke: calc(var(--card-scale-font, 1) * 2.2px) #ffffff;
+  -webkit-text-stroke: calc(var(--card-unit, 0.5cqw) * 2.2) #ffffff;
   paint-order: stroke fill;
   text-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.45);
 }
 
 .overlay-stat-badge.def-badge .stat-badge-num {
   color: #0c4a6e;
-  -webkit-text-stroke: calc(var(--card-scale-font, 1) * 2.2px) #ffffff;
+  -webkit-text-stroke: calc(var(--card-unit, 0.5cqw) * 2.2) #ffffff;
   paint-order: stroke fill;
   text-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.45);
 }
@@ -2170,7 +2276,7 @@ body {
   left: 5.5%;
   width: 89.0%;
   height: 20.71%;
-  background: linear-gradient(135deg, rgba(6, 78, 59, 0.95) 0%, rgba(2, 44, 34, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.96) 0%, rgba(2, 44, 34, 0.96) 100%);
   border: 1.5px solid #10b981;
   border-radius: 8px;
   display: flex;
@@ -2179,21 +2285,25 @@ body {
   color: #ecfdf5;
   font-family: 'Noto Sans KR', sans-serif;
   font-weight: 800;
-  font-size: calc(var(--card-scale-font, 1) * 11px);
+  font-size: calc(var(--card-unit, 0.5cqw) * 16);
+  line-height: 1.2;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.8);
   z-index: 28;
   pointer-events: none;
-  padding: 0 10px;
+  padding: 2px 6px;
   text-align: center;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  box-sizing: border-box;
 }
-  padding: 0 6px;
-  text-align: center;
+
+.card-composite-wrapper.battlefield-view .overlay-spell-effect {
+  display: flex !important;
+  font-size: calc(var(--card-unit, 0.5cqw) * 14);
+  line-height: 1.25;
+  font-weight: 800;
+  color: #064e3b;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 2px 6px;
 }
 
 /* ============================================================================
@@ -2202,11 +2312,12 @@ body {
 .card-back-wrapper {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: 100%;
   aspect-ratio: 400 / 560;
   background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
   border: 2px solid #334155;
-  border-radius: 8px;
+  border-radius: 4% / 2.85%;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
   display: flex;
   align-items: center;
@@ -2254,7 +2365,8 @@ body {
 
 .cpu-card-back {
   width: 44px;
-  height: 60px;
+  height: auto;
+  aspect-ratio: 400 / 560;
   cursor: default;
   transition: transform 0.2s ease;
 }
@@ -2314,7 +2426,8 @@ body {
 .horizontal-card-rotator.central-rotator {
   position: absolute;
   width: 76px;
-  height: 108px;
+  height: auto;
+  aspect-ratio: 400 / 560;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%) rotate(90deg);
@@ -2583,8 +2696,9 @@ body {
 
 /* --- [스케치 1 우측]: "인게임" 필드 몬스터 유닛 카드 (Unit Field Card - 시인성 강화를 위해 확대) --- */
 .unit-field-card {
-  width: 108px;
-  height: 150px;
+  width: clamp(78px, 11.8vh, 108px);
+  height: auto;
+  aspect-ratio: 400 / 560;
   background: transparent;
   border: none;
   border-radius: 8px;
@@ -2742,7 +2856,8 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  height: 165px;
+  height: auto;
+  min-height: clamp(124px, 18vh, 165px);
   padding-bottom: 6px;
   max-width: 490px;
 }
@@ -2757,8 +2872,9 @@ body {
  * [3D Hand Card with Fan-Out & Holo Foil]
  * ============================================================================ */
 .duel-card {
-  width: 105px;
-  height: 147px;
+  width: clamp(82px, 13vh, 110px);
+  height: auto;
+  aspect-ratio: 400 / 560;
   background: transparent;
   border: none;
   border-radius: 9px;
@@ -2803,7 +2919,7 @@ body {
   mix-blend-mode: color-dodge;
   pointer-events: none;
   border-radius: 7px;
-  opacity: 0.35;
+  opacity: 0;
   transform: translateZ(32px);
   transition: opacity 0.2s;
 }
@@ -3027,16 +3143,21 @@ body {
 }
 
 .pack-choice-card {
-  width: 150px;
-  height: 220px;
+  width: 170px;
+  height: auto;
+  aspect-ratio: 400 / 560;
   background: #171d2b;
   border: 2px solid #334155;
   border-radius: 10px;
-  padding: 14px;
+  padding: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .pack-choice-card:hover {
@@ -3139,8 +3260,9 @@ body {
 }
 
 .binder-book-container {
-  width: 1060px;
-  height: 730px;
+  width: min(1100px, calc(100% - 28px));
+  height: min(740px, calc(100% - 24px));
+  max-width: 100%;
   max-height: 94vh;
   background: radial-gradient(circle at 50% 30%, #151a28 0%, #080a12 100%);
   border: 3px solid #1e293b;
@@ -3300,34 +3422,20 @@ body {
   pointer-events: none;
 }
 
-/* 2. 9포켓 투명 비닐 시트 컨테이너 (Ultra-Clear Sleeve Sheet) */
+/* 2. 9포켓 투명 비닐 시트 컨테이너 (카드 크기 최대화) */
 .binder-sheet-wrapper {
-  width: 430px;
-  flex: 0 0 430px;
+  width: clamp(310px, 46%, 520px);
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   background: rgba(8, 12, 19, 0.95);
   border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  padding: 8px 10px;
+  padding: 5px;
   box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.85), 0 8px 24px rgba(0, 0, 0, 0.6);
   position: relative;
   min-width: 0;
   box-sizing: border-box;
-}
-
-.sheet-plastic-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.62rem;
-  color: #475569;
-  letter-spacing: 1px;
-  font-weight: 800;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
-  padding-bottom: 4px;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  user-select: none;
 }
 
 /* 3x3 바인더 그리드 (9슬롯) */
@@ -3336,7 +3444,7 @@ body {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  gap: 8px;
+  gap: 5px;
   min-height: 0;
   height: 100%;
 }
@@ -3347,11 +3455,11 @@ body {
   background: rgba(14, 20, 32, 0.9);
   border: 1.5px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
-  padding: 4px 4px 2px 4px;
+  padding: 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   cursor: pointer;
   transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease, border-color 0.2s ease;
   overflow: hidden;
@@ -3385,10 +3493,11 @@ body {
   pointer-events: none;
 }
 
-/* 슬리브 내부 카드 뷰포트 (정확한 1:1.4 포커 카드 비율 강제) */
+/* 슬리브 내부 카드 뷰포트 (창 비율과 무관하게 정확한 400:560 카드 정배율 최대 내접) */
 .pocket-inner-wrap {
   flex: 1;
   width: 100%;
+  container-type: size;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3398,9 +3507,8 @@ body {
 }
 
 .binder-card-viewport {
-  height: 100%;
-  max-height: 100%;
-  width: auto;
+  width: min(100cqw, calc(100cqh * 400 / 560));
+  height: min(100cqh, calc(100cqw * 560 / 400));
   aspect-ratio: 400 / 560;
   display: flex;
   align-items: center;
@@ -3413,20 +3521,14 @@ body {
 }
 
 .binder-slot .card-composite-wrapper {
+  width: 100% !important;
   height: 100% !important;
-  width: auto !important;
-  max-height: 100% !important;
-  max-width: 100% !important;
   aspect-ratio: 400 / 560 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75) !important;
   margin: 0 auto !important;
 }
 
-/* 3x3 미니 슬롯 카드의 텍스트 최적화 (태그 숨김, 숫자 핏) */
-.binder-slot .overlay-tags {
-  display: none !important;
-}
-
+/* 3x3 미니 슬롯 카드: 심플 필드 모드 정합성 유지 */
 .binder-slot .overlay-attack-group,
 .binder-slot .overlay-defense-group {
   gap: 2px !important;
@@ -3539,16 +3641,18 @@ body {
   border-radius: 6px;
 }
 
-/* 슬리브 하단 번호 & 상태 배지 라인 */
+/* 슬리브 하단 번호 & 상태 배지 라인 (카드 영역 최대화를 위한 초슬림 바) */
 .pocket-bottom-bar {
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 3px 0 3px;
-  font-size: 0.62rem;
+  padding: 1px 3px 0 3px;
+  font-size: 0.58rem;
+  line-height: 1.05;
   z-index: 16;
   pointer-events: none;
+  flex-shrink: 0;
 }
 
 .slot-idx-tag {
@@ -3605,10 +3709,10 @@ body {
   background: #090e1a;
   border: 2px solid #243247;
   border-radius: 12px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85), 0 8px 24px rgba(0, 0, 0, 0.7);
   min-width: 0;
-  overflow-y: auto;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -3617,8 +3721,9 @@ body {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 8px;
-  margin-bottom: 12px;
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .dossier-eyebrow {
@@ -3666,19 +3771,31 @@ body {
 
 .dossier-main-content {
   display: flex;
-  gap: 18px;
+  flex-direction: column;
+  gap: 10px;
   flex: 1;
   min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.dossier-hero-band {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: stretch;
+  flex-shrink: 0;
 }
 
 /* 좌측 카드 쇼케이스 */
 .dossier-card-side {
-  width: 180px;
+  width: clamp(136px, 36%, 170px);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .dossier-card-preview-box {
@@ -3689,9 +3806,9 @@ body {
 }
 
 #binder-dossier-card-preview .card-composite-wrapper {
-  width: auto !important;
+  width: 100% !important;
   height: 100% !important;
-  max-width: 180px !important;
+  max-width: none !important;
   aspect-ratio: 400 / 560 !important;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9) !important;
   margin: 0 auto !important;
@@ -3752,16 +3869,15 @@ body {
   font-size: 0.85rem;
 }
 
-/* 우측 상세 정보 패널 */
+/* 우측 상세 정보 패널 (상단 히어로 밴드 내 메타 + 숙련도 + 통계 균형 배치) */
 .dossier-info-side {
-  flex: 1;
+  flex: 1 1 190px;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 8px;
-  overflow-y: auto;
-  min-width: 0;
-  scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
+  overflow: visible;
+  min-width: 190px;
 }
 
 .dossier-title-line {
@@ -3912,9 +4028,9 @@ body {
   color: #facc15;
 }
 
-/* 상세 룰 & 효과 박스 */
+/* 상세 룰 & 효과 박스 (우측 패널 하단 전체 너비 활용) */
 .dossier-desc-container {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(15, 23, 42, 0.88);
   border: 1.5px solid #334155;
   border-radius: 8px;
   padding: 10px 12px;
@@ -3922,9 +4038,8 @@ body {
   flex-direction: column;
   gap: 6px;
   flex: 1;
+  min-height: 120px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #334155 transparent;
 }
 
 .dossier-effect-header {
@@ -4964,8 +5079,8 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  width: 1280px;
-  height: 800px;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 25000;
 }
@@ -5069,16 +5184,17 @@ body {
 
 /* 14. [F1] 실시간 손맛 튜너 모달 */
 .tuner-container {
-  width: 480px;
-  background: rgba(15, 23, 42, 0.95);
+  width: min(560px, 92vw);
+  max-height: 88vh;
+  background: rgba(15, 23, 42, 0.96);
   backdrop-filter: blur(14px);
   border: 1px solid #38bdf8;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px 22px;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.3);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .tuner-header {
@@ -5087,17 +5203,63 @@ body {
   align-items: center;
   border-bottom: 1px solid #1e293b;
   padding-bottom: 10px;
+  flex-shrink: 0;
 }
 
 .tuner-header h3 {
   font-size: 1.05rem;
   color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .tuner-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+  overflow-y: auto;
+  padding-right: 6px;
+  min-height: 0;
+}
+
+.tuner-section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #38bdf8;
+  letter-spacing: 0.4px;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px dashed rgba(56, 189, 248, 0.25);
+}
+
+.tuner-section-divider:first-child {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: none;
+}
+
+.tuner-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px 14px;
+}
+
+.tuner-inline-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.tuner-inline-toggle input {
+  accent-color: #38bdf8;
 }
 
 .tuner-row {
@@ -6025,7 +6187,7 @@ body {
 
 .dossier-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
@@ -6370,12 +6532,14 @@ body {
 }
 
 .deal-preview-mini {
-  width: 90px;
-  height: 130px;
+  width: 96px;
+  height: auto;
+  aspect-ratio: 400 / 560;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  flex-shrink: 0;
 }
 
 .deal-info-wrap {
@@ -6750,33 +6914,45 @@ body {
    5. 유희왕 콘솔 스타일 가방 & 덱 편집기 (#view-checkpoint-deck-editor)
    ============================================================================ */
 .deck-editor-page-container {
-  max-width: 1240px;
+  max-width: 1480px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
   height: 100%;
+  padding: 6px 10px;
+  box-sizing: border-box;
 }
 
 .editor-header-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   background: #101522;
   border: 1px solid #222d42;
-  border-radius: 12px;
-  padding: 10px 18px;
+  border-radius: 10px;
+  padding: 7px 14px;
+  flex-shrink: 0;
+}
+
+.editor-header-bar .back-btn,
+.editor-header-bar .meter-pill,
+.editor-header-bar .meter-label,
+.editor-header-bar .meter-trunk-count {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .editor-title-group h2 {
-  font-size: 1.2rem;
+  font-size: 1.08rem;
   font-weight: 800;
   color: #f8fafc;
 }
 
 .editor-sub {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #94a3b8;
 }
 
@@ -6795,9 +6971,9 @@ body {
   background: #151e30;
   border: 2px solid #3b82f6;
   color: #93c5fd;
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 8px;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
 }
 
@@ -6824,131 +7000,145 @@ body {
   color: #cbd5e1;
 }
 
-/* 2분할 트렁크 작업창 */
-.trunk-two-pane-container {
+/* 3분할 트렁크 작업창 (좌: 인게임 동일 상세 인스펙터 / 중: 5×6 덱 / 우: 가방) */
+.trunk-three-pane-container {
   display: grid;
-  grid-template-columns: 1fr 36px 1fr;
+  grid-template-columns: clamp(205px, 21vw, 275px) minmax(0, 1.18fr) minmax(0, 1fr);
   gap: 10px;
   flex: 1;
-  min-height: 520px;
+  min-height: 0;
   overflow: hidden;
+}
+
+.editor-inspector-panel {
+  width: 100% !important;
+  height: 100%;
+  background: #0d121c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.editor-inspector-panel .inspector-card-preview-container {
+  padding: 8px !important;
+}
+
+.editor-inspector-panel #editor-inspector-card-preview .card-composite-wrapper {
+  width: min(100%, calc(38vh * 400 / 560)) !important;
+  max-width: 185px !important;
+  height: auto !important;
+  aspect-ratio: 400 / 560 !important;
+  margin: 0 auto !important;
+}
+
+.editor-inspector-panel .inspector-effect-section {
+  padding: 10px !important;
+  gap: 8px !important;
 }
 
 .trunk-pane {
   background: #0d121c;
   border: 1px solid #1e293b;
   border-radius: 12px;
-  padding: 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-height: 0;
 }
 
 .pane-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   border-bottom: 1px solid #1e293b;
-  padding-bottom: 8px;
-  margin-bottom: 10px;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .pane-title-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
+  min-width: 0;
 }
 
-.pane-icon { font-size: 1.2rem; }
+.pane-icon { font-size: 1.05rem; flex-shrink: 0; }
 
 .pane-title-wrap h3 {
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 800;
   color: #f1f5f9;
+  white-space: nowrap;
 }
 
 .pane-hint {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: #64748b;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .trunk-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: min-content;
+  align-content: start;
+  gap: 6px;
   overflow-y: auto;
   flex: 1;
-  padding-right: 4px;
+  min-height: 0;
+  padding: 2px 4px 4px 2px;
+}
+
+.trunk-cards-grid.deck-grid-5x6 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.trunk-cards-grid.bag-cards-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .trunk-card-tile {
-  background: #131926;
+  background: #090d16;
   border: 1.5px solid #233148;
-  border-radius: 8px;
-  padding: 6px;
+  border-radius: 6px;
+  padding: 0;
+  aspect-ratio: 400 / 560;
+  width: 100%;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
   position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.trunk-card-frame {
+  width: 100%;
+  height: 100%;
 }
 
 .trunk-card-tile:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.02);
   border-color: #38bdf8;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6), 0 0 10px rgba(56, 189, 248, 0.35);
+  z-index: 4;
 }
 
 .trunk-card-tile.is-deckmaster {
-  border-color: #eab308;
-  background: linear-gradient(180deg, #221a0c 0%, #131926 100%);
+  border: 2px solid #facc15;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.52), inset 0 0 8px rgba(250, 204, 21, 0.2);
   cursor: not-allowed;
-}
-
-.deckmaster-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  background: #eab308;
-  color: #000;
-  font-size: 0.6rem;
-  font-weight: 900;
-  padding: 1px 4px;
-  border-radius: 3px;
-  z-index: 2;
-}
-
-.tile-name-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #e2e8f0;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 95px;
-}
-
-.trunk-divider-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.transfer-arrow-pill {
-  background: #172033;
-  color: #38bdf8;
-  border: 1px solid #2d4168;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.1rem;
-  font-weight: 900;
 }
 
 .editor-footer-bar {
@@ -6957,8 +7147,9 @@ body {
   align-items: center;
   background: #101522;
   border: 1px solid #222d42;
-  border-radius: 12px;
-  padding: 10px 18px;
+  border-radius: 10px;
+  padding: 7px 14px;
+  flex-shrink: 0;
 }
 
 .editor-status-notice {
@@ -7081,26 +7272,73 @@ body {
    배경·초상·아이콘 아트 (assets/asset_manifest.json)
    그림 파일이 없으면 url() 층이 비어 기존 그라디언트가 그대로 보인다.
    ========================================================================== */
-#view-title-lobby { background: linear-gradient(180deg, rgba(6, 8, 14, 0.35), rgba(6, 8, 14, 0.8)), url('assets/ui/bg_lobby.webp') center / cover no-repeat; }
-#view-fortune-teller { background: linear-gradient(180deg, rgba(10, 6, 18, 0.45), rgba(10, 6, 18, 0.85)), url('assets/ui/bg_fortune.webp') center / cover no-repeat; }
-#view-checkpoint { background: linear-gradient(180deg, rgba(8, 11, 18, 0.55), rgba(8, 11, 18, 0.88)), url('assets/ui/bg_hub.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
-#view-checkpoint-encounter { background: linear-gradient(180deg, rgba(8, 11, 18, 0.55), rgba(8, 11, 18, 0.88)), url('assets/ui/bg_encounter.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
-#view-checkpoint-shop { background: linear-gradient(180deg, rgba(14, 10, 6, 0.5), rgba(10, 8, 6, 0.88)), url('assets/ui/bg_shop.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
-#view-checkpoint-merchant { background: linear-gradient(180deg, rgba(6, 10, 8, 0.5), rgba(6, 8, 8, 0.88)), url('assets/ui/bg_merchant.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
-#view-checkpoint-deck-editor { background: linear-gradient(180deg, rgba(10, 9, 8, 0.6), rgba(8, 8, 8, 0.9)), url('assets/ui/bg_deck.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
-#view-duel-arena { background: linear-gradient(180deg, rgba(5, 7, 12, 0.35), rgba(5, 7, 12, 0.6)), url('assets/ui/bg_duel.webp') center / cover no-repeat, var(--bg-dark); }
-body[data-boss='BOSS_RED_UNSTOPPABLE_AGGRO'] #view-duel-arena { background: linear-gradient(180deg, rgba(14, 4, 4, 0.45), rgba(8, 4, 4, 0.7)), url('assets/ui/bg_boss_red.webp') center / cover no-repeat, var(--bg-dark); }
-body[data-boss='BOSS_BLUE_FORTRESS_CONTROL'] #view-duel-arena { background: linear-gradient(180deg, rgba(4, 8, 16, 0.45), rgba(4, 6, 12, 0.7)), url('assets/ui/bg_boss_blue.webp') center / cover no-repeat, var(--bg-dark); }
-body[data-boss='BOSS_PURPLE_RIGGED_FATE'] #view-duel-arena { background: linear-gradient(180deg, rgba(10, 4, 16, 0.45), rgba(8, 4, 12, 0.7)), url('assets/ui/bg_boss_purple.webp') center / cover no-repeat, var(--bg-dark); }
-body[data-view='VIEW_RUN_SUMMARY'] #view-run-summary { background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.8)), url('assets/ui/bg_defeat.webp') center / cover no-repeat; }
-body[data-view='VIEW_RUN_SUMMARY'].run-victory #view-run-summary { background: linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.75)), url('assets/ui/bg_victory.webp') center / cover no-repeat; }
+#view-title-lobby { background: radial-gradient(circle at 50% 25%, #161f38 0%, #090c14 68%, #05070b 100%); }
+#view-fortune-teller { background: radial-gradient(circle at 50% 20%, #24133e 0%, #0d0818 65%, #06040b 100%); }
+#view-checkpoint { background: radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
+#view-checkpoint-encounter { background: radial-gradient(circle at 50% 15%, #1c192b 0%, #080b12 100%); }
+#view-checkpoint-shop { background: radial-gradient(circle at 50% 15%, #1f1710 0%, #090b12 100%); }
+#view-checkpoint-merchant { background: radial-gradient(circle at 50% 15%, #111c19 0%, #07090e 100%); }
+#view-checkpoint-deck-editor { background: radial-gradient(circle at 50% 15%, #191822 0%, #08090e 100%); }
+#view-duel-arena { background: radial-gradient(circle at 50% 50%, #101729 0%, #07090f 75%, #05070a 100%); }
+body[data-boss='BOSS_RED_UNSTOPPABLE_AGGRO'] #view-duel-arena { background: radial-gradient(circle at 50% 45%, #2b0f14 0%, #0a0507 80%); }
+body[data-boss='BOSS_BLUE_FORTRESS_CONTROL'] #view-duel-arena { background: radial-gradient(circle at 50% 45%, #0c1f3a 0%, #050811 80%); }
+body[data-boss='BOSS_PURPLE_RIGGED_FATE'] #view-duel-arena { background: radial-gradient(circle at 50% 45%, #220d35 0%, #07040d 80%); }
+body[data-view='VIEW_RUN_SUMMARY'] #view-run-summary { background: radial-gradient(circle at 50% 30%, #171822 0%, #06070a 100%); }
+body[data-view='VIEW_RUN_SUMMARY'].run-victory #view-run-summary { background: radial-gradient(circle at 50% 30%, #2b2109 0%, #080705 100%); }
 
+/* 전역 유틸리티 숨김 & 타이틀바 줄바꿈 방지 */
+.is-hidden:not(.in-game-options-modal):not(.graveyard-viewer-modal):not(.timer-pause-modal) {
+  display: none !important;
+}
+.titlebar-brand,
+.titlebar-controls,
+.titlebar-action-btn,
+.titlebar-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 통일된 카드 래퍼 프레임 (400:560 정배율) */
+.shop-single-card-frame,
+.pack-result-card-frame,
+.merchant-offer-card-frame {
+  width: 170px;
+  height: auto;
+  aspect-ratio: 400 / 560;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+.trade-card-frame {
+  width: 88px;
+  height: auto;
+  aspect-ratio: 400 / 560;
+  margin: 0 auto;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.art-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
 .art-fallback-hidden { display: none !important; }
+.npc-avatar,
+.merchant-npc-icon,
+.shopkeeper-portrait,
+.pack-visual-box,
+.portal-icon,
+.tarot-back {
+  position: relative;
+}
 .npc-portrait-img { width: 100%; height: 100%; object-fit: contain; object-position: bottom center; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6)); }
-.npc-avatar:has(.npc-portrait-img) { width: 180px; height: 220px; font-size: 0; background: none; border: none; box-shadow: none; }
-.merchant-npc-icon:has(.npc-portrait-img) { width: 120px; height: 150px; flex: 0 0 120px; background: none; border: none; }
+.npc-avatar:has(.npc-portrait-img) { width: 150px; height: 185px; margin: 0 auto 10px auto; font-size: 0; background: none; border: none; box-shadow: none; }
+.merchant-npc-icon:has(.npc-portrait-img) { width: 88px; height: 100px; flex: 0 0 88px; background: none; border: none; }
 .shopkeeper-portrait { width: 64px; height: 64px; display: inline-flex; align-items: flex-end; justify-content: center; font-size: 2.2rem; margin-right: 10px; }
-.shopkeeper-portrait:has(.npc-portrait-img) { width: 120px; height: 140px; margin-top: -40px; }
+.shopkeeper-portrait:has(.npc-portrait-img) { width: 88px; height: 100px; margin-top: 0; }
 .subpage-title-group:has(.shopkeeper-portrait) { display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 4px; }
 .subpage-title-group:has(.shopkeeper-portrait) .subpage-sub { flex-basis: 100%; }
 .tarot-art { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
@@ -7111,4 +7349,752 @@ body[data-view='VIEW_RUN_SUMMARY'].run-victory #view-run-summary { background: l
 .portal-art-img { width: 44px; height: 44px; object-fit: contain; vertical-align: middle; }
 .pack-art-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55)); }
 .pack-visual-neutral { background: linear-gradient(160deg, #3f6212 0%, #1a2e05 100%); }
-.card-back-inner { background-image: url('assets/ui/card_back.webp'); background-size: cover; background-position: center; }
+.card-back-inner {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 7px;
+  overflow: hidden;
+  background-image: url('assets/ui/card_back.svg');
+  background-size: cover;
+  background-position: center;
+}
+.card-back-svg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   고도화 SVG 벡터 아이콘, 듀얼 보드 마법진 & 포일 광택 애니메이션
+   ========================================================================== */
+.vicon {
+  display: inline-block;
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.16em;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.vicon-gold { color: #facc15; filter: drop-shadow(0 0 3px rgba(250, 204, 21, 0.35)); }
+.vicon-sword, .vicon-swords { color: #f87171; }
+.vicon-shield, .vicon-bulwark { color: #60a5fa; }
+.vicon-skull { color: #cbd5e1; }
+.vicon-bag, .vicon-shop, .vicon-pack { color: #fbbf24; }
+.vicon-merchant, .vicon-crystal, .vicon-dice { color: #c084fc; }
+.vicon-crown, .vicon-spark { color: #fde047; }
+.vicon-warn { color: #f97316; }
+.vicon-check { color: #4ade80; }
+.vicon-cross { color: #f87171; }
+.vicon-keyword {
+  width: 0.95em;
+  height: 0.95em;
+  vertical-align: -0.14em;
+  margin-right: 2px;
+}
+.vicon-mood {
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.15em;
+  margin-right: 4px;
+}
+.hub-camp-icon .vicon,
+.boss-skull-icon .vicon,
+.portal-opp-avatar .vicon,
+.dossier-avatar-frame .vicon {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+}
+.mini-pack-art .vicon {
+  width: 1.15em;
+  height: 1.15em;
+  color: #f8fafc;
+}
+.portal-art-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  vertical-align: middle;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.55));
+}
+
+/* 듀얼 보드 좌/우 마법 세트 슬롯 회전 마법진 */
+.set-slot-magic {
+  width: 66px;
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.field-central-set-slot:hover .set-slot-magic {
+  opacity: 1;
+  transform: scale(1.06);
+}
+.magic-circle-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.35));
+}
+.magic-circle-right {
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.35));
+}
+.magic-circle-svg .mc-ring-outer {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mc-spin-cw 22s linear infinite;
+}
+.magic-circle-svg .mc-ring-inner {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mc-spin-ccw 14s linear infinite;
+}
+@keyframes mc-spin-cw {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes mc-spin-ccw {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+/* 타로 카드 은은한 비전 방사광 (사선 흰 띠 제거 및 자연스러운 테두리 글로우) */
+.tarot-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.08) 0%, transparent 62%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease;
+  z-index: 2;
+}
+.tarot-card:hover::after {
+  opacity: 1;
+}
+.pack-visual-box {
+  position: relative;
+  overflow: hidden;
+}
+.pack-foil-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(118deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
+  transform: translateX(-110%);
+  pointer-events: none;
+}
+.booster-pack-item:hover .pack-foil-shimmer {
+  transform: translateX(110%);
+  transition: transform 0.7s ease;
+}
+
+/* ============================================================================
+ * [레어도별 카드 비주얼 시스템 & 실시간 튜너 CSS 변수 연동]
+ * - COMMON / UNCOMMON / RARE / EPIC / LEGENDARY 각 등급별 이름 색, 일러스트 이펙트, 테두리 발광
+ * ============================================================================ */
+.card-composite-wrapper[data-rarity] {
+  transition: box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+/* 티어별 CSS 변수 매핑 */
+.card-composite-wrapper[data-rarity="COMMON"] {
+  --r-name-color: var(--rarity-common-name-color, #1a0f05);
+  --r-accent: var(--rarity-common-accent, #94a3b8);
+  --r-art-fx: var(--rarity-common-art-fx, 0);
+  --r-glow: var(--rarity-common-glow, 0);
+  --r-name-glow: var(--rarity-common-name-glow, 0);
+}
+.card-composite-wrapper[data-rarity="UNCOMMON"] {
+  --r-name-color: var(--rarity-uncommon-name-color, #0f766e);
+  --r-accent: var(--rarity-uncommon-accent, #34d399);
+  --r-art-fx: var(--rarity-uncommon-art-fx, 0.6);
+  --r-glow: var(--rarity-uncommon-glow, 0.6);
+  --r-name-glow: var(--rarity-uncommon-name-glow, 0.5);
+}
+.card-composite-wrapper[data-rarity="RARE"] {
+  --r-name-color: var(--rarity-rare-name-color, #0369a1);
+  --r-accent: var(--rarity-rare-accent, #38bdf8);
+  --r-art-fx: var(--rarity-rare-art-fx, 1.0);
+  --r-glow: var(--rarity-rare-glow, 0.9);
+  --r-name-glow: var(--rarity-rare-name-glow, 0.8);
+}
+.card-composite-wrapper[data-rarity="EPIC"] {
+  --r-name-color: var(--rarity-epic-name-color, #7e22ce);
+  --r-accent: var(--rarity-epic-accent, #c084fc);
+  --r-art-fx: var(--rarity-epic-art-fx, 1.2);
+  --r-glow: var(--rarity-epic-glow, 1.2);
+  --r-name-glow: var(--rarity-epic-name-glow, 1.1);
+}
+.card-composite-wrapper[data-rarity="LEGENDARY"] {
+  --r-name-color: var(--rarity-legendary-name-color, #d97706);
+  --r-accent: var(--rarity-legendary-accent, #fbbf24);
+  --r-art-fx: var(--rarity-legendary-art-fx, 1.4);
+  --r-glow: var(--rarity-legendary-glow, 1.5);
+  --r-name-glow: var(--rarity-legendary-name-glow, 1.4);
+}
+
+/* 효과가 꺼져 있지 않은 레어도에 한해 이름 색상 및 발광 적용 */
+.card-composite-wrapper[data-rarity]:not([data-rarity-preset="NONE"]) .overlay-name {
+  color: var(--r-name-color);
+  text-shadow:
+    0 0 2px #ffffff,
+    0 0 calc(var(--r-name-glow, 0) * 6px) var(--r-accent),
+    0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+/* 카드 외곽 오라 글로우 (레어도 프리셋 NONE/NAME_ONLY는 제외) */
+.card-composite-wrapper[data-rarity-preset="METALLIC"],
+.card-composite-wrapper[data-rarity-preset="ARCANE_SHIMMER"],
+.card-composite-wrapper[data-rarity-preset="CRYSTAL_AURORA"],
+.card-composite-wrapper[data-rarity-preset="MYTHIC_PRISM"] {
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.65),
+    0 0 calc(var(--r-glow, 0.8) * 10px) color-mix(in srgb, var(--r-accent, #38bdf8) 55%, transparent);
+}
+
+/* 일러스트 창 내부 이펙트 레이어 (.layer-1-art) */
+.layer-1-art {
+  position: relative;
+}
+
+.rarity-art-fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 4;
+  mix-blend-mode: screen;
+  overflow: hidden;
+  border-radius: inherit;
+  background-repeat: no-repeat !important;
+}
+
+/* 1. METALLIC: 은은한 금속 광택 림 + 느린 대각선 하이라이트 */
+.card-composite-wrapper[data-rarity-preset="METALLIC"] .rarity-art-fx-layer {
+  opacity: clamp(0, calc(var(--r-art-fx, 0.6) * 0.45), 0.9);
+  background-image: linear-gradient(122deg, transparent 35%, rgba(226, 232, 240, 0.42) 50%, transparent 65%);
+  background-size: 280% 280%;
+  animation: rarityMetallicSweep 4.8s ease-in-out infinite;
+  box-shadow: inset 0 0 calc(var(--r-art-fx, 0.6) * 14px) rgba(52, 211, 153, 0.35);
+}
+
+/* 2. ARCANE_SHIMMER: 비전 룬 파동 + 사파이어 쉬머 */
+.card-composite-wrapper[data-rarity-preset="ARCANE_SHIMMER"] .rarity-art-fx-layer {
+  opacity: clamp(0, calc(var(--r-art-fx, 1) * 0.65), 1);
+  background-image:
+    radial-gradient(circle at 50% 45%, rgba(56, 189, 248, 0.32) 0%, transparent 68%),
+    linear-gradient(115deg, transparent 34%, rgba(125, 211, 252, 0.5) 50%, transparent 66%);
+  background-size: 100% 100%, 300% 300%;
+  animation: rarityArcaneSweep 3.8s ease-in-out infinite;
+  box-shadow: inset 0 0 calc(var(--r-art-fx, 1) * 16px) rgba(56, 189, 248, 0.55);
+}
+
+/* 3. CRYSTAL_AURORA: 자수정 오로라 + 가변 속도 회전 성운 (타일 반복/경계 잘림 없음) */
+.card-composite-wrapper[data-rarity-preset="CRYSTAL_AURORA"] .rarity-art-fx-layer {
+  opacity: clamp(0, calc(var(--r-art-fx, 1.2) * 0.78), 1);
+  background-image:
+    radial-gradient(circle at 50% 48%, rgba(192, 132, 252, 0.28) 0%, rgba(56, 189, 248, 0.14) 50%, transparent 78%),
+    linear-gradient(128deg, transparent 36%, rgba(232, 121, 249, 0.55) 50%, transparent 64%);
+  background-size: 100% 100%, 340% 340%;
+  animation: rarityAuroraSweepTempo 4.6s cubic-bezier(0.37, 0.04, 0.63, 0.96) infinite;
+  box-shadow: inset 0 0 calc(var(--r-art-fx, 1.2) * 20px) rgba(192, 132, 252, 0.68);
+}
+
+.card-composite-wrapper[data-rarity-preset="CRYSTAL_AURORA"] .rarity-art-fx-layer::before {
+  content: "";
+  position: absolute;
+  inset: -70%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    rgba(192, 132, 252, 0.34) 0deg,
+    rgba(56, 189, 248, 0.28) 95deg,
+    rgba(244, 114, 182, 0.34) 205deg,
+    rgba(192, 132, 252, 0.34) 360deg
+  );
+  filter: blur(12px);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.95) 20%, rgba(0, 0, 0, 0.45) 45%, transparent 66%);
+  mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.95) 20%, rgba(0, 0, 0, 0.45) 45%, transparent 66%);
+  animation: rarityAuroraSpinTempo 5.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* 4. MYTHIC_PRISM: 전설 홀로그램 레인보우 프리즘 + 찬란한 황금 비네트 */
+.card-composite-wrapper[data-rarity-preset="MYTHIC_PRISM"] .rarity-art-fx-layer {
+  opacity: clamp(0, calc(var(--r-art-fx, 1.4) * 0.8), 1);
+  background-image:
+    radial-gradient(circle at 50% 42%, rgba(251, 191, 36, 0.42) 0%, transparent 68%),
+    linear-gradient(
+      115deg,
+      transparent 22%,
+      rgba(255, 80, 120, 0.36) 36%,
+      rgba(255, 220, 60, 0.45) 48%,
+      rgba(60, 240, 200, 0.38) 60%,
+      rgba(130, 140, 255, 0.36) 72%,
+      transparent 86%
+    );
+  background-size: 100% 100%, 300% 300%;
+  animation: rarityMythicPrism 3.0s ease-in-out infinite alternate;
+  box-shadow: inset 0 0 calc(var(--r-art-fx, 1.4) * 22px) rgba(251, 191, 36, 0.72);
+}
+
+@keyframes rarityMetallicSweep {
+  0%, 100% { background-position: 115% 0%; }
+  50% { background-position: -15% 100%; }
+}
+
+@keyframes rarityArcaneSweep {
+  0%, 100% { background-position: center, 115% 0%; }
+  50% { background-position: center, -15% 100%; }
+}
+
+@keyframes rarityAuroraSweepTempo {
+  0% { background-position: center, 125% -10%; filter: brightness(0.95); }
+  22% { background-position: center, 92% 18%; filter: brightness(1.04); }
+  54% { background-position: center, -18% 110%; filter: brightness(1.25); }
+  78% { background-position: center, -25% 115%; filter: brightness(1.02); }
+  100% { background-position: center, 125% -10%; filter: brightness(0.95); }
+}
+
+@keyframes rarityAuroraSpinTempo {
+  0% { transform: rotate(0deg) scale(0.96); }
+  26% { transform: rotate(42deg) scale(1.03); }
+  56% { transform: rotate(225deg) scale(1.1); }
+  84% { transform: rotate(330deg) scale(1.01); }
+  100% { transform: rotate(360deg) scale(0.96); }
+}
+
+@keyframes rarityMythicPrism {
+  0% { background-position: center, 0% 0%; filter: hue-rotate(0deg); }
+  100% { background-position: center, 100% 100%; filter: hue-rotate(48deg); }
+}
+
+/* ============================================================================
+ * [F4] 별도 분리된 레어도 비주얼 실시간 튜너 모달
+ * ============================================================================ */
+.rarity-tuner-container {
+  width: min(760px, 94vw);
+  max-height: 90vh;
+  background: rgba(11, 17, 30, 0.97);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid #f59e0b;
+  border-radius: 14px;
+  padding: 20px 24px;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.92), 0 0 36px rgba(245, 158, 11, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rarity-tuner-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rarity-tab {
+  flex: 1;
+  min-width: 110px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.85);
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.rarity-tab:hover {
+  border-color: #94a3b8;
+  color: #fff;
+}
+
+.rarity-tab.active {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.28);
+}
+
+.rarity-tuner-layout {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  gap: 18px;
+  align-items: start;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.rarity-preview-stage {
+  background: radial-gradient(circle at 50% 45%, rgba(30, 41, 59, 0.75) 0%, rgba(8, 12, 20, 0.95) 100%);
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.rarity-preview-mode-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+}
+
+.rarity-preview-mode-row .btn.active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.22);
+  color: #bae6fd;
+}
+
+.rarity-preview-card-mount {
+  width: 190px;
+  aspect-ratio: 400 / 560;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rarity-preview-caption {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.rarity-controls-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rarity-select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.rarity-swatch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rarity-swatch-row input[type="color"] {
+  width: 34px;
+  height: 28px;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: #0f172a;
+  cursor: pointer;
+  padding: 1px;
+}
+
+.swatch-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease;
+}
+
+.swatch-btn:hover {
+  transform: scale(1.14);
+  border-color: #fff;
+}
+
+/* ============================================================================
+ * [게임 내 커스텀 알림/확인 모달 (window.alert / confirm 완전 대체)]
+ * ============================================================================ */
+.app-dialog-overlay {
+  z-index: 9800 !important;
+}
+
+.app-dialog-card {
+  width: min(460px, 90vw);
+  background: radial-gradient(circle at 50% 0%, #172033 0%, #0a0f1c 100%);
+  border: 1.5px solid #38bdf8;
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.92), 0 0 32px rgba(56, 189, 248, 0.28);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: dialogPopIn 0.18s cubic-bezier(0.2, 0.85, 0.3, 1);
+}
+
+.app-dialog-card.is-danger {
+  border-color: #f87171;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.92), 0 0 32px rgba(248, 113, 113, 0.28);
+}
+
+@keyframes dialogPopIn {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.app-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.7);
+  padding-bottom: 10px;
+}
+
+.app-dialog-icon {
+  color: #38bdf8;
+  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.app-dialog-card.is-danger .app-dialog-icon {
+  color: #f87171;
+}
+
+.app-dialog-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.app-dialog-message {
+  font-size: 0.9rem;
+  line-height: 1.58;
+  color: #cbd5e1;
+  white-space: pre-line;
+}
+
+.app-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.app-dialog-footer .btn {
+  flex: 0 0 auto;
+  width: auto;
+  white-space: nowrap;
+  padding: 10px 20px;
+}
+
+/* ============================================================================
+ * [화면 전환 비전 커튼 & 씬 진입 애니메이션]
+ * ============================================================================ */
+.view-transition-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 8500;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at 50% 45%, rgba(56, 189, 248, 0.14) 0%, rgba(7, 11, 20, 0.94) 72%);
+  transition: opacity var(--view-transition-ms, 260ms) cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.view-transition-veil.is-active {
+  opacity: 1;
+}
+
+.screen.screen-entering {
+  animation: screenFadeScaleIn var(--view-transition-ms, 260ms) cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes screenFadeScaleIn {
+  from {
+    opacity: 0.15;
+    transform: scale(0.985);
+    filter: brightness(1.18);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* ============================================================================
+ * [하스스톤식 카드 사용/발동 상세 그래픽 팝업 쇼케이스]
+ * ============================================================================ */
+.card-play-showcase {
+  position: fixed;
+  left: var(--showcase-x, 17%);
+  top: var(--showcase-y, 48%);
+  transform: translate(-50%, -50%) scale(calc(var(--showcase-scale, 1.15) * 0.84));
+  opacity: 0;
+  pointer-events: none;
+  z-index: 6200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.18, 1.18, 0.32, 1);
+}
+
+.card-play-showcase.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(var(--showcase-scale, 1.15));
+}
+
+.card-play-showcase.is-exiting {
+  opacity: 0;
+  transform: translate(-50%, -54%) scale(calc(var(--showcase-scale, 1.15) * 0.92));
+}
+
+.showcase-banner-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), 0 0 12px rgba(56, 189, 248, 0.4);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.showcase-banner-pill.is-cpu {
+  border-color: #f43f5e;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), 0 0 12px rgba(244, 63, 94, 0.45);
+}
+
+.showcase-card-shell {
+  width: min(200px, 26vh);
+  height: auto;
+  aspect-ratio: 400 / 560;
+  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.92));
+}
+
+/* ============================================================================
+ * [상대 & 플레이어 유닛 소환 / 마법 발동 / 공격 연출 애니메이션]
+ * ============================================================================ */
+@keyframes summonSlamEnter {
+  0% { opacity: 0; transform: scale(1.28) translateY(-18px); filter: brightness(1.65); }
+  55% { opacity: 1; transform: scale(0.95) translateY(2px); filter: brightness(1.15); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: brightness(1); }
+}
+
+.summon-slam-enter {
+  animation: summonSlamEnter 0.36s cubic-bezier(0.2, 0.95, 0.32, 1);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+}
+
+.btn-xs {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+}
+
+/* ============================================================================
+ * [듀얼 / 런 승리 연출 황금 배너 오버레이]
+ * ============================================================================ */
+.duel-victory-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 6400;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  background: radial-gradient(circle at 50% 48%, rgba(250, 204, 21, 0.22) 0%, rgba(15, 23, 42, 0.45) 55%, transparent 80%);
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+  overflow: hidden;
+}
+
+.duel-victory-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.victory-rays {
+  position: absolute;
+  width: 900px;
+  height: 900px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(250, 204, 21, 0.18) 0deg 10deg,
+    transparent 10deg 26deg
+  );
+  -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.9) 18%, transparent 62%);
+  mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.9) 18%, transparent 62%);
+  animation: victoryRaysSpin 12s linear infinite;
+}
+
+.victory-emblem-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 26px 56px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(30, 27, 14, 0.94));
+  border: 2px solid #facc15;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 48px rgba(250, 204, 21, 0.55);
+  transform: scale(0.76);
+  transition: transform 0.36s cubic-bezier(0.18, 1.28, 0.32, 1);
+}
+
+.duel-victory-overlay.is-visible .victory-emblem-card {
+  transform: scale(1);
+}
+
+.victory-trophy-icon {
+  font-size: 2.6rem;
+  color: #facc15;
+  filter: drop-shadow(0 0 18px rgba(250, 204, 21, 0.75));
+}
+
+.victory-headline {
+  margin: 0;
+  font-family: 'Cinzel', serif;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 5px;
+  background: linear-gradient(180deg, #fffbeb 0%, #fde047 52%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.85));
+}
+
+.victory-subtext {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #fef08a;
+  letter-spacing: 0.4px;
+}
+
+@keyframes victoryRaysSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pr-body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b91c1c" />
+      <stop offset="35%" stop-color="#450a0a" />
+      <stop offset="70%" stop-color="#991b1b" />
+      <stop offset="100%" stop-color="#1a0505" />
+    </linearGradient>
+    <linearGradient id="pr-foil" x1="0%" y1="0%" x2="100%" y2="25%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.06" />
+      <stop offset="38%" stop-color="#fca5a5" stop-opacity="0.24" />
+      <stop offset="50%" stop-color="#fef08a" stop-opacity="0.32" />
+      <stop offset="65%" stop-color="#f97316" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.22" />
+    </linearGradient>
+    <linearGradient id="pr-metal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#78350f" />
+      <stop offset="28%" stop-color="#fde68a" />
+      <stop offset="52%" stop-color="#b45309" />
+      <stop offset="78%" stop-color="#fef3c7" />
+      <stop offset="100%" stop-color="#451a03" />
+    </linearGradient>
+    <linearGradient id="pr-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="35%" stop-color="#eab308" />
+      <stop offset="70%" stop-color="#92400e" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+    <pattern id="pr-crimp" width="10" height="40" patternUnits="userSpaceOnUse">
+      <rect width="5" height="40" fill="#000000" opacity="0.24" />
+      <rect x="5" width="5" height="40" fill="#ffffff" opacity="0.14" />
+    </pattern>
+    <filter id="pr-glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+  </defs>
+
+  <rect x="26" y="14" width="268" height="452" rx="8" fill="#0d0304" opacity="0.48" />
+  <path d="M 24,10 L 296,10 L 296,48 L 288,54 L 288,426 L 296,432 L 296,470 L 24,470 L 24,432 L 32,426 L 32,54 L 24,48 Z"
+        fill="url(#pr-body)" stroke="#f87171" stroke-width="1.5" />
+
+  <rect x="25" y="11" width="270" height="36" rx="2" fill="url(#pr-metal)" opacity="0.9" />
+  <rect x="25" y="11" width="270" height="36" rx="2" fill="url(#pr-crimp)" />
+  <line x1="24" y1="47" x2="296" y2="47" stroke="#fde68a" stroke-width="1.8" />
+
+  <rect x="25" y="433" width="270" height="36" rx="2" fill="url(#pr-metal)" opacity="0.9" />
+  <rect x="25" y="433" width="270" height="36" rx="2" fill="url(#pr-crimp)" />
+  <line x1="24" y1="433" x2="296" y2="433" stroke="#fde68a" stroke-width="1.8" />
+
+  <rect x="40" y="58" width="240" height="364" rx="8" fill="none" stroke="url(#pr-gold)" stroke-width="2.5" />
+  <rect x="47" y="65" width="226" height="350" rx="5" fill="none" stroke="#fca5a5" stroke-width="1" opacity="0.45" />
+  <circle cx="160" cy="235" r="88" fill="none" stroke="url(#pr-gold)" stroke-width="1.4" stroke-dasharray="10 4" opacity="0.55" />
+
+  <polygon points="100,72 220,72 206,96 114,96" fill="#280707" stroke="url(#pr-gold)" stroke-width="1.8" />
+  <polygon points="160,76 168,84 160,92 152,84" fill="#fb923c" stroke="url(#pr-gold)" stroke-width="1.2" />
+
+  <!-- 포효하는 드래곤 헤드 문장 -->
+  <g filter="url(#pr-glow)">
+    <!-- 뒤편 불꽃 링 -->
+    <polygon points="160,136 226,184 202,306 160,330 118,306 94,184"
+             fill="#280707" stroke="url(#pr-gold)" stroke-width="3.2" />
+    <!-- 뿔과 갈기 -->
+    <path d="M 134,174 L 106,136 L 146,162 Z" fill="url(#pr-gold)" />
+    <path d="M 186,174 L 214,136 L 174,162 Z" fill="url(#pr-gold)" />
+    <path d="M 118,210 L 82,192 L 114,228 Z" fill="#dc2626" stroke="url(#pr-gold)" stroke-width="1.4" />
+    <path d="M 202,210 L 238,192 L 206,228 Z" fill="#dc2626" stroke="url(#pr-gold)" stroke-width="1.4" />
+    <!-- 용 두개골 & 눈 -->
+    <polygon points="160,156 196,198 184,264 160,296 136,264 124,198"
+             fill="#b91c1c" stroke="url(#pr-gold)" stroke-width="2.6" />
+    <polygon points="160,170 180,204 160,268 140,204" fill="#7f1d1d" stroke="#fca5a5" stroke-width="1" />
+    <polygon points="136,204 152,214 140,222" fill="#fef08a" />
+    <polygon points="184,204 168,214 180,222" fill="#fef08a" />
+    <!-- 송곳니 -->
+    <polygon points="142,262 149,282 156,266" fill="#fef3c7" />
+    <polygon points="178,262 171,282 164,266" fill="#fef3c7" />
+  </g>
+
+  <polygon points="116,386 204,386 218,406 102,406" fill="#280707" stroke="url(#pr-gold)" stroke-width="1.6" />
+  <circle cx="160" cy="396" r="4.5" fill="#f97316" />
+  <circle cx="130" cy="396" r="2.5" fill="url(#pr-gold)" />
+  <circle cx="190" cy="396" r="2.5" fill="url(#pr-gold)" />
+
+  <path d="M 32,54 L 288,54 L 288,426 L 32,426 Z" fill="url(#pr-foil)" pointer-events="none" />
+  <line x1="34" y1="54" x2="34" y2="426" stroke="#ffffff" stroke-width="2" opacity="0.24" />
+</svg>

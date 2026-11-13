@@ -19,6 +19,20 @@ import { installBrowserInterferenceGuard, SafeCardPointerController } from './sr
 import { ProceduralAudioHarness } from './src/audioHarness.js';
 import { SoundBank } from './src/audio/soundBank.js';
 import { CanvasJuiceEngine } from './src/canvasJuiceEngine.js';
+import { svgIcon, keywordIcon, magicCircleSvg, hydrateVectorIcons } from './src/ui/vectorIcons.js';
+import {
+  RARITY_TIERS,
+  RARITY_LABELS_KO,
+  RARITY_PRESET_INFO,
+  loadRarityConfig,
+  saveRarityConfig,
+  cloneDefaultRarityConfig,
+  applyRarityConfigToRoot,
+  normalizeRarityKey,
+} from './src/ui/raritySystem.js';
+
+let rarityConfig = loadRarityConfig();
+applyRarityConfigToRoot(rarityConfig);
 
 // 1. 브라우저 개입 원천 차단기 (우클릭, F5, Ctrl+R, 줌 차단)
 installBrowserInterferenceGuard(window);
@@ -51,24 +65,22 @@ const runSaves = new RunSaveStore(window.localStorage);
  */
 function artImg(src, className, fallbackHtml) {
   if (!src) return fallbackHtml;
-  return `<img src="${src}" class="${className}" alt="" draggable="false" onerror="this.remove(); this.nextElementSibling && this.nextElementSibling.classList.remove('art-fallback-hidden');" onload="this.nextElementSibling && this.nextElementSibling.classList.add('art-fallback-hidden');" /><span class="art-fallback">${fallbackHtml}</span>`;
+  return `<img src="${src}" class="${className}" alt="" draggable="false" onerror="this.remove(); this.nextElementSibling && this.nextElementSibling.classList.remove('art-fallback-hidden');" onload="this.nextElementSibling && this.nextElementSibling.classList.add('art-fallback-hidden');" /><span class="art-fallback art-fallback-hidden">${fallbackHtml}</span>`;
 }
 
 const PACK_ART = {
-  PACK_BLUE: 'assets/ui/pack_blue.webp',
-  PACK_RED: 'assets/ui/pack_red.webp',
-  PACK_PURPLE: 'assets/ui/pack_purple.webp',
-  PACK_WILD: 'assets/ui/pack_neutral.webp',
-  PACK_LEGEND: 'assets/ui/pack_legend.webp',
+  PACK_BLUE: 'assets/ui/pack_blue.svg',
+  PACK_RED: 'assets/ui/pack_red.svg',
+  PACK_PURPLE: 'assets/ui/pack_purple.svg',
+  PACK_WILD: 'assets/ui/pack_neutral.svg',
+  PACK_LEGEND: 'assets/ui/pack_legend.svg',
 };
 
-/** 상점 주인·수상한 상인 초상화: 라운드마다 다른 모습이 나온다 */
-const NPC_VARIANTS = { shop: 4, merchant: 4 };
-function npcPortraitSrc(kind, round, mood = null) {
-  const n = NPC_VARIANTS[kind];
-  if (!n) return null;
-  const idx = mood != null ? mood : ((round || 1) - 1) % n;
-  return `assets/npc/${kind === 'shop' ? 'shopkeeper' : 'merchant'}_${idx + 1}.webp`;
+/** 상점 주인·수상한 상인 초상화: 내장 벡터 SVG 초상화 반환 */
+function npcPortraitSrc(kind, _round, _mood = null) {
+  if (kind === 'shop') return 'assets/ui/npc_shopkeeper.svg';
+  if (kind === 'merchant') return 'assets/ui/npc_merchant.svg';
+  return null;
 }
 
 /** index.html에 미리 넣어 둔 그림 슬롯([data-art])을 채운다 */
@@ -334,6 +346,9 @@ const VIEW_BGM = {
   VIEW_PACK_OPENING: 'BGM_SHOP',
 };
 
+let currentViewKey = null;
+let viewTransitionTimerId = null;
+
 function switchView(viewKey) {
   if (viewKey !== 'VIEW_DUEL_ARENA') {
     duelTurnTimer.stop();
@@ -345,10 +360,191 @@ function switchView(viewKey) {
   if (bgm) audio.playBgm(bgm);
   document.body.dataset.view = viewKey;
   document.body.dataset.boss = phase === 'STAGE_5_FINAL_BOSS' ? engine.state.assignedFinalBoss || '' : '';
-  Object.values(views).forEach((v) => v?.classList.remove('active'));
-  if (views[viewKey]) {
-    views[viewKey].classList.add('active');
+
+  const isActualChange = Boolean(currentViewKey && currentViewKey !== viewKey);
+  currentViewKey = viewKey;
+  const transMs = Math.max(0, Number(tunerSettings?.transitionMs ?? 260));
+  document.documentElement.style.setProperty('--view-transition-ms', `${transMs}ms`);
+
+  const veil = document.getElementById('view-transition-veil');
+  const applySwitch = () => {
+    Object.values(views).forEach((v) => v?.classList.remove('active', 'screen-entering'));
+    if (views[viewKey]) {
+      views[viewKey].classList.add('active');
+      if (isActualChange && transMs > 0) {
+        void views[viewKey].offsetWidth;
+        views[viewKey].classList.add('screen-entering');
+      }
+    }
+    if (isActualChange && viewKey === 'VIEW_DUEL_ARENA' && fxCanvas) {
+      const r = fxCanvas.getBoundingClientRect();
+      fxEngine.spawnSummonBurst(r.width * 0.5, r.height * 0.5, phase === 'STAGE_5_FINAL_BOSS' ? '#f43f5e' : '#38bdf8', 170);
+    }
+  };
+
+  if (isActualChange && transMs > 0 && veil) {
+    if (viewTransitionTimerId) clearTimeout(viewTransitionTimerId);
+    veil.classList.add('is-active');
+    applySwitch();
+    viewTransitionTimerId = setTimeout(() => {
+      veil.classList.remove('is-active');
+      viewTransitionTimerId = null;
+    }, Math.min(180, Math.round(transMs * 0.55)));
+  } else {
+    veil?.classList.remove('is-active');
+    applySwitch();
   }
+}
+
+// ============================================================================
+// 게임 내 공통 알림/확인 다이얼로그 (window.alert / window.confirm 대체)
+// ============================================================================
+let activeAppDialogResolver = null;
+
+function openAppDialog({ title = '알림', message = '', confirmText = '확인', cancelText = null, icon = 'bulb', danger = false }) {
+  const modal = document.getElementById('modal-app-dialog');
+  const card = modal?.querySelector('.app-dialog-card');
+  const titleEl = document.getElementById('app-dialog-title');
+  const msgEl = document.getElementById('app-dialog-message');
+  const iconEl = document.getElementById('app-dialog-icon');
+  const okBtn = document.getElementById('btn-app-dialog-ok');
+  const cancelBtn = document.getElementById('btn-app-dialog-cancel');
+  const closeBtn = document.getElementById('btn-app-dialog-close');
+
+  if (!modal || !okBtn) return Promise.resolve(false);
+
+  if (activeAppDialogResolver) {
+    activeAppDialogResolver(false);
+    activeAppDialogResolver = null;
+  }
+
+  if (titleEl) titleEl.textContent = title;
+  if (msgEl) msgEl.textContent = message;
+  if (iconEl) iconEl.innerHTML = svgIcon(icon);
+  if (card) card.classList.toggle('is-danger', Boolean(danger));
+  okBtn.textContent = confirmText;
+  okBtn.className = danger ? 'btn btn-abandon-danger' : 'btn primary-btn';
+
+  if (cancelBtn) {
+    if (cancelText) {
+      cancelBtn.textContent = cancelText;
+      cancelBtn.style.display = '';
+    } else {
+      cancelBtn.style.display = 'none';
+    }
+  }
+
+  modal.classList.add('active');
+  okBtn.focus();
+
+  return new Promise((resolve) => {
+    const finish = (val) => {
+      modal.classList.remove('active');
+      okBtn.onclick = null;
+      if (cancelBtn) cancelBtn.onclick = null;
+      if (closeBtn) closeBtn.onclick = null;
+      modal.onclick = null;
+      document.removeEventListener('keydown', onKeyDown);
+      activeAppDialogResolver = null;
+      resolve(val);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        finish(false);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        finish(true);
+      }
+    };
+
+    activeAppDialogResolver = finish;
+    okBtn.onclick = () => {
+      audio.playCardPickup();
+      finish(true);
+    };
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        audio.playLightTap();
+        finish(false);
+      };
+    }
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        audio.playLightTap();
+        finish(false);
+      };
+    }
+    modal.onclick = (e) => {
+      if (e.target === modal) {
+        finish(false);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+  });
+}
+
+function showGameAlert(message, { title = '안내', icon = 'warn', danger = false } = {}) {
+  return openAppDialog({ title, message, confirmText: '확인', cancelText: null, icon, danger });
+}
+
+function showGameConfirm(message, { title = '확인', confirmText = '확인', cancelText = '취소', icon = 'warn', danger = false } = {}) {
+  return openAppDialog({ title, message, confirmText, cancelText, icon, danger });
+}
+
+// ============================================================================
+// 하스스톤식 카드 사용/발동 상세 그래픽 팝업 쇼케이스
+// ============================================================================
+let cardShowcaseFadeTimer = null;
+let cardShowcaseClearTimer = null;
+
+function applyShowcaseTunerVars() {
+  const root = document.documentElement.style;
+  root.setProperty('--showcase-x', `${tunerSettings?.showcaseX ?? 17}%`);
+  root.setProperty('--showcase-y', `${tunerSettings?.showcaseY ?? 48}%`);
+  root.setProperty('--showcase-scale', `${tunerSettings?.showcaseScale ?? 1.15}`);
+}
+
+function showCardPlayShowcase(cardOrDef, { actorLabel = '카드 발동', isCpu = false, atk = null, def = null } = {}) {
+  if (!cardOrDef || tunerSettings?.showcaseEnabled === false) return;
+  const host = document.getElementById('card-play-showcase');
+  if (!host) return;
+
+  const cardDef = cardOrDef.cardId ? lookupCardDef(cardOrDef.cardId) || cardOrDef : cardOrDef;
+  if (!cardDef) return;
+
+  if (cardShowcaseFadeTimer) clearTimeout(cardShowcaseFadeTimer);
+  if (cardShowcaseClearTimer) clearTimeout(cardShowcaseClearTimer);
+
+  applyShowcaseTunerVars();
+
+  const resolvedAtk = atk ?? cardOrDef.currentAttack ?? cardDef.attack ?? 0;
+  const resolvedDef = def ?? cardOrDef.currentDefense ?? cardDef.defense ?? cardDef.health ?? 0;
+  const iconName = cardDef.type === 'SPELL' ? 'spell' : 'swords';
+
+  host.innerHTML = `
+    <div class="showcase-banner-pill ${isCpu ? 'is-cpu' : ''}">
+      ${svgIcon(iconName)} <span>${actorLabel}</span>
+    </div>
+    <div class="showcase-card-shell">
+      ${generateCompositeCardHtml(cardDef, resolvedAtk, resolvedDef, 1.0, false)}
+    </div>
+  `;
+
+  host.classList.remove('is-exiting', 'is-visible');
+  void host.offsetWidth;
+  host.classList.add('is-visible');
+
+  const duration = Math.max(400, Number(tunerSettings?.showcaseDurationMs ?? 1500));
+  cardShowcaseFadeTimer = setTimeout(() => {
+    host.classList.add('is-exiting');
+    host.classList.remove('is-visible');
+    cardShowcaseClearTimer = setTimeout(() => {
+      host.classList.remove('is-exiting');
+      host.innerHTML = '';
+    }, 260);
+  }, duration);
 }
 
 // ============================================================================
@@ -360,24 +556,29 @@ document.getElementById('btn-return-main-menu')?.addEventListener('click', () =>
   engine.state = engine.createEmptyRunState('RUN_INIT', Date.now());
   switchView('VIEW_TITLE_LOBBY');
 });
+function getTauriWindow() {
+  const winMod = window.__TAURI__?.window;
+  if (!winMod) return null;
+  if (typeof winMod.getCurrentWindow === 'function') return winMod.getCurrentWindow();
+  if (typeof winMod.getCurrent === 'function') return winMod.getCurrent();
+  return null;
+}
+
 document.getElementById('btn-win-close')?.addEventListener('click', () => {
-  if (window.__TAURI__?.window) {
-    window.__TAURI__.window.getCurrent().close();
+  const tauriWin = getTauriWindow();
+  if (tauriWin) {
+    tauriWin.close();
   } else {
     window.close();
   }
 });
 
 document.getElementById('btn-win-minimize')?.addEventListener('click', () => {
-  if (window.__TAURI__?.window) {
-    window.__TAURI__.window.getCurrent().minimize();
-  }
+  getTauriWindow()?.minimize();
 });
 
 document.getElementById('btn-win-maximize')?.addEventListener('click', () => {
-  if (window.__TAURI__?.window) {
-    window.__TAURI__.window.getCurrent().toggleMaximize();
-  }
+  getTauriWindow()?.toggleMaximize();
 });
 
 // 전역 바인더 토글 버튼
@@ -391,15 +592,21 @@ document.getElementById('btn-close-binder')?.addEventListener('click', () => {
 // ============================================================================
 // 1. VIEW_TITLE_LOBBY
 // ============================================================================
-document.getElementById('btn-start-run')?.addEventListener('click', () => {
-  if (runSaves.hasSave() && !confirm('이어서 할 수 있는 런이 있습니다. 새로 시작하면 저장된 진행 상황이 사라집니다. 계속할까요?')) return;
+document.getElementById('btn-start-run')?.addEventListener('click', async () => {
+  if (runSaves.hasSave()) {
+    const ok = await showGameConfirm(
+      '이어서 할 수 있는 런이 있습니다.\n새로 시작하면 저장된 진행 상황이 사라집니다. 계속할까요?',
+      { title: '새 런 시작 확인', confirmText: '새로 시작', cancelText: '유지하기', icon: 'warn', danger: true }
+    );
+    if (!ok) return;
+  }
   runSaves.clear();
   audio.playCardPickup();
   engine.startNewRun(`RUN_${Date.now()}`, Date.now());
   switchView('VIEW_FORTUNE_TELLER');
 });
 
-document.getElementById('btn-continue-run')?.addEventListener('click', () => {
+document.getElementById('btn-continue-run')?.addEventListener('click', async () => {
   const saved = runSaves.load();
   if (!saved) {
     refreshContinueButton();
@@ -411,7 +618,7 @@ document.getElementById('btn-continue-run')?.addEventListener('click', () => {
     syncRunPhaseView();
   } catch (err) {
     console.error('[Continue Error]', err);
-    alert('저장된 진행 상황을 불러오지 못했습니다. 새 런을 시작해 주세요.');
+    await showGameAlert('저장된 진행 상황을 불러오지 못했습니다. 새 런을 시작해 주세요.', { title: '불러오기 실패', danger: true });
     runSaves.clear();
     refreshContinueButton();
   }
@@ -438,11 +645,11 @@ const logDrawerLabel = document.getElementById('log-drawer-label');
 function updateLogToggleUI() {
   const isCollapsed = combatLogDrawer?.classList.contains('is-collapsed');
   if (isCollapsed) {
-    if (logDrawerIcon) logDrawerIcon.textContent = '📜';
+    if (logDrawerIcon) logDrawerIcon.innerHTML = svgIcon('scroll');
     if (logDrawerLabel) logDrawerLabel.textContent = '전투 로그';
     btnToggleLogDrawer?.classList.remove('active');
   } else {
-    if (logDrawerIcon) logDrawerIcon.textContent = '✕';
+    if (logDrawerIcon) logDrawerIcon.innerHTML = svgIcon('cross');
     if (logDrawerLabel) logDrawerLabel.textContent = '로그 닫기';
     btnToggleLogDrawer?.classList.add('active');
   }
@@ -526,6 +733,10 @@ document.getElementById('btn-opt-tuner')?.addEventListener('click', () => {
   toggleInGameOptions(false);
   toggleTunerModal();
 });
+document.getElementById('btn-opt-rarity-tuner')?.addEventListener('click', () => {
+  toggleInGameOptions(false);
+  toggleRarityTunerModal();
+});
 document.getElementById('btn-opt-playground')?.addEventListener('click', () => {
   toggleInGameOptions(false);
   const btn = document.getElementById('btn-toggle-playground');
@@ -567,13 +778,13 @@ function openGraveyardViewer(seatIndex) {
 
   const isPlayer = seatIndex === 0;
   const gy = seat.graveyard || [];
-  titleEl.innerHTML = `💀 ${isPlayer ? '플레이어' : '상대'} 묘지 <span class="gy-count-tag">(총 ${gy.length}장 / 최신순)</span>`;
+  titleEl.innerHTML = `${svgIcon('skull')} ${isPlayer ? '플레이어' : '상대'} 묘지 <span class="gy-count-tag">(총 ${gy.length}장 / 최신순)</span>`;
 
   container.innerHTML = '';
   if (gy.length === 0) {
     container.innerHTML = `
       <div class="empty-gy-notice">
-        <span class="empty-gy-icon">🪦</span>
+        <span class="empty-gy-icon">${svgIcon('tombstone')}</span>
         <p>묘지에 파괴되거나 소모된 카드가 없습니다.</p>
       </div>
     `;
@@ -595,7 +806,7 @@ function openGraveyardViewer(seatIndex) {
       cardRow.innerHTML = `
         <div class="gy-card-badge">#${orderNum} ${idx === 0 ? '<span class="latest-tag">최신</span>' : ''}</div>
         <div class="gy-card-mini-preview">
-          ${generateCompositeCardHtml(def, atk, defStat, 0.42)}
+          ${generateCompositeCardHtml(def, atk, defStat, 0.38, true)}
         </div>
         <div class="gy-card-info">
           <div class="gy-card-name-line">
@@ -686,6 +897,172 @@ document.querySelectorAll('.tarot-card').forEach((cardEl) => {
 // ============================================================================
 let isCpuTurnScheduled = false;
 
+function toCanvasLocalRect(domRect) {
+  const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0 };
+  return {
+    left: domRect.left - cRect.left,
+    top: domRect.top - cRect.top,
+    width: domRect.width,
+    height: domRect.height,
+  };
+}
+
+function captureBoardRects(boardSelector) {
+  const map = new Map();
+  document.querySelectorAll(`${boardSelector} .unit-field-card[data-instance-id]`).forEach((el) => {
+    map.set(el.getAttribute('data-instance-id'), el.getBoundingClientRect());
+  });
+  return map;
+}
+
+function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, prePlayerMetaRect, preCpuIds, prePlayerIds, preLastSpell, act, liveDuel }) {
+  const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0, width: 1280, height: 800 };
+  const playerGyEl = document.getElementById('player-graveyard');
+  const cpuGyEl = document.getElementById('cpu-graveyard');
+  const pGyRect = playerGyEl ? toCanvasLocalRect(playerGyEl.getBoundingClientRect()) : { left: 100, top: 650, width: 70, height: 90 };
+  const cGyRect = cpuGyEl ? toCanvasLocalRect(cpuGyEl.getBoundingClientRect()) : { left: 1100, top: 100, width: 70, height: 90 };
+
+  // 1. 새로 격발된 세트 마법 / 함정 쇼케이스
+  if (liveDuel?.lastSpellTriggerResult && liveDuel.lastSpellTriggerResult !== preLastSpell) {
+    const trig = liveDuel.lastSpellTriggerResult;
+    const trigDef = lookupCardDef(trig.cardId);
+    if (trigDef) {
+      showCardPlayShowcase(trigDef, {
+        actorLabel: trig.fizzled ? `마법 불발 (${trigDef.name})` : (trig.ownerSeat === 1 ? '상대 세트 마법 발동!' : '내 함정/마법 발동!'),
+        isCpu: trig.ownerSeat === 1,
+      });
+    }
+  }
+
+  // 2. 사라진 플레이어 유닛 파괴 파편 & 영혼 궤적
+  const postPlayerIds = new Set((liveDuel?.seats?.[0]?.board || []).map((u) => u.instanceId));
+  prePlayerIds.forEach((id) => {
+    if (!postPlayerIds.has(id)) {
+      const deadRect = prePlayerRects.get(id);
+      if (deadRect) {
+        const localR = toCanvasLocalRect(deadRect);
+        fxEngine.spawnCardShatter(localR, tunerSettings.shatterShards);
+        fxEngine.spawnSoulWisp(localR, pGyRect, () => {});
+        audio.playCardShatter();
+      }
+    }
+  });
+
+  if (!act) return;
+
+  if (act.type === 'PLAY_CARD') {
+    const cpuSeat = liveDuel?.seats?.[1];
+    const summonedUnit = (cpuSeat?.board || []).find((u) => !preCpuIds.has(u.instanceId));
+    if (summonedUnit) {
+      audio.playCardPlayImpact();
+      const unitEl = document.querySelector(`#cpu-board .unit-field-card[data-instance-id="${summonedUnit.instanceId}"]`);
+      if (unitEl) {
+        unitEl.classList.add('summon-slam-enter');
+        const ur = unitEl.getBoundingClientRect();
+        fxEngine.spawnSummonBurst(ur.left - cRect.left + ur.width / 2, ur.top - cRect.top + ur.height / 2, '#f43f5e', 105);
+      }
+      showCardPlayShowcase(summonedUnit, {
+        actorLabel: '상대 몬스터 소환',
+        isCpu: true,
+        atk: summonedUnit.currentAttack,
+        def: summonedUnit.currentDefense,
+      });
+    } else {
+      const castCard = [...(cpuSeat?.graveyard || [])].reverse().find((c) => c.instanceId === act.cardInstanceId)
+        || (cpuSeat?.graveyard || [])[cpuSeat.graveyard.length - 1];
+      const spellDef = castCard ? lookupCardDef(castCard.cardId) : null;
+      audio.playCardPlayImpact();
+      const arenaEl = document.getElementById('arena-field');
+      const ar = arenaEl ? arenaEl.getBoundingClientRect() : cRect;
+      const sx = ar.left - cRect.left + ar.width / 2;
+      const sy = ar.top - cRect.top + ar.height * 0.42;
+      fxEngine.spawnSummonBurst(sx, sy, '#c084fc', 135);
+      fxEngine.triggerScreenShake(7);
+      if (spellDef) {
+        showCardPlayShowcase(spellDef, { actorLabel: '상대 마법 발동', isCpu: true });
+      }
+    }
+  } else if (act.type === 'SET_SPELL') {
+    audio.playCardPickup();
+    const slotEl = act.slotType === 'FIELD_RIGHT'
+      ? document.getElementById('field-set-right')
+      : act.slotType === 'FIELD_LEFT'
+        ? document.getElementById('field-set-left')
+        : document.querySelector('#cpu-board .unit-field-card') || document.getElementById('cpu-board');
+    if (slotEl) {
+      const sr = slotEl.getBoundingClientRect();
+      fxEngine.spawnSummonBurst(sr.left - cRect.left + sr.width / 2, sr.top - cRect.top + sr.height / 2, '#818cf8', 68);
+    }
+  } else if (act.type === 'ATTACK') {
+    const res = engine.lastAttackResult;
+    if (!res) return;
+    const atkPower = res.attackerAttack || 6;
+    const isHeroHit = res.targetType === 'HERO' || !res.targetInstanceId;
+    const rawTargetRect = isHeroHit
+      ? prePlayerMetaRect
+      : (prePlayerRects.get(res.targetInstanceId) || prePlayerMetaRect);
+    if (!rawTargetRect) return;
+
+    const tx = rawTargetRect.left - cRect.left + rawTargetRect.width / 2;
+    const ty = rawTargetRect.top - cRect.top + rawTargetRect.height / 2;
+
+    const atkEl = document.querySelector(`#cpu-board .unit-field-card[data-instance-id="${res.attackerInstanceId}"]`);
+    if (atkEl) {
+      atkEl.classList.add('summon-slam-enter');
+    }
+
+    fxEngine.triggerHitstop(tunerSettings.hitstopMs || 50);
+    fxEngine.triggerScreenShake(Math.min(25, 4 + atkPower * 1.25));
+
+    if (isHeroHit) {
+      audio.playPlayerImpact(atkPower);
+      fxEngine.spawnShockwave(tx, ty, 220, '#f43f5e');
+      fxEngine.spawnImpactStarburst(tx, ty, 58, '#f43f5e');
+      fxEngine.spawnPlayerDustPuff(tx, ty, rawTargetRect.width, rawTargetRect.height, 42);
+      fxEngine.showFloatingText(tx, ty - 26, `-${res.damageDealt}`, '#ef4444', 32);
+    } else {
+      audio.playDamageHit();
+      fxEngine.spawnShockwave(tx, ty, Math.min(130, 45 + atkPower * 3.5), '#f43f5e');
+      fxEngine.spawnImpactStarburst(tx, ty, Math.min(45, 16 + atkPower * 2), atkPower > 10 ? '#f59e0b' : '#f43f5e');
+      fxEngine.showFloatingText(tx, ty - 24, `-${res.damageDealt}`, '#ef4444', 28);
+      const targetNowEl = document.querySelector(`#player-board .unit-field-card[data-instance-id="${res.targetInstanceId}"]`);
+      if (targetNowEl) {
+        targetNowEl.classList.add('slam-hit-target');
+        setTimeout(() => targetNowEl.classList.remove('slam-hit-target'), 320);
+      }
+    }
+
+    if (res.attackerDied) {
+      const deadCpuRect = preCpuRects.get(res.attackerInstanceId);
+      if (deadCpuRect) {
+        const localCpu = toCanvasLocalRect(deadCpuRect);
+        fxEngine.spawnCardShatter(localCpu, tunerSettings.shatterShards);
+        fxEngine.spawnSoulWisp(localCpu, cGyRect, () => {});
+        audio.playCardShatter();
+      }
+    }
+
+    if (res.recoilDamage > 0) {
+      const cpuMetaEl = document.getElementById('cpu-meta') || document.getElementById('cpu-seat');
+      if (cpuMetaEl) {
+        const mr = cpuMetaEl.getBoundingClientRect();
+        const mx = mr.left - cRect.left + mr.width / 2;
+        const my = mr.top - cRect.top + mr.height / 2;
+        audio.playPlayerImpact(res.recoilDamage);
+        fxEngine.spawnShockwave(mx, my, 160, '#f97316');
+        fxEngine.showFloatingText(mx, my + 24, `반사 -${res.recoilDamage}`, '#f97316', 26);
+      }
+    }
+
+    if (res.pierceDamage > 0 && prePlayerMetaRect) {
+      audio.playPiercingBolt();
+      fxEngine.spawnPiercingBolt(toCanvasLocalRect(rawTargetRect), toCanvasLocalRect(prePlayerMetaRect), res.pierceDamage, () => {
+        audio.playPlayerImpact(res.pierceDamage);
+      });
+    }
+  }
+}
+
 function scheduleCpuTurnIfNeeded(snap) {
   const duel = snap?.activeDuel;
   if (!duel || duel.status !== 'ONGOING' || duel.activeSeat !== 1) {
@@ -694,53 +1071,48 @@ function scheduleCpuTurnIfNeeded(snap) {
   if (isCpuTurnScheduled) return;
   isCpuTurnScheduled = true;
 
-  // 상대는 한 수씩 둔다: 행동 하나 → 화면 갱신 → 잠시 대기 → 다음 행동
+  const cpuTempo = Math.max(0.4, Number(tunerSettings?.cpuTempo ?? 1.0));
+
+  // 상대는 한 수씩 둔다: 사전 좌표 캡처 → 행동 실행 → 화면 갱신 → 상대 이펙트 & 쇼케이스 재생
   const step = () => {
+    const preDuel = engine.getSnapshot().activeDuel;
+    const preCpuRects = captureBoardRects('#cpu-board');
+    const prePlayerRects = captureBoardRects('#player-board');
+    const prePlayerMetaEl = document.getElementById('player-meta') || document.getElementById('player-seat');
+    const prePlayerMetaRect = prePlayerMetaEl ? prePlayerMetaEl.getBoundingClientRect() : null;
+    const preCpuIds = new Set((preDuel?.seats?.[1]?.board || []).map((u) => u.instanceId));
+    const prePlayerIds = new Set((preDuel?.seats?.[0]?.board || []).map((u) => u.instanceId));
+    const preLastSpell = preDuel?.lastSpellTriggerResult || null;
+
     let result = { done: true };
     try {
       result = engine.executeCpuStep();
     } catch (e) {
       console.error('[CPU Turn Error]', e);
     }
-    if (result.moodShift) showCpuMoodBubble(result.moodShift);
+
     syncRunPhaseView();
-    const live = engine.getSnapshot().activeDuel;
-    if (!result.done && live && live.status === 'ONGOING' && live.activeSeat === 1) {
-      const delay = result.action?.type === 'ATTACK' ? 900 : 650;
-      setTimeout(step, delay);
+    const liveDuel = engine.getSnapshot().activeDuel;
+    playCpuStepVisualEffects({
+      preCpuRects,
+      prePlayerRects,
+      prePlayerMetaRect,
+      preCpuIds,
+      prePlayerIds,
+      preLastSpell,
+      act: result.action,
+      liveDuel,
+    });
+
+    if (!result.done && liveDuel && liveDuel.status === 'ONGOING' && liveDuel.activeSeat === 1) {
+      const baseDelay = result.action?.type === 'ATTACK' ? 980 : 760;
+      setTimeout(step, Math.round(baseDelay / cpuTempo));
     } else {
       isCpuTurnScheduled = false;
       syncRunPhaseView();
     }
   };
-  setTimeout(step, 750);
-}
-
-/** 상대 성향 변화 말풍선 */
-function showCpuMoodBubble(shift) {
-  const bubble = document.getElementById('cpu-mood-bubble');
-  if (!bubble) return;
-  bubble.innerHTML = `<span class="mood-bubble-tag mood-${shift.to}">${t(`mood.${shift.to}.name`)}</span> “${shift.line}”`;
-  bubble.classList.remove('is-visible');
-  void bubble.offsetWidth;
-  bubble.classList.add('is-visible');
-  clearTimeout(showCpuMoodBubble.timer);
-  showCpuMoodBubble.timer = setTimeout(() => bubble.classList.remove('is-visible'), 3600);
-  audio.playMoodShift();
-}
-
-/** 상대 성향 배지 갱신 */
-function renderCpuMoodBadge() {
-  const badge = document.getElementById('cpu-mood-badge');
-  if (!badge) return;
-  const mood = engine.getCpuMood();
-  if (!mood) {
-    badge.textContent = '';
-    return;
-  }
-  badge.className = `cpu-mood-badge mood-${mood.id}`;
-  badge.textContent = `성향: ${mood.name}`;
-  badge.title = mood.desc;
+  setTimeout(step, Math.round(750 / cpuTempo));
 }
 
 // 듀얼 이벤트(효과 발동·파괴·피해 등)를 전투 로그로 옮긴다
@@ -753,7 +1125,6 @@ const EVENT_LOG_CATEGORY = {
   trigger: 'spell',
   fizzle: 'spell',
   set: 'spell',
-  mood: 'turn',
 };
 const COMBAT_KINDS = new Set(['attack', 'destroy', 'damage']);
 function flushDuelEventsToLog(duel, { skipCombat = false } = {}) {
@@ -764,14 +1135,42 @@ function flushDuelEventsToLog(duel, { skipCombat = false } = {}) {
   }
   for (let i = lastEventIndex; i < duel.events.length; i++) {
     const ev = duel.events[i];
+    if (ev.kind === 'mood') continue;
     if (skipCombat && COMBAT_KINDS.has(ev.kind)) continue;
     appendCombatLog(EVENT_LOG_CATEGORY[ev.kind] || 'system', t(ev.key, ev.params));
   }
   lastEventIndex = duel.events.length;
 }
 
+let previousUiRunPhase = null;
+let duelVictoryOverlayTimer = null;
+const DUEL_COMBAT_PHASES = new Set(['DUEL_ENCOUNTER', 'STAGE_1_DUEL_1', 'STAGE_3_DUEL_2', 'STAGE_5_FINAL_BOSS']);
+
+function triggerDuelVictoryFX(headline = 'VICTORY!', subtext = '결투에서 승리했습니다') {
+  audio.playVictoryJingle();
+  const rect = fxCanvas ? fxCanvas.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
+  fxEngine.spawnVictoryCelebration((rect.width || window.innerWidth) * 0.5, (rect.height || window.innerHeight) * 0.44);
+
+  const overlay = document.getElementById('duel-victory-overlay');
+  const titleEl = document.getElementById('duel-victory-title');
+  const subEl = document.getElementById('duel-victory-sub');
+  if (overlay) {
+    if (titleEl) titleEl.textContent = headline;
+    if (subEl) subEl.textContent = subtext;
+    overlay.classList.remove('is-visible');
+    void overlay.offsetWidth;
+    overlay.classList.add('is-visible');
+    if (duelVictoryOverlayTimer) clearTimeout(duelVictoryOverlayTimer);
+    duelVictoryOverlayTimer = setTimeout(() => {
+      overlay.classList.remove('is-visible');
+    }, 1550);
+  }
+}
+
 function syncRunPhaseView() {
   const snap = engine.getSnapshot();
+  const wasDuelPhase = DUEL_COMBAT_PHASES.has(previousUiRunPhase);
+  previousUiRunPhase = snap.phase;
   scheduleRunSave();
 
   switch (snap.phase) {
@@ -782,6 +1181,9 @@ function syncRunPhaseView() {
     case 'STAGE_CHECKPOINT':
       switchView('VIEW_CHECKPOINT');
       renderCheckpointView(snap);
+      if (wasDuelPhase) {
+        triggerDuelVictoryFX('VICTORY!', `인카운터 승리 · 라운드 ${snap.checkpointRound || 1} 도달`);
+      }
       break;
 
     case 'DUEL_ENCOUNTER':
@@ -796,6 +1198,9 @@ function syncRunPhaseView() {
     case 'STAGE_2_REWARD_PACK':
       switchView('VIEW_PACK_OPENING');
       renderPackOpening(snap);
+      if (wasDuelPhase) {
+        triggerDuelVictoryFX('VICTORY!', '결투 승리 보상 획득!');
+      }
       break;
 
     case 'STAGE_4_MERCHANT_EVENT':
@@ -804,9 +1209,9 @@ function syncRunPhaseView() {
       break;
 
     case 'RUN_VICTORY':
-      audio.playVictoryJingle();
       switchView('VIEW_RUN_SUMMARY');
       renderRunSummary(snap, true);
+      triggerDuelVictoryFX('CHAMPION VICTORY!', '최종 보스를 격파하고 런을 완주했습니다!');
       break;
 
     case 'RUN_FAILED':
@@ -831,6 +1236,14 @@ const defaultTunerSettings = {
   shatterShards: 18,
   pierceSpeed: 1.0,
   hitstopMs: 50,
+  transitionMs: 260,
+  ambientFxMult: 1.0,
+  cpuTempo: 1.0,
+  showcaseEnabled: true,
+  showcaseX: 17,
+  showcaseY: 48,
+  showcaseDurationMs: 1500,
+  showcaseScale: 1.15,
 };
 
 let tunerSettings = { ...defaultTunerSettings };
@@ -842,32 +1255,54 @@ try {
 } catch (e) {}
 
 fxEngine.updateTuner(tunerSettings);
+applyShowcaseTunerVars();
+document.documentElement.style.setProperty('--view-transition-ms', `${tunerSettings.transitionMs ?? 260}ms`);
 
 const overlayLiveTuner = document.getElementById('overlay-live-tuner');
 
 function syncTunerInputs() {
-  const sliderShake = document.getElementById('slider-shake');
-  const sliderSlam = document.getElementById('slider-slam-speed');
-  const sliderInertia = document.getElementById('slider-inertia');
-  const sliderShards = document.getElementById('slider-shards');
-  const sliderPierce = document.getElementById('slider-pierce-speed');
-  const sliderHitstop = document.getElementById('slider-hitstop');
+  const setSlider = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  };
+  const setText = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
 
-  if (sliderShake) sliderShake.value = tunerSettings.shakeMult;
-  if (sliderSlam) sliderSlam.value = tunerSettings.slamSpeed;
-  if (sliderInertia) sliderInertia.value = tunerSettings.inertiaMult;
-  if (sliderShards) sliderShards.value = tunerSettings.shatterShards;
-  if (sliderPierce) sliderPierce.value = tunerSettings.pierceSpeed;
-  if (sliderHitstop) sliderHitstop.value = tunerSettings.hitstopMs;
+  setSlider('slider-shake', tunerSettings.shakeMult);
+  setSlider('slider-slam-speed', tunerSettings.slamSpeed);
+  setSlider('slider-inertia', tunerSettings.inertiaMult);
+  setSlider('slider-shards', tunerSettings.shatterShards);
+  setSlider('slider-pierce-speed', tunerSettings.pierceSpeed);
+  setSlider('slider-hitstop', tunerSettings.hitstopMs);
+  setSlider('slider-transition-ms', tunerSettings.transitionMs);
+  setSlider('slider-ambient-fx', tunerSettings.ambientFxMult);
+  setSlider('slider-cpu-tempo', tunerSettings.cpuTempo);
+  setSlider('slider-showcase-x', tunerSettings.showcaseX);
+  setSlider('slider-showcase-y', tunerSettings.showcaseY);
+  setSlider('slider-showcase-ms', tunerSettings.showcaseDurationMs);
+  setSlider('slider-showcase-scale', tunerSettings.showcaseScale);
 
-  document.getElementById('val-shake').textContent = `${tunerSettings.shakeMult}x`;
-  document.getElementById('val-slam-speed').textContent = `${tunerSettings.slamSpeed}x`;
-  document.getElementById('val-inertia').textContent = `${tunerSettings.inertiaMult}x`;
-  document.getElementById('val-shards').textContent = `${tunerSettings.shatterShards}개`;
-  document.getElementById('val-pierce-speed').textContent = `${tunerSettings.pierceSpeed}x`;
-  const valHitstop = document.getElementById('val-hitstop');
-  if (valHitstop) valHitstop.textContent = `${tunerSettings.hitstopMs}ms`;
+  const checkShowcase = document.getElementById('check-showcase-enabled');
+  if (checkShowcase) checkShowcase.checked = tunerSettings.showcaseEnabled !== false;
 
+  setText('val-shake', `${Number(tunerSettings.shakeMult).toFixed(1)}x`);
+  setText('val-slam-speed', `${Number(tunerSettings.slamSpeed).toFixed(1)}x`);
+  setText('val-inertia', `${Number(tunerSettings.inertiaMult).toFixed(1)}x`);
+  setText('val-shards', `${tunerSettings.shatterShards}개`);
+  setText('val-pierce-speed', `${Number(tunerSettings.pierceSpeed).toFixed(1)}x`);
+  setText('val-hitstop', `${tunerSettings.hitstopMs}ms`);
+  setText('val-transition-ms', `${tunerSettings.transitionMs}ms`);
+  setText('val-ambient-fx', `${Number(tunerSettings.ambientFxMult).toFixed(1)}x`);
+  setText('val-cpu-tempo', `${Number(tunerSettings.cpuTempo).toFixed(1)}x`);
+  setText('val-showcase-x', `${tunerSettings.showcaseX}%`);
+  setText('val-showcase-y', `${tunerSettings.showcaseY}%`);
+  setText('val-showcase-ms', `${tunerSettings.showcaseDurationMs}ms`);
+  setText('val-showcase-scale', `${Number(tunerSettings.showcaseScale).toFixed(2)}x`);
+
+  document.documentElement.style.setProperty('--view-transition-ms', `${tunerSettings.transitionMs}ms`);
+  applyShowcaseTunerVars();
   fxEngine.updateTuner(tunerSettings);
 }
 
@@ -883,7 +1318,7 @@ function saveTunerSettings() {
   try {
     localStorage.setItem('duel_rogue_tuner_settings_v1', JSON.stringify(tunerSettings));
     const logEl = document.getElementById('duel-narrative-log');
-    if (logEl) logEl.textContent = '💾 [LJack] 캔버스 주스 & 손맛 튜너 설정이 디스크(localStorage)에 핫저장되었습니다! (F2)';
+    if (logEl) logEl.textContent = '[LJack] 캔버스 주스 & 손맛 튜너 설정이 디스크에 저장되었습니다! (F2)';
   } catch (e) {}
   if (overlayLiveTuner) overlayLiveTuner.classList.remove('active');
 }
@@ -903,32 +1338,204 @@ document.getElementById('btn-tuner-reset')?.addEventListener('click', () => {
   syncTunerInputs();
 });
 
-['shake', 'slam-speed', 'inertia', 'shards', 'pierce-speed', 'hitstop'].forEach((key) => {
-  const el = document.getElementById(`slider-${key}`);
+document.getElementById('check-showcase-enabled')?.addEventListener('change', (e) => {
+  tunerSettings.showcaseEnabled = e.target.checked;
+});
+
+document.getElementById('btn-showcase-preview')?.addEventListener('click', () => {
+  const sampleCard = lookupCardDef('C_BLUE_05') || lookupCardDef('C_BLUE_01');
+  if (sampleCard) {
+    const prevEnabled = tunerSettings.showcaseEnabled;
+    tunerSettings.showcaseEnabled = true;
+    showCardPlayShowcase(sampleCard, { actorLabel: '카드 팝업 미리보기', isCpu: false });
+    tunerSettings.showcaseEnabled = prevEnabled;
+  }
+});
+
+const TUNER_SLIDER_MAP = [
+  ['slider-shake', 'val-shake', 'shakeMult', (v) => `${v.toFixed(1)}x`, false],
+  ['slider-slam-speed', 'val-slam-speed', 'slamSpeed', (v) => `${v.toFixed(1)}x`, false],
+  ['slider-inertia', 'val-inertia', 'inertiaMult', (v) => `${v.toFixed(1)}x`, false],
+  ['slider-shards', 'val-shards', 'shatterShards', (v) => `${v}개`, true],
+  ['slider-pierce-speed', 'val-pierce-speed', 'pierceSpeed', (v) => `${v.toFixed(1)}x`, false],
+  ['slider-hitstop', 'val-hitstop', 'hitstopMs', (v) => `${v}ms`, true],
+  ['slider-transition-ms', 'val-transition-ms', 'transitionMs', (v) => `${v}ms`, true],
+  ['slider-ambient-fx', 'val-ambient-fx', 'ambientFxMult', (v) => `${v.toFixed(1)}x`, false],
+  ['slider-cpu-tempo', 'val-cpu-tempo', 'cpuTempo', (v) => `${v.toFixed(1)}x`, false],
+  ['slider-showcase-x', 'val-showcase-x', 'showcaseX', (v) => `${v}%`, true],
+  ['slider-showcase-y', 'val-showcase-y', 'showcaseY', (v) => `${v}%`, true],
+  ['slider-showcase-ms', 'val-showcase-ms', 'showcaseDurationMs', (v) => `${v}ms`, true],
+  ['slider-showcase-scale', 'val-showcase-scale', 'showcaseScale', (v) => `${v.toFixed(2)}x`, false],
+];
+
+TUNER_SLIDER_MAP.forEach(([sliderId, valId, prop, fmt, isInt]) => {
+  const el = document.getElementById(sliderId);
   el?.addEventListener('input', (e) => {
-    const val = parseFloat(e.target.value);
-    if (key === 'shake') {
-      tunerSettings.shakeMult = val;
-      document.getElementById('val-shake').textContent = `${val.toFixed(1)}x`;
-    } else if (key === 'slam-speed') {
-      tunerSettings.slamSpeed = val;
-      document.getElementById('val-slam-speed').textContent = `${val.toFixed(1)}x`;
-    } else if (key === 'inertia') {
-      tunerSettings.inertiaMult = val;
-      document.getElementById('val-inertia').textContent = `${val.toFixed(1)}x`;
-    } else if (key === 'shards') {
-      tunerSettings.shatterShards = parseInt(val, 10);
-      document.getElementById('val-shards').textContent = `${val}개`;
-    } else if (key === 'pierce-speed') {
-      tunerSettings.pierceSpeed = val;
-      document.getElementById('val-pierce-speed').textContent = `${val.toFixed(1)}x`;
-    } else if (key === 'hitstop') {
-      tunerSettings.hitstopMs = parseInt(val, 10);
-      const valHitstop = document.getElementById('val-hitstop');
-      if (valHitstop) valHitstop.textContent = `${val}ms`;
-    }
+    const val = isInt ? parseInt(e.target.value, 10) : parseFloat(e.target.value);
+    tunerSettings[prop] = val;
+    const label = document.getElementById(valId);
+    if (label) label.textContent = fmt(val);
+    document.documentElement.style.setProperty('--view-transition-ms', `${tunerSettings.transitionMs}ms`);
+    applyShowcaseTunerVars();
     fxEngine.updateTuner(tunerSettings);
   });
+});
+
+// ============================================================================
+// [F4] 카드 레어도 비주얼 실시간 튜너 (별도 분리 모달)
+// ============================================================================
+const overlayRarityTuner = document.getElementById('overlay-rarity-tuner');
+let activeRarityTab = 'LEGENDARY';
+let activeRarityPreviewType = 'MONSTER';
+
+function getRaritySampleDef(tier, type) {
+  const found = DEFAULT_CARD_CATALOG.find(
+    (c) => normalizeRarityKey(c.rarity) === tier && (type === 'SPELL' ? c.type === 'SPELL' : c.type === 'MONSTER')
+  );
+  if (found) return { ...found, rarity: tier };
+  const base = type === 'SPELL' ? (lookupCardDef('C_BLUE_02') || DEFAULT_CARD_CATALOG[1]) : (lookupCardDef('C_BLUE_03') || DEFAULT_CARD_CATALOG[0]);
+  return { ...base, rarity: tier };
+}
+
+function renderRarityTunerPreview() {
+  const mount = document.getElementById('rarity-preview-card-mount');
+  const caption = document.getElementById('rarity-preview-caption');
+  if (!mount) return;
+  const tierCfg = rarityConfig[activeRarityTab] || rarityConfig.COMMON;
+  const sampleDef = getRaritySampleDef(activeRarityTab, activeRarityPreviewType);
+  mount.innerHTML = generateCompositeCardHtml(sampleDef, sampleDef.attack, sampleDef.defense ?? sampleDef.health, 0.95, false);
+  if (caption) {
+    const info = RARITY_PRESET_INFO[tierCfg.preset];
+    caption.textContent = `${RARITY_LABELS_KO[activeRarityTab] || activeRarityTab} · ${info ? info.label : tierCfg.preset}`;
+  }
+}
+
+function syncRarityTunerControls() {
+  const tierCfg = rarityConfig[activeRarityTab] || rarityConfig.COMMON;
+  const sel = document.getElementById('sel-rarity-preset');
+  const colorInput = document.getElementById('input-rarity-name-color');
+  const artFxSlider = document.getElementById('slider-rarity-art-fx');
+  const glowSlider = document.getElementById('slider-rarity-glow');
+  const nameGlowSlider = document.getElementById('slider-rarity-name-glow');
+
+  if (sel) sel.value = tierCfg.preset || 'NONE';
+  if (colorInput) colorInput.value = tierCfg.nameColor || '#1a0f05';
+  if (artFxSlider) artFxSlider.value = String(tierCfg.artFx ?? 0);
+  if (glowSlider) glowSlider.value = String(tierCfg.glow ?? 0);
+  if (nameGlowSlider) nameGlowSlider.value = String(tierCfg.nameGlow ?? 0);
+
+  const setText = (id, v) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = v;
+  };
+  setText('val-rarity-name-color', tierCfg.nameColor || '#1a0f05');
+  setText('val-rarity-art-fx', `${Number(tierCfg.artFx ?? 0).toFixed(1)}x`);
+  setText('val-rarity-glow', `${Number(tierCfg.glow ?? 0).toFixed(1)}x`);
+  setText('val-rarity-name-glow', `${Number(tierCfg.nameGlow ?? 0).toFixed(1)}x`);
+
+  document.querySelectorAll('#rarity-tuner-tabs .rarity-tab').forEach((btn) => {
+    btn.classList.toggle('active', btn.getAttribute('data-rarity') === activeRarityTab);
+  });
+
+  applyRarityConfigToRoot(rarityConfig);
+  renderRarityTunerPreview();
+}
+
+function toggleRarityTunerModal() {
+  if (!overlayRarityTuner) return;
+  overlayRarityTuner.classList.toggle('active');
+  if (overlayRarityTuner.classList.contains('active')) {
+    syncRarityTunerControls();
+  }
+}
+
+window.__TOGGLE_RARITY_TUNER = toggleRarityTunerModal;
+
+document.getElementById('btn-toggle-rarity-tuner')?.addEventListener('click', toggleRarityTunerModal);
+document.getElementById('btn-close-rarity-tuner')?.addEventListener('click', () => overlayRarityTuner?.classList.remove('active'));
+
+document.querySelectorAll('#rarity-tuner-tabs .rarity-tab').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    audio.playCardPickup();
+    activeRarityTab = normalizeRarityKey(btn.getAttribute('data-rarity'));
+    syncRarityTunerControls();
+  });
+});
+
+document.getElementById('btn-rarity-preview-monster')?.addEventListener('click', (e) => {
+  activeRarityPreviewType = 'MONSTER';
+  e.currentTarget.classList.add('active');
+  document.getElementById('btn-rarity-preview-spell')?.classList.remove('active');
+  renderRarityTunerPreview();
+});
+document.getElementById('btn-rarity-preview-spell')?.addEventListener('click', (e) => {
+  activeRarityPreviewType = 'SPELL';
+  e.currentTarget.classList.add('active');
+  document.getElementById('btn-rarity-preview-monster')?.classList.remove('active');
+  renderRarityTunerPreview();
+});
+
+document.getElementById('sel-rarity-preset')?.addEventListener('change', (e) => {
+  const preset = e.target.value;
+  const info = RARITY_PRESET_INFO[preset];
+  const target = rarityConfig[activeRarityTab];
+  target.preset = preset;
+  if (info) {
+    target.artFx = info.artFx;
+    target.glow = info.glow;
+    target.nameGlow = info.nameGlow;
+  }
+  syncRarityTunerControls();
+});
+
+document.getElementById('input-rarity-name-color')?.addEventListener('input', (e) => {
+  rarityConfig[activeRarityTab].nameColor = e.target.value;
+  rarityConfig[activeRarityTab].accentColor = e.target.value;
+  syncRarityTunerControls();
+});
+
+document.querySelectorAll('#rarity-name-swatches .swatch-btn').forEach((sw) => {
+  sw.addEventListener('click', () => {
+    const c = sw.getAttribute('data-color');
+    rarityConfig[activeRarityTab].nameColor = c;
+    rarityConfig[activeRarityTab].accentColor = c;
+    if (rarityConfig[activeRarityTab].preset === 'NONE') {
+      rarityConfig[activeRarityTab].preset = 'NAME_ONLY';
+    }
+    syncRarityTunerControls();
+  });
+});
+
+[
+  ['slider-rarity-art-fx', 'artFx'],
+  ['slider-rarity-glow', 'glow'],
+  ['slider-rarity-name-glow', 'nameGlow'],
+].forEach(([id, prop]) => {
+  document.getElementById(id)?.addEventListener('input', (e) => {
+    rarityConfig[activeRarityTab][prop] = parseFloat(e.target.value);
+    syncRarityTunerControls();
+  });
+});
+
+document.getElementById('btn-rarity-reset')?.addEventListener('click', () => {
+  rarityConfig = cloneDefaultRarityConfig();
+  saveRarityConfig(rarityConfig);
+  syncRarityTunerControls();
+});
+
+document.getElementById('btn-rarity-save')?.addEventListener('click', () => {
+  saveRarityConfig(rarityConfig);
+  applyRarityConfigToRoot(rarityConfig);
+  overlayRarityTuner?.classList.remove('active');
+  const logEl = document.getElementById('duel-narrative-log');
+  if (logEl) logEl.textContent = '[LJack] 카드 레어도 비주얼 설정이 저장되었습니다.';
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'F4') {
+    e.preventDefault();
+    toggleRarityTunerModal();
+  }
 });
 
 // ============================================================================
@@ -1045,7 +1652,7 @@ function addGraveyardGhost(graveyardId, cardDef) {
   ghost.className = 'graveyard-card-ghost';
   ghost.innerHTML = `
     <span style="font-weight:700;">${cardDef?.name || '파괴됨'}</span>
-    <span style="font-size:0.55rem; color:#64748b;">💀 DESTROYED</span>
+    <span style="font-size:0.55rem; color:#64748b;">${svgIcon('skull')} DESTROYED</span>
   `;
   stack.innerHTML = '';
   stack.appendChild(ghost);
@@ -1060,22 +1667,22 @@ let isAttackAnimating = false;
 
 /** 카드 대표 아이콘 심볼 결정 헬퍼 */
 function getCardArtIcon(cardDef) {
-  if (!cardDef) return '🃏';
+  if (!cardDef) return svgIcon('pack');
   const name = cardDef.name || '';
   const tags = (cardDef.tags || []).join(' ');
   const type = cardDef.type || '';
 
-  if (name.includes('방패') || tags.includes('수호자') || tags.includes('방어')) return '🛡️';
-  if (name.includes('천사') || tags.includes('신성') || name.includes('미카엘')) return '👼';
-  if (name.includes('마법사') || type === 'SPELL' || tags.includes('마법')) return '🔮';
-  if (name.includes('거신') || name.includes('아이기스') || tags.includes('거신')) return '🗿';
-  if (name.includes('돌격') || name.includes('전사') || tags.includes('전사')) return '⚔️';
-  if (name.includes('화염') || name.includes('용') || name.includes('드래곤')) return '🐉';
-  if (name.includes('늑대') || name.includes('야수') || tags.includes('돌격병')) return '🐺';
-  if (name.includes('혼돈') || tags.includes('도박') || tags.includes('변칙')) return '🎲';
-  if (name.includes('저격') || tags.includes('원거리')) return '🏹';
-  if (type === 'MONSTER') return '⚔️';
-  return '✨';
+  if (name.includes('방패') || tags.includes('수호자') || tags.includes('방어')) return svgIcon('shield');
+  if (name.includes('천사') || tags.includes('신성') || name.includes('미카엘')) return svgIcon('divineHalo');
+  if (name.includes('마법사') || type === 'SPELL' || tags.includes('마법')) return svgIcon('crystal');
+  if (name.includes('거신') || name.includes('아이기스') || tags.includes('거신')) return svgIcon('bulwark');
+  if (name.includes('돌격') || name.includes('전사') || tags.includes('전사')) return svgIcon('swords');
+  if (name.includes('화염') || name.includes('용') || name.includes('드래곤')) return svgIcon('flame');
+  if (name.includes('늑대') || name.includes('야수') || tags.includes('돌격병')) return svgIcon('tauntBanner');
+  if (name.includes('혼돈') || tags.includes('도박') || tags.includes('변칙')) return svgIcon('dice');
+  if (name.includes('저격') || tags.includes('원거리')) return svgIcon('target');
+  if (type === 'MONSTER') return svgIcon('sword');
+  return svgIcon('spark');
 }
 
 /** 실시간 전투 상세 로그 추가 헬퍼 (스케치 2 우측 로그창) */
@@ -1165,17 +1772,7 @@ function generateCardBackHtml(scaleFont = 1.0) {
   return `
     <div class="card-composite-wrapper card-back-wrapper" style="--card-scale-font: ${scaleFont};">
       <div class="card-back-inner">
-        <div class="card-back-rim">
-          <div class="card-back-emblem">
-            <svg viewBox="0 0 100 100" class="card-back-svg">
-              <circle cx="50" cy="50" r="40" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="4 2" />
-              <polygon points="50,18 80,72 20,72" fill="none" stroke="#64748b" stroke-width="2" />
-              <polygon points="50,82 80,28 20,28" fill="none" stroke="#64748b" stroke-width="2" />
-              <circle cx="50" cy="50" r="14" fill="#0f172a" stroke="#94a3b8" stroke-width="2" />
-              <circle cx="50" cy="50" r="5" fill="#38bdf8" />
-            </svg>
-          </div>
-        </div>
+        <img src="assets/ui/card_back.svg" class="card-back-svg-img" alt="" draggable="false" />
       </div>
     </div>
   `;
@@ -1193,7 +1790,7 @@ function getCardArtHtml(def) {
   };
   const artSrc = customArtMap[def?.id];
   if (artSrc) {
-    return `<img src="${artSrc}" alt="${def.name}" />`;
+    return `<img src="${artSrc}" alt="${def.name}" onerror="this.onerror=null; this.src='assets/placeholders/procedural_fallback.svg';" />`;
   }
   const factionLabel = def?.faction ? t(`faction.${def.faction}`) : def?.archetype || '';
   return `
@@ -1209,7 +1806,7 @@ function getCardArtHtml(def) {
  * - 레벨 표시 영역을 포함한 전체 가로폭(85.6%)을 활용
  * - ... 말줄임표 축약 없이 긴 텍스트 발생 시 scaleX를 계산하여 좌우 폭을 압축해 100% 온전하게 노출
  */
-function formatCardNameHtml(name, isMonster) {
+function formatCardNameHtml(name, isMonster, level = 1) {
   if (!name) return '';
   // 글자별 유닛 계산 (한글/전각 = 1.0, 영문/숫자 = 0.55, 공백 = 0.3)
   const charUnits = Array.from(name).reduce((acc, ch) => {
@@ -1217,13 +1814,12 @@ function formatCardNameHtml(name, isMonster) {
     return acc + (ch.charCodeAt(0) > 255 ? 1.0 : 0.55);
   }, 0);
 
-  // 상단 바 유효 너비 기준 약 8.2유닛까지는 1.0 정배율 유지
-  // 8.2유닛 초과 시 좌우 폭(scaleX)을 동적으로 축소하여 ... 없이 전체 글자 우겨넣기
-  const baseUnits = 8.2;
+  // 몬스터 카드는 우측 발톱자국 레벨 영역을 제외한 가로폭 기준 동적 압축
+  const baseUnits = isMonster ? (level >= 5 ? 4.8 : 5.7) : 8.2;
   let scaleX = 1.0;
   let letterSpacing = 0.2;
   if (charUnits > baseUnits) {
-    scaleX = Math.max(0.52, baseUnits / charUnits);
+    scaleX = Math.max(0.45, baseUnits / charUnits);
     letterSpacing = Math.max(-1.1, 0.2 - (charUnits - baseUnits) * 0.18);
   }
 
@@ -1231,8 +1827,9 @@ function formatCardNameHtml(name, isMonster) {
     ? `display:inline-block; transform:scaleX(${scaleX.toFixed(3)}); transform-origin:left center; letter-spacing:${letterSpacing.toFixed(1)}px; white-space:nowrap;`
     : `display:inline-block; letter-spacing:0.2px; white-space:nowrap;`;
 
+  const levelClass = isMonster ? (level >= 5 ? 'has-level-wide' : 'has-level') : 'spell';
   return `
-    <div class="overlay-name ${isMonster ? '' : 'spell'}" title="${name}">
+    <div class="overlay-name ${levelClass}" title="${name}">
       <span class="card-name-text" style="${squeezerStyle}">${name}</span>
     </div>
   `;
@@ -1250,8 +1847,8 @@ function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicDef = nu
   const atk = dynamicAtk ?? cardOrDef.currentAttack ?? def.attack ?? 0;
   const defense = dynamicDef ?? cardOrDef.currentDefense ?? def.defense ?? (def.health ?? 0);
   const level = cardOrDef.level ?? def.level ?? def.cost ?? 1;
-  const tags = def.tags || [];
-  const primaryTagsStr = tags.length > 0 ? tags.map((t) => (t.startsWith('#') ? t : `#${t}`)).join(' ') : (isMonster ? '#몬스터' : '#마법');
+  const rarityKey = normalizeRarityKey(def.rarity);
+  const rarityPreset = rarityConfig[rarityKey]?.preset || 'NONE';
 
   const frameSvg = isMonster ? 'assets/frames/card_frame_unit_blank.svg' : 'assets/frames/card_frame_spell_blank.svg';
 
@@ -1274,8 +1871,9 @@ function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicDef = nu
   } else {
     // [상세 정보 모드]: 기존 정통 프레임 및 공/수 양식 100% 유지 (프레임 양각 박스에 맞춘 고정밀 정렬)
     if (isMonster) {
+      const kwIds = def.kw || [];
       const allLabels = [
-        ...(def.keywords || []).map((k) => `<span class="frame-tag-pill keyword-pill">${k}</span>`),
+        ...(def.keywords || []).map((k, i) => `<span class="frame-tag-pill keyword-pill">${keywordIcon(kwIds[i] || k)}${k}</span>`),
         ...(def.tags || []).map((t) => `<span class="frame-tag-pill tag-pill">${t.startsWith('#') ? t : `#${t}`}</span>`),
       ];
       const formattedTagsHtml = allLabels.length > 0
@@ -1291,11 +1889,13 @@ function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicDef = nu
         </div>
       `;
     } else {
-      const triggerLabel = def.spellTriggerType ? `[${def.spellTriggerType}] ` : '';
+      const triggerHtml = def.spellTriggerType
+        ? `<div style="font-size:calc(var(--card-unit, 0.5cqw) * 9); color:#047857; font-weight:800; margin-bottom:2px;">[${def.spellTriggerType}]</div>`
+        : '';
       const spellSummary = def.target ? `[대상: ${def.target}] ${def.effect || def.description}` : (def.effect || def.description || def.effectType);
       bottomContentHtml = `
         <div class="overlay-spell-effect" title="${def.description || def.effectType}">
-          <div style="font-size:calc(var(--card-scale-font, 1) * 9.5px); color:#047857; font-weight:800; margin-bottom:3px;">${triggerLabel}</div>
+          ${triggerHtml}
           <div>${spellSummary}</div>
         </div>
       `;
@@ -1305,18 +1905,20 @@ function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicDef = nu
   const wrapperClass = isBattlefield ? 'card-composite-wrapper battlefield-view' : 'card-composite-wrapper';
 
   return `
-    <div class="${wrapperClass}" style="--card-scale-font: ${scaleFont};">
-      <!-- LAYER 1: 원화 -->
+    <div class="${wrapperClass}" data-rarity="${rarityKey}" data-rarity-preset="${rarityPreset}" style="--card-scale-font: ${scaleFont};">
+      <!-- LAYER 1: 원화 + 레어도 이펙트 오버레이 -->
       <div class="layer-1-art">
         ${getCardArtHtml(def)}
+        <div class="rarity-art-fx-layer"></div>
       </div>
       <!-- LAYER 2: 프레임 (SVG 벡터) -->
       <div class="layer-2-frame">
         <img src="${frameSvg}" alt="${isMonster ? 'Monster Frame' : 'Spell Frame'}" />
       </div>
-      <!-- LAYER 3: 동적 데이터 & 상단 바 전 영역 카드 이름 & 하단 스탯 -->
+      <!-- LAYER 3: 동적 데이터 & 카드 이름 & 발톱자국 레벨 & 하단 스탯 -->
       <div class="layer-3-dynamic-labels">
-        ${formatCardNameHtml(def.name, isMonster)}
+        ${formatCardNameHtml(def.name, isMonster, level)}
+        ${isMonster ? generateClawLevelHtml(level) : ''}
         ${bottomContentHtml}
       </div>
     </div>
@@ -1328,29 +1930,26 @@ function generateIdleCardHtml(cardOrDef, dynamicAtk = null, dynamicDef = null) {
   return generateCompositeCardHtml(cardOrDef, dynamicAtk, dynamicDef, 1.0, false);
 }
 
-/** 스케치 2: 좌측 카드 상세 & 효과 확인창 동기화 (정제된 키워드/종족표/조건/효과 전용 렌더링) */
-function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = null) {
+/** 스케치 2: 좌측 카드 상세 & 효과 확인창 동기화 (듀얼 인게임 + 덱 편집기 공용 렌더링) */
+function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = null, options = {}) {
   if (!cardOrDef) return;
+  const previewTargets = document.querySelectorAll('[data-inspector-preview]');
+  const tagsTargets = document.querySelectorAll('[data-inspector-tags]');
+  const effectTargets = document.querySelectorAll('[data-inspector-effect]');
 
   // 상대 세트 카드는 마법 카드가 아닌 '카드 뒷면'을 프리뷰로 렌더링하고 정보 은닉
   if (cardOrDef.isOpponentSecret || cardOrDef.isFacedown) {
-    const previewContainer = document.getElementById('inspector-card-preview');
-    if (previewContainer) {
-      previewContainer.innerHTML = generateCardBackHtml(1.0);
-    }
-    const effectEl = document.getElementById('inspector-effect-content');
-    if (effectEl) {
-      effectEl.innerHTML = `
+    const backHtml = generateCardBackHtml(1.0);
+    previewTargets.forEach((el) => { el.innerHTML = backHtml; });
+    const secretEffectHtml = `
         <div class="rule-block secret-block">
           <span class="rule-badge-condition">[비공개 세트 카드]</span>
           <div class="rule-content-condition" style="margin-top: 4px;">상대 듀얼리스트가 전장에 뒤집어 세트한 비밀 카드입니다. 조건 충족 시 앞면으로 뒤집히며 효과가 발동됩니다.</div>
         </div>
       `;
-    }
-    const tagsContainer = document.getElementById('inspector-tags-container');
-    if (tagsContainer) {
-      tagsContainer.innerHTML = '<span class="badge-keyword">비공개</span> <span class="badge-race-tag">#세트카드</span>';
-    }
+    effectTargets.forEach((el) => { el.innerHTML = secretEffectHtml; });
+    const secretTagsHtml = '<span class="badge-keyword">비공개</span> <span class="badge-race-tag">#세트카드</span>';
+    tagsTargets.forEach((el) => { el.innerHTML = secretTagsHtml; });
     return;
   }
 
@@ -1362,108 +1961,100 @@ function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = null) {
   const isGod = def.isGod || def.level === 6;
 
   // 1. 상단 평소 카드 실물 프리뷰
-  const previewContainer = document.getElementById('inspector-card-preview');
-  if (previewContainer) {
-    previewContainer.innerHTML = generateIdleCardHtml(def, atk, defense);
-  }
+  const idleCardHtml = generateIdleCardHtml(def, atk, defense);
+  previewTargets.forEach((el) => {
+    el.innerHTML = idleCardHtml;
+    requestAnimationFrame(() => {
+      const wEl = el.querySelector('.card-composite-wrapper');
+      const w = wEl?.getBoundingClientRect().width;
+      if (w && w > 10) {
+        wEl.style.setProperty('--card-scale-font', (w / 200).toFixed(3));
+      }
+    });
+  });
 
   // 2. 키워드(# 없음) 및 종족/소속표 태그(# 있음) 배지 렌더링
-  const tagsContainer = document.getElementById('inspector-tags-container');
-  if (tagsContainer) {
-    let pillsHtml = '';
-
-    // 신 급 몬스터 특별 황금 배지 (3장 전용)
-    if (isGod) {
-      pillsHtml += '<span class="badge-god-tier">👑 6성 신(神)</span> ';
-    }
-
-    // 기능 키워드 (# 미포함: 도발, 돌진, 관통, 반격, 광역 등)
-    const kwIds = cardOrDef.kw || def.kw || [];
-    if (keywords.length > 0) {
-      pillsHtml += keywords
-        .map((kw, i) => `<span class="badge-keyword" title="${kwIds[i] ? keywordDesc(kwIds[i]) : '핵심 기능 키워드'}">${kw}</span>`)
-        .join(' ') + ' ';
-    }
-    if (def.rarity) {
-      pillsHtml += `<span class="badge-rarity rarity-${def.rarity}">${t(`rarity.${def.rarity}`)}</span> `;
-    }
-
-    // 종족 / 소속표 태그 (# 포함: #성역, #보병, #용족, #신 등)
-    if (tags.length > 0) {
-      pillsHtml += tags
-        .map((t) => {
-          const formatted = t.startsWith('#') ? t : `#${t}`;
-          return `<span class="badge-race-tag" title="종족 / 소속 표기">${formatted}</span>`;
-        })
-        .join(' ');
-    }
-
-    if (!pillsHtml.trim()) {
-      pillsHtml = '<span class="badge-keyword">기본</span>';
-    }
-
-    tagsContainer.innerHTML = pillsHtml;
+  let pillsHtml = '';
+  if (options.isDeckMaster || cardOrDef.isDeckMaster) {
+    pillsHtml += `<span class="badge-god-tier">${svgIcon('crown')} 덱 마스터</span> `;
   }
+  if (isGod) {
+    pillsHtml += `<span class="badge-god-tier">${svgIcon('crown')} 6성 신(神)</span> `;
+  }
+
+  const kwIds = cardOrDef.kw || def.kw || [];
+  if (keywords.length > 0) {
+    pillsHtml += keywords
+      .map((kw, i) => `<span class="badge-keyword" title="${kwIds[i] ? keywordDesc(kwIds[i]) : '핵심 기능 키워드'}">${keywordIcon(kwIds[i] || kw)}${kw}</span>`)
+      .join(' ') + ' ';
+  }
+  if (def.rarity) {
+    pillsHtml += `<span class="badge-rarity rarity-${def.rarity}">${t(`rarity.${def.rarity}`)}</span> `;
+  }
+  if (tags.length > 0) {
+    pillsHtml += tags
+      .map((t) => {
+        const formatted = t.startsWith('#') ? t : `#${t}`;
+        return `<span class="badge-race-tag" title="종족 / 소속 표기">${formatted}</span>`;
+      })
+      .join(' ');
+  }
+  if (!pillsHtml.trim()) {
+    pillsHtml = '<span class="badge-keyword">기본</span>';
+  }
+  tagsTargets.forEach((el) => { el.innerHTML = pillsHtml; });
 
   // 3. 하단 카드 상세 효과 (규칙 잡음 없이 오직 [대상], [조건], [효과]만 정갈하게 표기)
-  const effectEl = document.getElementById('inspector-effect-content');
-  if (effectEl) {
-    let contentHtml = '';
-
-    // [대상] (스펠 또는 타겟팅 효과가 있을 때)
-    if (def.target) {
-      contentHtml += `
-        <div class="rule-block target-block">
-          <span class="rule-badge-target">[대상]</span>
-          <span class="rule-content-target">${def.target}</span>
-        </div>
-      `;
-    }
-
-    // [키워드] 기능 설명
-    const kwList = cardOrDef.kw || def.kw || [];
-    if (kwList.length > 0) {
-      contentHtml += `
-        <div class="rule-block keyword-block">
-          <span class="rule-badge-condition">[키워드]</span>
-          <span class="rule-content-condition">${kwList.map((id) => `<strong>${t(`kw.${id}`)}</strong> — ${keywordDesc(id)}`).join('<br>')}</span>
-        </div>
-      `;
-    }
-    if (cardOrDef.silenced) {
-      contentHtml += `<div class="rule-block"><span class="rule-badge-condition">[침묵]</span> <span class="rule-content-condition">키워드와 효과가 지워진 상태입니다.</span></div>`;
-    }
-
-    // [조건] / [효과] — 카드 능력 데이터에서 만든 문장
-    if (def.condition || def.effect) {
-      contentHtml += `
-        <div class="rule-block condition-block">
-          <span class="rule-badge-condition">[조건]</span>
-          <span class="rule-content-condition">${def.condition}</span>
-        </div>
-        <div class="rule-block effect-block">
-          <span class="rule-badge-effect">[효과]</span>
-          <span class="rule-content-effect">${def.effect}</span>
-        </div>
-      `;
-    } else if (kwList.length === 0) {
-      contentHtml += `<div class="rule-block effect-block"><span class="rule-content-effect">특수 효과가 없는 몬스터입니다.</span></div>`;
-    }
-
-    // 마법 또는 대상 카드의 불발 룰링 (미아 상태 불발 안내)
-    if (def.type === 'SPELL' && def.spellTriggerType && def.spellTriggerType !== 'INSTANT') {
-      contentHtml += `<div class="rule-block"><span class="rule-badge-target">[사용법]</span> <span class="rule-content-target">필드에 세트해 두면 조건이 맞을 때 자동으로 발동합니다.</span></div>`;
-    }
-    if (def.type === 'SPELL') {
-      contentHtml += `
-        <div class="rule-fizzle-clause">
-          <span class="fizzle-icon">⚠️</span> 대상이 소멸·파괴되거나 존재하지 않을 경우(미아 상태) 대상 부재로 효과는 <strong>불발</strong> 처리되어 묘지로 보내집니다.
-        </div>
-      `;
-    }
-
-    effectEl.innerHTML = contentHtml;
+  let contentHtml = '';
+  if (def.target) {
+    contentHtml += `
+      <div class="rule-block target-block">
+        <span class="rule-badge-target">[대상]</span>
+        <span class="rule-content-target">${def.target}</span>
+      </div>
+    `;
   }
+
+  const kwList = cardOrDef.kw || def.kw || [];
+  if (kwList.length > 0) {
+    contentHtml += `
+      <div class="rule-block keyword-block">
+        <span class="rule-badge-condition">[키워드]</span>
+        <span class="rule-content-condition">${kwList.map((id) => `${keywordIcon(id)}<strong>${t(`kw.${id}`)}</strong> — ${keywordDesc(id)}`).join('<br>')}</span>
+      </div>
+    `;
+  }
+  if (cardOrDef.silenced) {
+    contentHtml += `<div class="rule-block"><span class="rule-badge-condition">[침묵]</span> <span class="rule-content-condition">키워드와 효과가 지워진 상태입니다.</span></div>`;
+  }
+
+  if (def.condition || def.effect) {
+    contentHtml += `
+      <div class="rule-block condition-block">
+        <span class="rule-badge-condition">[조건]</span>
+        <span class="rule-content-condition">${def.condition}</span>
+      </div>
+      <div class="rule-block effect-block">
+        <span class="rule-badge-effect">[효과]</span>
+        <span class="rule-content-effect">${def.effect}</span>
+      </div>
+    `;
+  } else if (kwList.length === 0) {
+    contentHtml += `<div class="rule-block effect-block"><span class="rule-content-effect">특수 효과가 없는 몬스터입니다.</span></div>`;
+  }
+
+  if (def.type === 'SPELL' && def.spellTriggerType && def.spellTriggerType !== 'INSTANT') {
+    contentHtml += `<div class="rule-block"><span class="rule-badge-target">[사용법]</span> <span class="rule-content-target">필드에 세트해 두면 조건이 맞을 때 자동으로 발동합니다.</span></div>`;
+  }
+  if (def.type === 'SPELL') {
+    contentHtml += `
+      <div class="rule-fizzle-clause">
+        <span class="fizzle-icon">${svgIcon('warn')}</span> 대상이 소멸·파괴되거나 존재하지 않을 경우(미아 상태) 대상 부재로 효과는 <strong>불발</strong> 처리되어 묘지로 보내집니다.
+      </div>
+    `;
+  }
+
+  effectTargets.forEach((el) => { el.innerHTML = contentHtml; });
 }
 
 // ============================================================================
@@ -1631,6 +2222,13 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
 
       // ★ 2-C. [세트 마법 트리거 격발 및 불발 피드백]
       if (res.triggeredSpell) {
+        const trigDef = lookupCardDef(res.triggeredSpell.cardId);
+        if (trigDef) {
+          showCardPlayShowcase(trigDef, {
+            actorLabel: res.triggeredSpell.fizzled ? `마법 불발 (${trigDef.name})` : '상대 세트 마법 발동!',
+            isCpu: true,
+          });
+        }
         if (res.triggeredSpell.fizzled) {
           fxEngine.showFloatingText(cx, cy - 50, `💨 마법 불발! (${res.triggeredSpell.name})`, '#94a3b8', 20);
           const logEl = document.getElementById('duel-narrative-log');
@@ -1853,7 +2451,6 @@ function renderDuelArena(snap) {
   if (playerDestinyEl) playerDestinyEl.textContent = `운명: ${snap.selectedDestiny || '-'}`;
 
   document.getElementById('cpu-name').textContent = cpu.duelistName;
-  renderCpuMoodBadge();
   flushDuelEventsToLog(duel);
   document.getElementById('cpu-lp').textContent = cpuHp;
   const cpuSummonEl = document.getElementById('cpu-summon');
@@ -1903,7 +2500,7 @@ function renderDuelArena(snap) {
       slotEl.classList.add('has-set-card');
       const isMine = setSpell.ownerSeat === 0;
       const title = isMine ? `[세트된 마법] ${setSpell.name}` : `[상대 세트 카드] ?`;
-      const badgeText = isMine ? setSpell.name : '🔒 ?';
+      const badgeText = isMine ? setSpell.name : `${svgIcon('lock')} ?`;
       slotEl.innerHTML = `
         <div class="physical-set-card horizontal-central-set ${isMine ? 'mine' : 'enemy'}" title="${title}">
           <div class="horizontal-card-rotator central-rotator">
@@ -1932,10 +2529,11 @@ function renderDuelArena(snap) {
         }
       };
     } else {
+      const side = slotEl?.id === 'field-set-right' ? 'right' : 'left';
       slotEl.classList.remove('has-set-card');
       slotEl.innerHTML = `
         <div class="empty-set-slot-frame">
-          <span class="set-slot-icon">🔮</span>
+          <span class="set-slot-magic">${magicCircleSvg(side)}</span>
           <span class="set-slot-label">${defaultLabel}</span>
         </div>
       `;
@@ -2290,7 +2888,7 @@ function renderDuelArena(snap) {
 
     cardEl.innerHTML = `
       <div class="card-holo-foil"></div>
-      ${generateCompositeCardHtml(cardInst, def.attack, def.defense ?? def.health, 0.58, true)}
+      ${generateCompositeCardHtml(cardInst, def.attack, def.defense ?? def.health, 0.55, true)}
     `;
 
     // 마우스 호버 시 스케치 2 좌측 상세 & 효과 확인창 동기화
@@ -2501,7 +3099,7 @@ function showSpellActionMenu(cardEl, cardInst, def, duel, player) {
   if (def.spellTriggerType === 'INSTANT') {
     const btnInstant = document.createElement('button');
     btnInstant.className = 'spell-popover-btn';
-    btnInstant.innerHTML = '⚡ 즉시 발동';
+    btnInstant.innerHTML = `${svgIcon('bolt')} 즉시 발동`;
     btnInstant.onclick = (e) => {
       e.stopPropagation();
       closeSpellPopovers();
@@ -2518,7 +3116,7 @@ function showSpellActionMenu(cardEl, cardInst, def, duel, player) {
     if (availableMonster) {
       const btnFront = document.createElement('button');
       btnFront.className = 'spell-popover-btn';
-      btnFront.innerHTML = `🛡️ 몬스터 앞 세트 (${availableMonster.name})`;
+      btnFront.innerHTML = `${svgIcon('shield')} 몬스터 앞 세트 (${availableMonster.name})`;
       btnFront.onclick = (e) => {
         e.stopPropagation();
         closeSpellPopovers();
@@ -2532,7 +3130,7 @@ function showSpellActionMenu(cardEl, cardInst, def, duel, player) {
   if (!duel.fieldSetSlots?.left) {
     const btnLeft = document.createElement('button');
     btnLeft.className = 'spell-popover-btn';
-    btnLeft.innerHTML = '🔮 중앙 좌측 세트';
+    btnLeft.innerHTML = `${svgIcon('crystal')} 중앙 좌측 세트`;
     btnLeft.onclick = (e) => {
       e.stopPropagation();
       closeSpellPopovers();
@@ -2545,7 +3143,7 @@ function showSpellActionMenu(cardEl, cardInst, def, duel, player) {
   if (!duel.fieldSetSlots?.right) {
     const btnRight = document.createElement('button');
     btnRight.className = 'spell-popover-btn';
-    btnRight.innerHTML = '🔮 중앙 우측 세트';
+    btnRight.innerHTML = `${svgIcon('crystal')} 중앙 우측 세트`;
     btnRight.onclick = (e) => {
       e.stopPropagation();
       closeSpellPopovers();
@@ -2557,7 +3155,7 @@ function showSpellActionMenu(cardEl, cardInst, def, duel, player) {
   // 취소 버튼
   const btnCancel = document.createElement('button');
   btnCancel.className = 'spell-popover-btn cancel-btn';
-  btnCancel.innerHTML = '✖️ 취소';
+  btnCancel.innerHTML = `${svgIcon('cross')} 취소`;
   btnCancel.onclick = (e) => {
     e.stopPropagation();
     closeSpellPopovers();
@@ -2645,6 +3243,12 @@ function createUnitElement(unit, isPlayer, setSpells = []) {
 
 function handlePlayCard(cardInstanceId, tributeInstanceIds = null) {
   try {
+    const preSnap = engine.getSnapshot();
+    const preDuel = preSnap?.activeDuel;
+    const playedInst = preDuel?.seats?.[0]?.hand?.find((c) => c.instanceId === cardInstanceId);
+    const playedDef = playedInst ? lookupCardDef(playedInst.cardId) : null;
+    const preTrig = preDuel?.lastSpellTriggerResult || null;
+
     audio.playCardPlayImpact();
     engine.dispatchDuelCommand({
       type: 'PLAY_CARD',
@@ -2653,6 +3257,40 @@ function handlePlayCard(cardInstanceId, tributeInstanceIds = null) {
       tributeInstanceIds: tributeInstanceIds || undefined,
     });
     syncRunPhaseView();
+
+    const postDuel = engine.getSnapshot().activeDuel;
+    const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0, width: 1280, height: 800 };
+    if (playedDef) {
+      const isMonster = playedDef.type === 'MONSTER' || (playedDef.attack > 0 && playedDef.type !== 'SPELL');
+      if (isMonster) {
+        const summonedEl = document.querySelector(`#player-board .unit-field-card[data-instance-id="${cardInstanceId}"]`);
+        if (summonedEl) {
+          summonedEl.classList.add('summon-slam-enter');
+          const sr = summonedEl.getBoundingClientRect();
+          fxEngine.spawnSummonBurst(sr.left - cRect.left + sr.width / 2, sr.top - cRect.top + sr.height / 2, '#38bdf8', 105);
+        }
+      } else {
+        const arenaEl = document.getElementById('arena-field');
+        const ar = arenaEl ? arenaEl.getBoundingClientRect() : cRect;
+        fxEngine.spawnSummonBurst(ar.left - cRect.left + ar.width / 2, ar.top - cRect.top + ar.height * 0.56, '#34d399', 130);
+      }
+      showCardPlayShowcase(playedInst || playedDef, {
+        actorLabel: isMonster ? '내 몬스터 소환' : '내 마법 발동',
+        isCpu: false,
+      });
+    }
+    if (postDuel?.lastSpellTriggerResult && postDuel.lastSpellTriggerResult !== preTrig) {
+      const trig = postDuel.lastSpellTriggerResult;
+      const trigDef = lookupCardDef(trig.cardId);
+      if (trigDef) {
+        setTimeout(() => {
+          showCardPlayShowcase(trigDef, {
+            actorLabel: trig.fizzled ? `마법 불발 (${trigDef.name})` : (trig.ownerSeat === 1 ? '상대 함정 반응 발동!' : '내 세트 마법 발동!'),
+            isCpu: trig.ownerSeat === 1,
+          });
+        }, playedDef ? 420 : 0);
+      }
+    }
   } catch (err) {
     document.getElementById('duel-narrative-log').textContent = `[알림] ${err.message}`;
   }
@@ -2740,12 +3378,12 @@ function openTributeSelectionModal(cardInst, def, duel, player, cardEl = null) {
 
   modal.innerHTML = `
     <div class="tribute-select-header">
-      <span>👑 제물(릴리스) 소환 선택</span>
+      <span>${svgIcon('crown')} 제물(릴리스) 소환 선택</span>
       <span style="font-size:0.85rem; color:#f59e0b;">★Lv.${cardLevel}</span>
     </div>
     <div class="tribute-select-body"></div>
     <div style="font-size:0.75rem; color:#94a3b8; line-height:1.3;">
-      💡 <strong>진화 룰</strong>: 1단계 높은 레벨은 단일 제물 1마리만으로 진화 소환 가능하며, 2단계 이상은 레벨 합산이 필요합니다.
+      ${svgIcon('bulb')} <strong>진화 룰</strong>: 1단계 높은 레벨은 단일 제물 1마리만으로 진화 소환 가능하며, 2단계 이상은 레벨 합산이 필요합니다.
     </div>
     <div class="tribute-select-actions">
       <button id="btn-cancel-tribute" class="btn secondary-btn" style="padding:6px 14px; font-size:0.8rem;">취소</button>
@@ -2811,8 +3449,16 @@ document.getElementById('btn-end-turn')?.addEventListener('click', () => {
 });
 
 // 듀얼 런 포기 및 메인 메뉴 복귀 버튼
-document.getElementById('btn-abandon-run')?.addEventListener('click', () => {
-  if (confirm('현재 진행 중인 듀얼 런을 포기하고 메인 메뉴로 돌아가시겠습니까?')) {
+document.getElementById('btn-abandon-run')?.addEventListener('click', async () => {
+  const ok = await showGameConfirm('현재 진행 중인 듀얼 런을 포기하고 메인 메뉴로 돌아가시겠습니까?', {
+    title: '런 포기 확인',
+    confirmText: '런 포기',
+    cancelText: '계속 진행',
+    icon: 'flag',
+    danger: true,
+  });
+  if (ok) {
+    toggleInGameOptions(false);
     audio.playCardPickup();
     engine.state = engine.createEmptyRunState('RUN_INIT', Date.now());
     switchView('VIEW_TITLE_LOBBY');
@@ -2875,14 +3521,14 @@ function renderCheckpointView(snap) {
     const nameEl = document.getElementById('hub-encounter-opponent-name');
     const rewardEl = document.getElementById('hub-encounter-reward');
 
-    if (starsEl) starsEl.textContent = `${enc.stars || '★☆☆☆☆'} (${enc.difficultyLabel || '하'})`;
+    if (starsEl) starsEl.textContent = `${enc.stars || '★☆☆☆☆'} · ${enc.difficultyLabel || '하'}`;
     if (titleEl) titleEl.textContent = enc.opponentTitle || enc.title || '도전자';
     if (nameEl) nameEl.textContent = enc.opponentName || enc.name || '상대 듀얼리스트';
     if (rewardEl) rewardEl.textContent = `+${(enc.rewardGold || 500).toLocaleString()}원`;
 
     if (avatarEl) {
-      const avatars = ['⚔️', '🛡️', '🧙‍♂️', '🐉', '⚖️', '👑'];
-      avatarEl.textContent = avatars[Math.min(avatars.length - 1, (snap.roundNumber || 1) - 1)];
+      const avatars = ['swords', 'shield', 'crystal', 'flame', 'balance', 'crown'];
+      avatarEl.innerHTML = svgIcon(avatars[Math.min(avatars.length - 1, (snap.roundNumber || 1) - 1)]);
     }
   }
 
@@ -2935,7 +3581,7 @@ function renderCheckpointView(snap) {
       deckValidityText.textContent = '출격 준비 완료';
       deckValidityText.style.color = '#4ade80';
     } else {
-      deckValidityText.textContent = `⚠️ 편성 필요 (${deckCount}장)`;
+      deckValidityText.innerHTML = `${svgIcon('warn')} 편성 필요 (${deckCount}장)`;
       deckValidityText.style.color = '#f87171';
     }
   }
@@ -2955,32 +3601,18 @@ function renderCheckpointEncounterSubpage(snap) {
     const nameEl = document.getElementById('encounter-dossier-name');
     const descEl = document.getElementById('encounter-dossier-desc');
     const rewardEl = document.getElementById('encounter-dossier-reward');
-    const archEl = document.getElementById('encounter-dossier-archetype');
 
-    if (starsEl) starsEl.textContent = `${enc.stars || '★☆☆☆☆'} (${enc.difficultyLabel || '하'})`;
+    if (starsEl) starsEl.textContent = `${enc.stars || '★☆☆☆☆'} · ${enc.difficultyLabel || '하'}`;
     if (titleEl) titleEl.textContent = enc.opponentTitle || enc.title || '도전자';
     if (nameEl) nameEl.textContent = enc.opponentName || enc.name || '상대 듀얼리스트';
     if (descEl) {
-      const base = enc.description || '대결을 기다리는 상대입니다.';
-      if (enc.personality) {
-        const vol = enc.volatility ?? 0.5;
-        const temper = vol >= 0.65 ? '기분이 자주 바뀝니다' : vol >= 0.45 ? '상황에 따라 태도가 바뀝니다' : '좀처럼 흔들리지 않습니다';
-        descEl.innerHTML = `${base}<br><span class="dossier-personality mood-${enc.personality}">성향: ${t(`mood.${enc.personality}.name`)}</span> — ${t(`mood.${enc.personality}.desc`)} (${temper})`;
-      } else {
-        descEl.textContent = base;
-      }
+      descEl.textContent = enc.description || '대결을 기다리는 상대입니다.';
     }
     if (rewardEl) rewardEl.textContent = `+${(enc.rewardGold || 500).toLocaleString()}원`;
-    if (archEl) {
-      let archText = '열의 (RED ZEAL)';
-      if (enc.deckArchetype === 'BLUE_JUSTICE' || enc.faction === 'BLUE') archText = '정의 (BLUE JUSTICE)';
-      else if (enc.deckArchetype === 'PURPLE_CHAOS' || enc.deckArchetype === 'CHAOS_RNG' || enc.faction === 'PURPLE') archText = '혼돈 (PURPLE CHAOS)';
-      archEl.textContent = archText;
-    }
 
     if (avatarEl) {
-      const avatars = ['⚔️', '🛡️', '🧙‍♂️', '🐉', '⚖️', '👑'];
-      avatarEl.textContent = avatars[Math.min(avatars.length - 1, (snap.roundNumber || 1) - 1)];
+      const avatars = ['swords', 'shield', 'crystal', 'flame', 'balance', 'crown'];
+      avatarEl.innerHTML = svgIcon(avatars[Math.min(avatars.length - 1, (snap.roundNumber || 1) - 1)]);
     }
   }
 
@@ -2988,13 +3620,13 @@ function renderCheckpointEncounterSubpage(snap) {
   const duelBtn = document.getElementById('btn-start-encounter-from-subpage');
   if (deckCount === 30) {
     if (hintEl) {
-      hintEl.textContent = '✅ 덱 매수가 30장 규격을 충족하여 즉시 결전에 나설 수 있습니다.';
+      hintEl.innerHTML = `${svgIcon('check')} 덱 매수가 30장 규격을 충족하여 즉시 결전에 나설 수 있습니다.`;
       hintEl.className = 'dossier-deck-hint';
     }
     if (duelBtn) duelBtn.disabled = false;
   } else {
     if (hintEl) {
-      hintEl.textContent = `⚠️ 덱이 30장이 아닙니다 (현재 ${deckCount}장). [가방 & 덱 편집]에서 덱을 먼저 30장으로 편성하십시오.`;
+      hintEl.innerHTML = `${svgIcon('warn')} 덱이 30장이 아닙니다 (현재 ${deckCount}장). [가방 & 덱 편집]에서 덱을 먼저 30장으로 편성하십시오.`;
       hintEl.className = 'dossier-deck-hint is-invalid';
     }
     if (duelBtn) duelBtn.disabled = true;
@@ -3011,7 +3643,7 @@ function renderCheckpointShopSubpage(snap) {
     const src = npcPortraitSrc('shop', snap.roundNumber, mood);
     if (shopPortrait.dataset.src !== src) {
       shopPortrait.dataset.src = src;
-      shopPortrait.innerHTML = artImg(src, 'npc-portrait-img', '<span class="npc-emoji">🧔</span>');
+      shopPortrait.innerHTML = artImg(src, 'npc-portrait-img', svgIcon('shop'));
     }
   }
   const goldEl = document.getElementById('shop-subpage-gold');
@@ -3029,24 +3661,24 @@ function renderCheckpointShopSubpage(snap) {
     packEl.className = `booster-pack-item ${isLegend ? 'pack-legendary' : ''}`;
 
     let visualClass = 'pack-visual-blue';
-    let symbol = '⚖️';
+    let symbol = svgIcon('balance');
     let tagline = '컨트롤 & 성역 결계 테마';
 
     if (pack.id === 'PACK_RED') {
       visualClass = 'pack-visual-red';
-      symbol = '🔥';
+      symbol = svgIcon('flame');
       tagline = '어그로 & 화룡 돌격 테마';
     } else if (pack.id === 'PACK_PURPLE') {
       visualClass = 'pack-visual-purple';
-      symbol = '🎲';
+      symbol = svgIcon('dice');
       tagline = '혼돈 & 도박 룰렛 테마';
     } else if (pack.id === 'PACK_WILD') {
       visualClass = 'pack-visual-neutral';
-      symbol = '🐺';
+      symbol = svgIcon('gear');
       tagline = '야수 · 기계 · 정령 · 언데드 · 용병';
     } else if (pack.id === 'PACK_LEGEND') {
       visualClass = 'pack-visual-legend';
-      symbol = '👑';
+      symbol = svgIcon('crown');
       tagline = '태초의 3대 신화 & 최고급 거신';
     }
 
@@ -3074,7 +3706,7 @@ function renderCheckpointShopSubpage(snap) {
     `;
 
     const buyBtn = packEl.querySelector('.btn-buy-pack');
-    buyBtn?.addEventListener('click', () => {
+    buyBtn?.addEventListener('click', async () => {
       try {
         audio.playCardPlayImpact();
         const result = engine.buyBoosterPack(pack.id);
@@ -3083,7 +3715,7 @@ function renderCheckpointShopSubpage(snap) {
         renderCheckpointShopSubpage(engine.getSnapshot());
       } catch (err) {
         console.error('[Buy Pack Error]', err);
-        alert(err.message || '카드팩 구매에 실패했습니다.');
+        await showGameAlert(err.message || '카드팩 구매에 실패했습니다.', { title: '구매 실패', danger: true });
       }
     });
 
@@ -3106,8 +3738,8 @@ function renderCheckpointShopSubpage(snap) {
       const canAfford = (snap.gold ?? 0) >= item.price && !item.purchased;
 
       itemEl.innerHTML = `
-        <div style="display:flex; justify-content:center; padding:4px 0;">
-          ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.45, false)}
+        <div class="shop-single-card-frame">
+          ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.85, false)}
         </div>
         <div style="display:flex; flex-direction:column; gap:4px;">
           <h4 style="font-size:0.95rem; font-weight:800; color:#f1f5f9;">${cardDef.name}</h4>
@@ -3123,7 +3755,7 @@ function renderCheckpointShopSubpage(snap) {
       `;
 
       const buyBtn = itemEl.querySelector('.btn-buy-shop-single');
-      buyBtn?.addEventListener('click', () => {
+      buyBtn?.addEventListener('click', async () => {
         try {
           audio.playCardPlayImpact();
           engine.buyShopSingleCard(item.cardId);
@@ -3131,7 +3763,7 @@ function renderCheckpointShopSubpage(snap) {
           renderCheckpointShopSubpage(engine.getSnapshot());
         } catch (err) {
           console.error('[Buy Shop Single Error]', err);
-          alert(err.message || '낱장 카드 구매에 실패했습니다.');
+          await showGameAlert(err.message || '낱장 카드 구매에 실패했습니다.', { title: '구매 실패', danger: true });
         }
       });
 
@@ -3151,11 +3783,8 @@ function displayPackOpeningResultBanner(choices) {
     if (!def) return;
 
     const cardEl = document.createElement('div');
-    cardEl.style.width = '130px';
-    cardEl.style.height = '190px';
-    cardEl.style.transform = 'scale(0.7)';
-    cardEl.style.transformOrigin = 'top center';
-    cardEl.innerHTML = generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.7, false);
+    cardEl.className = 'pack-result-card-frame';
+    cardEl.innerHTML = generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.85, false);
     cardsContainer.appendChild(cardEl);
   });
 
@@ -3193,7 +3822,7 @@ function openTradeSelectModal(deal) {
 
     targetPreviewEl.innerHTML = `
       <div style="font-size:0.8rem; font-weight:800; color:#c084fc; margin-bottom:4px;">획득 대상 카드</div>
-      <div style="width:130px; height:185px; display:flex; align-items:center; justify-content:center;">
+      <div style="width:130px; height:182px; display:flex; align-items:center; justify-content:center;">
         ${rDef ? generateCompositeCardHtml(rDef, rDef.attack, rDef.defense ?? rDef.health, 0.65, false) : ''}
       </div>
       <div style="text-align:center; margin-top:6px;">
@@ -3204,7 +3833,7 @@ function openTradeSelectModal(deal) {
       <!-- 상인 지정 요구 카드 체크리스트 박스 -->
       <div class="modal-wanted-box">
         <div class="modal-wanted-header">
-          <span>🎯 트레이더 지정 요구 목록</span>
+          <span>${svgIcon('target')} 트레이더 지정 요구 목록</span>
           <span style="font-size:0.68rem; color:#cbd5e1;">(${reqCount}장)</span>
         </div>
         <div id="modal-wanted-items-list">
@@ -3251,7 +3880,7 @@ function renderTradeTrunkCards(snap) {
   if (candidates.length === 0) {
     container.innerHTML = `
       <div style="grid-column: 1 / -1; padding: 36px 16px; text-align: center; color: #94a3b8; font-size: 0.88rem;">
-        🎒 보유한 교환 가능한 카드가 없습니다!<br>
+        ${svgIcon('bag')} 보유한 교환 가능한 카드가 없습니다!<br>
         <small style="color:#64748b; margin-top:6px; display:inline-block;">(상점에서 부스터팩이나 낱장 카드를 구매한 후 다시 찾아오세요.)</small>
       </div>
     `;
@@ -3281,15 +3910,15 @@ function renderTradeTrunkCards(snap) {
     cardEl.className = `trade-selectable-card ${isSelected ? 'is-selected' : ''} ${isWanted ? 'is-designated' : 'is-not-designated'}`;
     cardEl.setAttribute('data-cand-key', cand.key);
 
-    const sourceLabel = cand.source === 'trunk' ? '🎒 가방' : '⚔️ 덱';
+    const sourceLabel = cand.source === 'trunk' ? `${svgIcon('bag')} 가방` : `${svgIcon('sword')} 덱`;
     const sourceClass = cand.source === 'trunk' ? 'source-trunk' : 'source-deck';
 
     cardEl.innerHTML = `
-      ${isSelected ? `<span class="trade-check-badge">✔ 제물 #${selectionOrder}</span>` : ''}
-      ${isWanted && !isSelected ? `<span class="trade-designated-target-badge">🎯 요구 카드</span>` : ''}
+      ${isSelected ? `<span class="trade-check-badge">${svgIcon('check')} 제물 #${selectionOrder}</span>` : ''}
+      ${isWanted && !isSelected ? `<span class="trade-designated-target-badge">${svgIcon('target')} 요구 카드</span>` : ''}
       <span class="trade-source-badge ${sourceClass}">${sourceLabel}</span>
-      <div style="width: 80px; height: 110px; display: flex; align-items: center; justify-content: center; overflow: hidden; pointer-events: none;">
-        ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.40, false)}
+      <div class="trade-card-frame">
+        ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.44, true)}
       </div>
       <div style="font-size: 0.72rem; color: #cbd5e1; margin-top: 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; pointer-events: none; font-weight: 700;">
         ${cardDef.name}
@@ -3321,7 +3950,7 @@ function renderTradeTrunkCards(snap) {
             audio.playLightTap();
             const hintEl = document.getElementById('trade-dialog-hint');
             if (hintEl) {
-              hintEl.innerHTML = `<span style="color:#f87171;">⚠️ 트레이더가 요구한 지정 카드(🎯)만 선택할 수 있습니다.</span>`;
+              hintEl.innerHTML = `<span style="color:#f87171;">${svgIcon('warn')} 트레이더가 요구한 지정 카드(${svgIcon('target')})만 선택할 수 있습니다.</span>`;
             }
             return;
           }
@@ -3369,7 +3998,7 @@ function updateTradeModalState(snap) {
       const wDef = lookupCardDef(wId);
       return `
         <div class="modal-wanted-item ${isSatisfied ? 'is-satisfied' : 'is-pending'}">
-          <span>${isSatisfied ? '✔' : '⏳'} ${wDef?.name || wId}</span>
+          <span>${isSatisfied ? svgIcon('check') : svgIcon('crystal')} ${wDef?.name || wId}</span>
           <span style="font-size:0.65rem; font-weight:800;">${isSatisfied ? `선택됨${sourceTag}` : '대기 중'}</span>
         </div>
       `;
@@ -3381,10 +4010,10 @@ function updateTradeModalState(snap) {
   const feeHintEl = document.getElementById('trade-fee-hint');
   if (feeHintEl) {
     if (fee > 0) {
-      feeHintEl.innerHTML = `🪙 제물 수수료: <strong>${fee.toLocaleString()}원</strong> (보유: ${currentGold.toLocaleString()}원)`;
+      feeHintEl.innerHTML = `${svgIcon('gold')} 제물 수수료: <strong>${fee.toLocaleString()}원</strong> (보유: ${currentGold.toLocaleString()}원)`;
       feeHintEl.style.color = currentGold >= fee ? '#fde047' : '#ef4444';
     } else {
-      feeHintEl.innerHTML = `<span style="color:#a3e635;">🪙 수수료 무료 (0원)</span>`;
+      feeHintEl.innerHTML = `<span style="color:#a3e635;">${svgIcon('gold')} 수수료 무료 (0원)</span>`;
     }
   }
 
@@ -3407,29 +4036,29 @@ function updateTradeModalState(snap) {
       if (confirmBtn) confirmBtn.disabled = !plan;
       if (hintEl) {
         if (!plan) {
-          hintEl.innerHTML = `<span style="color:#f87171; font-weight:700;">⚠️ ${planError}</span>`;
+          hintEl.innerHTML = `<span style="color:#f87171; font-weight:700;">${svgIcon('warn')} ${planError}</span>`;
         } else if (plan.refillCardIds.length > 0) {
           const names = plan.refillCardIds
             .map((id) => `「${lookupCardDef(id)?.name || id}」`)
             .join(', ');
-          hintEl.innerHTML = `<span style="color:#4ade80; font-weight:700;">✅ 지정 카드 충족! 출전 덱 빈 슬롯은 획득 카드와 가방의 ${names}로 자동 보충되어 30장 정규 규격이 유지됩니다.</span>`;
+          hintEl.innerHTML = `<span style="color:#4ade80; font-weight:700;">${svgIcon('check')} 지정 카드 충족! 출전 덱 빈 슬롯은 획득 카드와 가방의 ${names}로 자동 보충되어 30장 정규 규격이 유지됩니다.</span>`;
         } else if (plan.deckConsumed > 0) {
-          hintEl.innerHTML = `<span style="color:#4ade80; font-weight:700;">✅ 지정 카드 충족! (출전 덱 카드는 획득 카드로 자동 교체되어 30장 정규 규격이 유지됩니다.)</span>`;
+          hintEl.innerHTML = `<span style="color:#4ade80; font-weight:700;">${svgIcon('check')} 지정 카드 충족! (출전 덱 카드는 획득 카드로 자동 교체되어 30장 정규 규격이 유지됩니다.)</span>`;
         } else {
-          hintEl.innerHTML = `<span style="color:#4ade80; font-weight:700;">✅ 지정 카드 충족! [물물교환 확정] 버튼을 눌러 교환을 완료하세요.</span>`;
+          hintEl.innerHTML = `<span style="color:#4ade80; font-weight:700;">${svgIcon('check')} 지정 카드 충족! [물물교환 확정] 버튼을 눌러 교환을 완료하세요.</span>`;
         }
       }
     } else {
       if (confirmBtn) confirmBtn.disabled = true;
       if (hintEl) {
-        hintEl.innerHTML = `<span style="color:#f87171; font-weight:700;">⚠️ 제물 수수료가 부족하여 거래를 체결할 수 없습니다. (보유: ${currentGold.toLocaleString()}원 / 필요: ${fee.toLocaleString()}원)</span>`;
+        hintEl.innerHTML = `<span style="color:#f87171; font-weight:700;">${svgIcon('warn')} 제물 수수료가 부족하여 거래를 체결할 수 없습니다. (보유: ${currentGold.toLocaleString()}원 / 필요: ${fee.toLocaleString()}원)</span>`;
       }
     }
   } else {
     if (confirmBtn) confirmBtn.disabled = true;
     const remaining = expectedCount - activeSelectedCandidates.length;
     if (hintEl) {
-      hintEl.innerHTML = `<span style="color:#94a3b8;">오른쪽 카드 목록에서 트레이더가 요구하는 지정 카드(🎯)를 <strong>${remaining}장</strong> 더 선택해 주세요.</span>`;
+      hintEl.innerHTML = `<span style="color:#94a3b8;">오른쪽 카드 목록에서 트레이더가 요구하는 지정 카드(${svgIcon('target')})를 <strong>${remaining}장</strong> 더 선택해 주세요.</span>`;
     }
   }
 }
@@ -3441,7 +4070,7 @@ function renderCheckpointMerchantSubpage(snap) {
     const src = npcPortraitSrc('merchant', snap.roundNumber, done > 0 ? 3 : null);
     if (merchantIcon.dataset.src !== src) {
       merchantIcon.dataset.src = src;
-      merchantIcon.innerHTML = artImg(src, 'npc-portrait-img', '🕵️');
+      merchantIcon.innerHTML = artImg(src, 'npc-portrait-img', svgIcon('merchant'));
     }
   }
   const goldEl = document.getElementById('merchant-subpage-gold');
@@ -3457,7 +4086,7 @@ function renderCheckpointMerchantSubpage(snap) {
   if (!merchant || (!merchant.deals && (!merchant.items || merchant.items.length === 0))) {
     container.innerHTML = `
       <div class="merchant-empty-alley">
-        <span class="alley-ghost-icon">🌫️</span>
+        <span class="alley-ghost-icon">${svgIcon('moon')}</span>
         <p>수상한 상인의 뒷골목은 지금 쥐죽은 듯 조용합니다.<br><small style="color:#64748b;">(상인은 라운드마다 약 35% 확률로 드물게 찾아옵니다.)</small></p>
       </div>
     `;
@@ -3517,12 +4146,16 @@ function renderCheckpointMerchantSubpage(snap) {
           if (!inTrunk && !inDeck) canFulfill = false;
 
           const statusClass = inTrunk ? 'in-trunk' : inDeck ? 'in-deck' : 'missing';
-          const statusText = inTrunk ? '🎒 가방 보유' : inDeck ? '⚔️ 덱 장착' : '❌ 미보유';
+          const statusText = inTrunk
+            ? `${svgIcon('bag')} 가방 보유`
+            : inDeck
+              ? `${svgIcon('swords')} 덱 장착`
+              : `${svgIcon('cross')} 미보유`;
 
           return `
             <div class="wanted-chip">
               <div class="wanted-chip-left">
-                <span style="font-size:0.75rem;">🎯</span>
+                <span style="font-size:0.75rem;">${svgIcon('target')}</span>
                 <span>${wDef?.name || wId}</span>
               </div>
               <span class="wanted-status-pill ${statusClass}">${statusText}</span>
@@ -3538,7 +4171,7 @@ function renderCheckpointMerchantSubpage(snap) {
       dealCardEl.innerHTML = `
         <div class="deal-offer-side">
           <div class="deal-preview-mini">
-            ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.48, false)}
+            ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.48, true)}
           </div>
           <div class="deal-info-wrap">
             <h4 class="deal-card-name">${cardDef.name}</h4>
@@ -3555,12 +4188,12 @@ function renderCheckpointMerchantSubpage(snap) {
         <div class="deal-req-side">
           <div class="req-title">필요 대가: 트레이더 지정 요구 카드 <strong>(${reqCount}장)</strong></div>
           ${wantedHtml}
-          ${(deal.goldFee || 0) > 0 ? `<div class="req-fee">🪙 제물 수수료: <strong>${deal.goldFee.toLocaleString()}원</strong></div>` : '<div class="req-fee" style="color:#a3e635;">🪙 수수료 무료 (0원)</div>'}
+          ${(deal.goldFee || 0) > 0 ? `<div class="req-fee">${svgIcon('gold')} 제물 수수료: <strong>${deal.goldFee.toLocaleString()}원</strong></div>` : `<div class="req-fee" style="color:#a3e635;">${svgIcon('gold')} 수수료 무료 (0원)</div>`}
         </div>
 
         <div class="deal-action-side">
           <button class="btn btn-start-trade" ${deal.completed || !canFulfill ? 'disabled' : ''} data-deal-id="${deal.dealId}">
-            ${deal.completed ? '✅ 교환 완료' : !canFulfill ? '❌ 요구 카드 부족' : '🔄 물물교환 제안'}
+            ${deal.completed ? `${svgIcon('check')} 교환 완료` : !canFulfill ? `${svgIcon('cross')} 요구 카드 부족` : `${svgIcon('trade')} 물물교환 제안`}
           </button>
         </div>
       `;
@@ -3587,7 +4220,7 @@ function renderCheckpointMerchantSubpage(snap) {
 
       itemCardEl.innerHTML = `
         <div class="merchant-card-preview-mini">
-          ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.52, false)}
+          ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.52, true)}
         </div>
         <div class="merchant-item-details">
           <h4 class="merchant-card-name">${cardDef.name}</h4>
@@ -3603,7 +4236,7 @@ function renderCheckpointMerchantSubpage(snap) {
       `;
 
       const buyBtn = itemCardEl.querySelector('.btn-buy-single');
-      buyBtn?.addEventListener('click', () => {
+      buyBtn?.addEventListener('click', async () => {
         try {
           audio.playCardPlayImpact();
           engine.buySuspiciousMerchantCard(item.cardId);
@@ -3611,7 +4244,7 @@ function renderCheckpointMerchantSubpage(snap) {
           renderCheckpointMerchantSubpage(engine.getSnapshot());
         } catch (err) {
           console.error('[Buy Merchant Card Error]', err);
-          alert(err.message || '카드 구매에 실패했습니다.');
+          await showGameAlert(err.message || '카드 구매에 실패했습니다.', { title: '거래 실패', danger: true });
         }
       });
 
@@ -3643,24 +4276,24 @@ function renderCheckpointDeckEditorSubpage(snap) {
   if (deckCards.length === 30) {
     if (meterPill) { meterPill.className = 'meter-pill is-valid'; }
     if (noticeEl) {
-      noticeEl.textContent = '✅ 덱이 정확히 30장이므로 인카운터에 바로 출격할 수 있습니다.';
+      noticeEl.innerHTML = `${svgIcon('check')} 덱이 정확히 30장이므로 인카운터에 바로 출격할 수 있습니다.`;
       noticeEl.className = 'editor-status-notice';
     }
   } else if (deckCards.length < 30) {
     if (meterPill) { meterPill.className = 'meter-pill is-invalid'; }
     if (noticeEl) {
-      noticeEl.textContent = `⚠️ 덱 매수가 부족합니다. (현재 ${deckCards.length}장 / 30장) 가방에서 ${30 - deckCards.length}장을 더 추가하세요.`;
+      noticeEl.innerHTML = `${svgIcon('warn')} 덱 매수가 부족합니다. (현재 ${deckCards.length}장 / 30장) 가방에서 ${30 - deckCards.length}장을 더 추가하세요.`;
       noticeEl.className = 'editor-status-notice is-error';
     }
   } else {
     if (meterPill) { meterPill.className = 'meter-pill is-invalid'; }
     if (noticeEl) {
-      noticeEl.textContent = `⚠️ 덱 매수가 초과되었습니다. (현재 ${deckCards.length}장 / 30장) 덱에서 ${deckCards.length - 30}장을 빼 가방으로 보내세요.`;
+      noticeEl.innerHTML = `${svgIcon('warn')} 덱 매수가 초과되었습니다. (현재 ${deckCards.length}장 / 30장) 덱에서 ${deckCards.length - 30}장을 빼 가방으로 보내세요.`;
       noticeEl.className = 'editor-status-notice is-error';
     }
   }
 
-  // 좌측: 현재 듀얼 덱 카드 렌더링
+  // 중앙: 현재 듀얼 덱 (5×6 순수 카드 그래픽 렌더링)
   const deckGrid = document.getElementById('editor-deck-cards-grid');
   if (deckGrid) {
     deckGrid.innerHTML = '';
@@ -3671,20 +4304,23 @@ function renderCheckpointDeckEditorSubpage(snap) {
       const isDeckMaster = cardId === deckMasterId;
       const tileEl = document.createElement('div');
       tileEl.className = `trunk-card-tile ${isDeckMaster ? 'is-deckmaster' : ''}`;
+      tileEl.title = isDeckMaster ? `${def.name} (덱 마스터)` : def.name;
 
       tileEl.innerHTML = `
-        ${isDeckMaster ? '<span class="deckmaster-badge">👑 덱 마스터</span>' : ''}
-        <div style="transform: scale(0.42); transform-origin: top center; width: 95px; height: 135px; pointer-events: none;">
-          ${generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.42, false)}
+        <div class="trunk-card-frame">
+          ${generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.38, true)}
         </div>
-        <span class="tile-name-label" style="color: ${isDeckMaster ? '#facc15' : '#e2e8f0'};">${def.name}</span>
       `;
 
-      tileEl.addEventListener('mouseenter', () => updateCardInspector(def));
+      tileEl.addEventListener('mouseenter', () => updateCardInspector(def, null, null, { isDeckMaster }));
 
       if (isDeckMaster) {
         tileEl.addEventListener('click', () => {
-          alert('덱 마스터 몬스터는 가방으로 보낼 수 없습니다. (덱 마스터 보호 규칙)');
+          updateCardInspector(def, null, null, { isDeckMaster: true });
+          showGameAlert('덱 마스터 몬스터는 가방으로 보낼 수 없습니다. (덱 마스터 보호 규칙)', {
+            title: '덱 마스터 보호 규칙',
+            icon: 'crown',
+          });
         });
       } else {
         tileEl.addEventListener('click', () => {
@@ -3692,6 +4328,7 @@ function renderCheckpointDeckEditorSubpage(snap) {
             audio.playCardPickup();
             engine.moveCardDeckToTrunk(cardId);
             renderCheckpointDeckEditorSubpage(engine.getSnapshot());
+            updateCardInspector(def);
           } catch (e) {
             console.error(e);
           }
@@ -3702,14 +4339,14 @@ function renderCheckpointDeckEditorSubpage(snap) {
     });
   }
 
-  // 우측: 가방 (트렁크) 카드 렌더링
+  // 우측: 가방 (트렁크 - 순수 카드 그래픽 렌더링)
   const bagGrid = document.getElementById('editor-bag-cards-grid');
   if (bagGrid) {
     bagGrid.innerHTML = '';
     if (trunkCards.length === 0) {
       bagGrid.innerHTML = `
         <div style="color:#64748b; font-size:0.82rem; padding:40px 10px; text-align:center; grid-column:1/-1; line-height:1.6;">
-          🎒 가방이 비어 있습니다.<br>상점에서 부스터 팩을 구매하거나 암거래상 카드를 영입하세요!
+          ${svgIcon('bag')} 가방이 비어 있습니다.<br>상점에서 부스터 팩을 구매하거나 암거래상 카드를 영입하세요!
         </div>
       `;
     } else {
@@ -3719,12 +4356,12 @@ function renderCheckpointDeckEditorSubpage(snap) {
 
         const tileEl = document.createElement('div');
         tileEl.className = 'trunk-card-tile';
+        tileEl.title = def.name;
 
         tileEl.innerHTML = `
-          <div style="transform: scale(0.42); transform-origin: top center; width: 95px; height: 135px; pointer-events: none;">
-            ${generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.42, false)}
+          <div class="trunk-card-frame">
+            ${generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.42, true)}
           </div>
-          <span class="tile-name-label">${def.name}</span>
         `;
 
         tileEl.addEventListener('mouseenter', () => updateCardInspector(def));
@@ -3734,6 +4371,7 @@ function renderCheckpointDeckEditorSubpage(snap) {
             audio.playCardPlayImpact();
             engine.moveCardTrunkToDeck(cardId);
             renderCheckpointDeckEditorSubpage(engine.getSnapshot());
+            updateCardInspector(def);
           } catch (e) {
             console.error(e);
           }
@@ -3743,6 +4381,25 @@ function renderCheckpointDeckEditorSubpage(snap) {
       });
     }
   }
+
+  // 초기 진입 시 덱 첫 번째 카드(덱 마스터 등)를 인스펙터에 기본 노출
+  const initialPreviewDef = lookupCardDef(deckMasterId || deckCards[0] || trunkCards[0]);
+  if (initialPreviewDef) {
+    updateCardInspector(initialPreviewDef, null, null, { isDeckMaster: initialPreviewDef.id === deckMasterId });
+  }
+
+  // 덱/가방 카드 실제 렌더링 폭 기반 --card-scale-font 정밀 보정
+  requestAnimationFrame(() => {
+    [deckGrid, bagGrid].forEach((grid) => {
+      if (!grid) return;
+      grid.querySelectorAll('.card-composite-wrapper').forEach((wEl) => {
+        const w = wEl.getBoundingClientRect().width;
+        if (w > 10) {
+          wEl.style.setProperty('--card-scale-font', (w / 200).toFixed(3));
+        }
+      });
+    });
+  });
 }
 
 // ============================================================================
@@ -3824,10 +4481,14 @@ document.getElementById('btn-encounter-to-editor')?.addEventListener('click', ()
 });
 
 // 듀얼 인카운터 출진 (인카운터 서브페이지)
-document.getElementById('btn-start-encounter-from-subpage')?.addEventListener('click', () => {
+document.getElementById('btn-start-encounter-from-subpage')?.addEventListener('click', async () => {
   const snap = engine.getSnapshot();
   if ((snap.playerDeckCardIds || []).length !== 30) {
-    alert(`덱이 정확히 30장이어야 결전에 나설 수 있습니다. (현재: ${snap.playerDeckCardIds.length}장)`);
+    await showGameAlert(`덱이 정확히 30장이어야 결전에 나설 수 있습니다. (현재: ${snap.playerDeckCardIds.length}장)`, {
+      title: '덱 편성 확인',
+      icon: 'warn',
+      danger: true,
+    });
     return;
   }
   audio.playCardPlayImpact();
@@ -3836,13 +4497,23 @@ document.getElementById('btn-start-encounter-from-subpage')?.addEventListener('c
 });
 
 // 최종 보스 결전
-document.getElementById('btn-checkpoint-challenge-boss')?.addEventListener('click', () => {
+document.getElementById('btn-checkpoint-challenge-boss')?.addEventListener('click', async () => {
   const snap = engine.getSnapshot();
   if ((snap.playerDeckCardIds || []).length !== 30) {
-    alert(`덱이 정확히 30장이어야 최종 보스전에 나설 수 있습니다. (현재: ${snap.playerDeckCardIds.length}장)`);
+    await showGameAlert(`덱이 정확히 30장이어야 최종 보스전에 나설 수 있습니다. (현재: ${snap.playerDeckCardIds.length}장)`, {
+      title: '덱 편성 확인',
+      icon: 'warn',
+      danger: true,
+    });
     return;
   }
-  const confirmed = confirm('⚠️ 경고: 최종 보스에게 바로 도전하시겠습니까?\n패배 시 런은 즉시 실패로 종료됩니다.');
+  const confirmed = await showGameConfirm('최종 보스에게 바로 도전하시겠습니까?\n패배 시 이번 런은 즉시 실패로 종료됩니다.', {
+    title: '최종 보스 결전 경고',
+    confirmText: '보스전 돌입',
+    cancelText: '돌아가기',
+    icon: 'skull',
+    danger: true,
+  });
   if (confirmed) {
     audio.playTurnBell();
     engine.challengeFinalBoss();
@@ -3871,7 +4542,7 @@ modalTradeSelect?.addEventListener('click', (e) => {
   }
 });
 
-document.getElementById('btn-confirm-trade')?.addEventListener('click', () => {
+document.getElementById('btn-confirm-trade')?.addEventListener('click', async () => {
   if (!activeTradeDeal) return;
   const snap = engine.getSnapshot();
   const trunkCards = snap.playerTrunkCardIds || [];
@@ -3889,7 +4560,7 @@ document.getElementById('btn-confirm-trade')?.addEventListener('click', () => {
     renderCheckpointMerchantSubpage(engine.getSnapshot());
   } catch (err) {
     console.error('[Merchant Trade Error]', err);
-    alert(err.message || '물물교환 처리에 실패했습니다.');
+    await showGameAlert(err.message || '물물교환 처리에 실패했습니다.', { title: '물물교환 실패', danger: true });
   }
 });
 
@@ -3910,7 +4581,7 @@ function renderPackOpening(snap) {
 
     const cardEl = document.createElement('div');
     cardEl.className = 'pack-choice-card';
-    cardEl.innerHTML = generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.72);
+    cardEl.innerHTML = generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.79, false);
 
     cardEl.addEventListener('click', () => {
       audio.playCardPickup();
@@ -3943,7 +4614,7 @@ function renderMerchantEvent(snap) {
   const masteryCardDef = lookupCardDef(offer.bonusMasteryCardId);
 
   const previewEl = document.getElementById('merchant-card-preview');
-  previewEl.innerHTML = generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.85);
+  previewEl.innerHTML = `<div class="merchant-offer-card-frame">${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.85, false)}</div>`;
 
   document.getElementById('merchant-mastery-card-name').textContent = masteryCardDef?.name || '주력 카드';
 }
@@ -3972,12 +4643,12 @@ function renderRunSummary(snap, isVictory) {
   const payloadBox = document.getElementById('hall-payload-box');
 
   if (isVictory) {
-    badgeEl.textContent = '🏆';
+    badgeEl.innerHTML = svgIcon('trophy');
     titleEl.textContent = 'DUEL ROGUE CLIMAX';
     titleEl.style.color = '#facc15';
     descEl.textContent = '운명의 최종 보스를 꺾고 모든 시련을 완주했습니다!';
   } else {
-    badgeEl.textContent = '💀';
+    badgeEl.innerHTML = svgIcon('skull');
     titleEl.textContent = 'DUEL ROGUE DEFEAT';
     titleEl.style.color = '#f87171';
     descEl.textContent = '라이프 포인트가 0이 되어 런이 종료되었습니다.';
@@ -4073,33 +4744,28 @@ function renderBinderPage(pageIndex, focusCardId = null) {
           ${generateCardBackHtml(0.45)}
           <div class="unknown-mystery-overlay">
             <div class="mystery-seal-icon">?</div>
-            <div class="mystery-seal-label">미발견</div>
           </div>
         </div>
       `;
-      statusPillHtml = `<span class="slot-status-pill unk">미발견 (?)</span>`;
     } else if (slot.state === BinderCardState.DISCOVERED) {
       cardContentHtml = `
         <div class="binder-card-viewport card-discovered">
-          ${generateCompositeCardHtml(def, def.attack, def.defense ?? (def.health ?? 0), 0.45, false)}
+          ${generateCompositeCardHtml(def, def.attack, def.defense ?? (def.health ?? 0), 0.54, true)}
         </div>
       `;
-      statusPillHtml = `<span class="slot-status-pill disc">발견 (미소유)</span>`;
     } else if (slot.state === BinderCardState.OWNED) {
       cardContentHtml = `
         <div class="binder-card-viewport card-owned">
-          ${generateCompositeCardHtml(def, def.attack, def.defense ?? (def.health ?? 0), 0.45, false)}
+          ${generateCompositeCardHtml(def, def.attack, def.defense ?? (def.health ?? 0), 0.54, true)}
         </div>
       `;
-      statusPillHtml = `<span class="slot-status-pill own">소유</span>`;
     } else if (slot.state === BinderCardState.MASTERED) {
       cardContentHtml = `
         <div class="holographic-foil-layer"></div>
         <div class="binder-card-viewport card-mastered">
-          ${generateCompositeCardHtml(def, def.attack, def.defense ?? (def.health ?? 0), 0.45, false)}
+          ${generateCompositeCardHtml(def, def.attack, def.defense ?? (def.health ?? 0), 0.54, true)}
         </div>
       `;
-      statusPillHtml = `<span class="slot-status-pill mast">★ 숙련 (${slot.masteryPoints}pt)</span>`;
     }
 
     slotEl.innerHTML = `
@@ -4108,10 +4774,6 @@ function renderBinderPage(pageIndex, focusCardId = null) {
         ${cardContentHtml}
       </div>
       <div class="pocket-sheen"></div>
-      <div class="pocket-bottom-bar">
-        <span class="slot-idx-tag">#${String(slot.globalIndex + 1).padStart(2, '0')}</span>
-        ${statusPillHtml}
-      </div>
     `;
 
     // 마우스 호버 및 클릭 인터랙션
@@ -4131,6 +4793,16 @@ function renderBinderPage(pageIndex, focusCardId = null) {
     });
 
     gridEl.appendChild(slotEl);
+  });
+
+  // 3×3 바인더 카드 실제 폭 기준 --card-scale-font 정밀 보정
+  requestAnimationFrame(() => {
+    gridEl.querySelectorAll('.binder-slot .card-composite-wrapper').forEach((wEl) => {
+      const w = wEl.getBoundingClientRect().width;
+      if (w > 10) {
+        wEl.style.setProperty('--card-scale-font', (w / 200).toFixed(3));
+      }
+    });
   });
 
   // 전체 바인더 통계
@@ -4207,15 +4879,15 @@ function updateBinderDossier(slot, def) {
   const defStat = def.defense ?? (def.health ?? 0);
   const isMonster = def.type === 'MONSTER' || (atk > 0 && def.type !== 'SPELL');
 
-  // 1. 대형 프리뷰 렌더링 (비율 유지 0.82 스케일)
+  // 1. 대형 프리뷰 렌더링 (비율 유지 0.85 스케일 - 170px 컨테이너 정밀 맞춤)
   if (isUnknown) {
-    previewContainer.innerHTML = generateCardBackHtml(0.82);
+    previewContainer.innerHTML = generateCardBackHtml(0.85);
   } else {
     previewContainer.innerHTML = generateCompositeCardHtml(
       def,
       atk,
       defStat,
-      0.82,
+      0.85,
       false
     );
   }
@@ -4223,7 +4895,7 @@ function updateBinderDossier(slot, def) {
   // 2. 카드 아래 공/수 전투 스탯 배너
   if (combatStatsContainer) {
     if (isUnknown) {
-      combatStatsContainer.innerHTML = `<div class="dossier-stat-pill" style="background:#1e293b; color:#64748b; border:1px solid #334155;">🔒 정보 미확인</div>`;
+      combatStatsContainer.innerHTML = `<div class="dossier-stat-pill" style="background:#1e293b; color:#64748b; border:1px solid #334155;">${svgIcon('lock')} 정보 미확인</div>`;
     } else if (isMonster) {
       combatStatsContainer.innerHTML = `
         <div class="dossier-stat-pill stat-pill-atk">
@@ -4237,7 +4909,7 @@ function updateBinderDossier(slot, def) {
       const triggerLabel = def.spellTriggerType === 'SET' ? '트랩 / 세트 발동' : '즉시 발동 (INSTANT)';
       combatStatsContainer.innerHTML = `
         <div class="dossier-stat-pill stat-pill-spell">
-          <span>📜 ${triggerLabel}</span>
+          <span>${svgIcon('scroll')} ${triggerLabel}</span>
         </div>
       `;
     }
@@ -4248,14 +4920,14 @@ function updateBinderDossier(slot, def) {
     if (titleEl) titleEl.textContent = '??? [미지의 카드]';
     if (statusBadgeEl) {
       statusBadgeEl.className = 'dossier-badge badge-unk';
-      statusBadgeEl.textContent = '🔒 미발견 (UNKNOWN)';
+      statusBadgeEl.innerHTML = `${svgIcon('lock')} 미발견 (UNKNOWN)`;
     }
   } else {
     if (titleEl) titleEl.textContent = `${def.name} (#${String(slot.globalIndex + 1).padStart(2, '0')})`;
     if (statusBadgeEl) {
       if (isMastered) {
         statusBadgeEl.className = 'dossier-badge badge-mast';
-        statusBadgeEl.textContent = '★ 숙련 마스터 (MASTERED)';
+        statusBadgeEl.innerHTML = `${svgIcon('star')} 숙련 마스터 (MASTERED)`;
       } else if (isOwned) {
         statusBadgeEl.className = 'dossier-badge badge-own';
         statusBadgeEl.textContent = '소유 완료 (OWNED)';
@@ -4301,7 +4973,7 @@ function updateBinderDossier(slot, def) {
     if (isUnknown) {
       masterySubEl.innerHTML = '카드를 획득한 후 듀얼에서 사용하면 숙련도가 누적됩니다.';
     } else if (isMastered) {
-      masterySubEl.innerHTML = '<strong style="color:#facc15;">★ 숙련도 마스터 완료!</strong> 바인더와 인게임 카드에 찬란한 무지개 홀로그램 포일 오라가 영구 각인되었습니다.';
+      masterySubEl.innerHTML = `<strong style="color:#facc15;">${svgIcon('star')} 숙련도 마스터 완료!</strong> 바인더와 인게임 카드에 찬란한 무지개 홀로그램 포일 오라가 영구 각인되었습니다.`;
     } else {
       const remaining = Math.max(0, masteryMax - mastery);
       masterySubEl.innerHTML = `전투에서 이 카드를 플레이하여 100pt를 달성하면 <strong>홀로그램 포일 카드</strong>로 승급됩니다. (남은 포인트: <strong>${remaining}pt</strong>)`;
@@ -4335,8 +5007,8 @@ function updateBinderDossier(slot, def) {
     if (isUnknown) {
       descEl.innerHTML = `
         <div class="dossier-desc-unknown">
-          <p><strong>🔒 아직 발견되지 않은 미지의 카드입니다.</strong></p>
-          <p class="sub-hint">💡 던전 런(Duel Run)을 진행하며 새로운 보상 팩을 개봉하거나, 적 듀얼리스트와의 대전에서 이 카드를 마주치면 도감 정보가 해금됩니다.</p>
+          <p><strong>${svgIcon('lock')} 아직 발견되지 않은 미지의 카드입니다.</strong></p>
+          <p class="sub-hint">${svgIcon('bulb')} 던전 런(Duel Run)을 진행하며 새로운 보상 팩을 개봉하거나, 적 듀얼리스트와의 대전에서 이 카드를 마주치면 도감 정보가 해금됩니다.</p>
         </div>
       `;
     } else {
@@ -4357,16 +5029,16 @@ function updateBinderDossier(slot, def) {
         const isPierce = def.tags?.some((t) => t.includes('관통'));
         rulesListHtml = `
           <div class="dossier-rule-item">
-            <span>⚔️ <strong>[전투 판정]</strong> 공격력(${atk}) > 상대 수비력일 때 상대 유닛을 <strong>전투 파괴</strong>합니다.</span>
+            <span>${svgIcon('swords')} <strong>[전투 판정]</strong> 공격력(${atk}) > 상대 수비력일 때 상대 유닛을 <strong>전투 파괴</strong>합니다.</span>
           </div>
           <div class="dossier-rule-item">
-            <span>⚡ <strong>[속공 룰]</strong> 소환된 턴에 대기 시간 없이 즉시 적 몬스터를 공격할 수 있습니다.</span>
+            <span>${svgIcon('bolt')} <strong>[속공 룰]</strong> 소환된 턴에 대기 시간 없이 즉시 적 몬스터를 공격할 수 있습니다.</span>
           </div>
           <div class="dossier-rule-item">
-            <span>🛡️ <strong>[수호 룰]</strong> 필드에 몬스터가 1마리라도 생존해 있으면 본체 직접 공격이 차단됩니다.</span>
+            <span>${svgIcon('shield')} <strong>[수호 룰]</strong> 필드에 몬스터가 1마리라도 생존해 있으면 본체 직접 공격이 차단됩니다.</span>
           </div>
           <div class="dossier-rule-item">
-            <span>💥 <strong>[관통 판정]</strong> ${isPierce ? '<span style="color:#f59e0b; font-weight:800;">관통 보유:</span> 수비력을 초과한 대미지가 적 본체 LP에 직격합니다.' : '<span style="color:#94a3b8;">일반 타격:</span> 관통이 없으므로 수비력을 초과해도 본체 피해가 없습니다.'}</span>
+            <span>${svgIcon('arrowPierce')} <strong>[관통 판정]</strong> ${isPierce ? '<span style="color:#f59e0b; font-weight:800;">관통 보유:</span> 수비력을 초과한 대미지가 적 본체 LP에 직격합니다.' : '<span style="color:#94a3b8;">일반 타격:</span> 관통이 없으므로 수비력을 초과해도 본체 피해가 없습니다.'}</span>
           </div>
         `;
       } else {
@@ -4375,19 +5047,19 @@ function updateBinderDossier(slot, def) {
           : '손패에서 패 코스트를 지불하고 필드에 즉시 격발하여 전황을 바꿉니다.';
         rulesListHtml = `
           <div class="dossier-rule-item">
-            <span>📜 <strong>[발동 방식]</strong> ${triggerDesc}</span>
+            <span>${svgIcon('scroll')} <strong>[발동 방식]</strong> ${triggerDesc}</span>
           </div>
           <div class="dossier-rule-item">
-            <span>⚖️ <strong>[전술 제한]</strong> 마법 카드는 강력한 전황 역전력을 지니므로 덱당 엄선하여 편성합니다.</span>
+            <span>${svgIcon('balance')} <strong>[전술 제한]</strong> 마법 카드는 강력한 전황 역전력을 지니므로 덱당 엄선하여 편성합니다.</span>
           </div>
         `;
       }
 
       descEl.innerHTML = `
-        <div class="dossier-effect-header"><strong>📜 카드 고유 효과</strong></div>
+        <div class="dossier-effect-header"><strong>${svgIcon('scroll')} 카드 고유 효과</strong></div>
         <div class="dossier-desc-banner">${effectKoreanText}</div>
         <div class="dossier-rules-list">
-          <div style="font-weight:800; color:#38bdf8; margin-bottom:2px;">📖 전술 & 교전 규정</div>
+          <div style="font-weight:800; color:#38bdf8; margin-bottom:2px;">${svgIcon('book')} 전술 & 교전 규정</div>
           ${rulesListHtml}
         </div>
       `;
@@ -4460,7 +5132,7 @@ function updatePlaygroundAttackerVisuals() {
   const tagsRow = document.getElementById('pg-attacker-tags');
   const titleEl = document.getElementById('pg-attacker-title');
 
-  if (atkText) atkText.textContent = `⚔️${pgState.atk}`;
+  if (atkText) atkText.innerHTML = `${svgIcon('sword')}${pgState.atk}`;
   if (tagsRow) {
     tagsRow.innerHTML = pgState.hasPierce ? `<span class="card-tag tag-pierce">#관통</span>` : `<span class="card-tag">#기사</span>`;
   }
@@ -4489,9 +5161,9 @@ function updatePlaygroundTargetVisuals() {
   const hpRight = document.getElementById('pg-target-hp-right');
   const hpAvatar = document.getElementById('pg-target-hp-avatar');
 
-  if (hpLeft) hpLeft.textContent = `❤️${pgState.targetCardHp.left}`;
-  if (hpCenter) hpCenter.textContent = `❤️${pgState.targetCardHp.center}`;
-  if (hpRight) hpRight.textContent = `❤️${pgState.targetCardHp.right}`;
+  if (hpLeft) hpLeft.innerHTML = `${svgIcon('heart')}${pgState.targetCardHp.left}`;
+  if (hpCenter) hpCenter.innerHTML = `${svgIcon('heart')}${pgState.targetCardHp.center}`;
+  if (hpRight) hpRight.innerHTML = `${svgIcon('heart')}${pgState.targetCardHp.right}`;
   if (hpAvatar) hpAvatar.textContent = pgState.targetCardHp.avatar;
 }
 
@@ -4729,9 +5401,9 @@ function executePlaygroundSlam() {
       }
 
       logPlaygroundTelemetry(
-        `💥 [2. 강타 임팩트] 각도: ${angleDeg.toFixed(1)}° | 데미지: ${atk} | 역경직: ${pgState.hitstopMs}ms | ${
-          isDead ? '☠️ 파괴 및 영혼 배출!' : '❤️ 생존'
-        } ${pierceDamage > 0 ? `| ⚡ 본체 초과 관통 +${pierceDamage}!` : ''}`
+        `[2. 강타 임팩트] 각도: ${angleDeg.toFixed(1)}° | 데미지: ${atk} | 역경직: ${pgState.hitstopMs}ms | ${
+          isDead ? '파괴 및 영혼 배출!' : '생존'
+        } ${pierceDamage > 0 ? `| 본체 초과 관통 +${pierceDamage}!` : ''}`
       );
 
       // 4. 원위치 복귀
@@ -4992,7 +5664,7 @@ function initSlamPlayground() {
       el.style.opacity = '1';
     });
     updatePlaygroundTargetVisuals();
-    logPlaygroundTelemetry('🔄 모든 타겟 카드의 체력과 상태가 완전히 복원되었습니다.');
+    logPlaygroundTelemetry('모든 타겟 카드의 체력과 상태가 완전히 복원되었습니다.');
   });
 
   // 실행 버튼
@@ -5006,6 +5678,9 @@ function initSlamPlayground() {
 
 // 연출 테스트 룸 초기화
 initSlamPlayground();
+
+// 정적 data-vicon 벡터 아이콘 일괄 하이드레이션
+hydrateVectorIcons();
 
 // 초기화: 타이틀 로비 화면 시작
 switchView('VIEW_TITLE_LOBBY');

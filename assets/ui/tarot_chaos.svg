@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="tc-sky" cx="50%" cy="35%" r="72%">
+      <stop offset="0%" stop-color="#6b21a8" />
+      <stop offset="48%" stop-color="#2e1065" />
+      <stop offset="85%" stop-color="#13052b" />
+      <stop offset="100%" stop-color="#070212" />
+    </radialGradient>
+    <radialGradient id="tc-halo" cx="50%" cy="40%" r="42%">
+      <stop offset="0%" stop-color="#f0abfc" stop-opacity="0.72" />
+      <stop offset="45%" stop-color="#a855f7" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#7e22ce" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="tc-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="30%" stop-color="#eab308" />
+      <stop offset="65%" stop-color="#78350f" />
+      <stop offset="100%" stop-color="#facc15" />
+    </linearGradient>
+    <linearGradient id="tc-ivory" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#faf5ff" />
+      <stop offset="55%" stop-color="#d8b4fe" />
+      <stop offset="100%" stop-color="#581c87" />
+    </linearGradient>
+    <linearGradient id="tc-bottom-fade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#070212" stop-opacity="0" />
+      <stop offset="100%" stop-color="#070212" stop-opacity="0.94" />
+    </linearGradient>
+    <filter id="tc-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="320" height="512" rx="16" fill="url(#tc-sky)" />
+  <circle cx="160" cy="198" r="150" fill="url(#tc-halo)" />
+
+  <!-- 공허 균열 & 소용돌이 아크 -->
+  <g fill="none" stroke="#d8b4fe" opacity="0.32">
+    <ellipse cx="160" cy="198" rx="116" ry="52" transform="rotate(-24 160 198)" stroke-width="1.4" stroke-dasharray="8 5" />
+    <ellipse cx="160" cy="198" rx="116" ry="52" transform="rotate(24 160 198)" stroke-width="1.4" stroke-dasharray="8 5" />
+    <circle cx="160" cy="198" r="102" stroke="url(#tc-gold)" stroke-width="1.5" opacity="0.65" />
+    <circle cx="160" cy="198" r="78" stroke="#c084fc" stroke-width="1" stroke-dasharray="3 5" opacity="0.55" />
+  </g>
+
+  <!-- 광대 왕관 & 양면 가면 문장 -->
+  <g filter="url(#tc-glow)">
+    <!-- 3갈래 제스터 크라운 -->
+    <path d="M 160,118 L 146,90 Q 134,62 108,74 Q 124,94 128,124 Z" fill="#4c1d95" stroke="url(#tc-gold)" stroke-width="2" />
+    <path d="M 160,118 L 174,90 Q 186,62 212,74 Q 196,94 192,124 Z" fill="#4c1d95" stroke="url(#tc-gold)" stroke-width="2" />
+    <path d="M 148,124 L 160,56 L 172,124 Z" fill="#7e22ce" stroke="url(#tc-gold)" stroke-width="2" />
+    <circle cx="106" cy="73" r="6" fill="url(#tc-gold)" />
+    <circle cx="214" cy="73" r="6" fill="url(#tc-gold)" />
+    <circle cx="160" cy="54" r="7" fill="url(#tc-gold)" />
+
+    <!-- 중앙 양면 운명 가면 -->
+    <path d="M 114,132 Q 160,118 206,132 L 200,198 Q 160,236 120,198 Z"
+          fill="#1e1b4b" stroke="url(#tc-gold)" stroke-width="3" />
+    <!-- 우반부 밝은 이보리, 좌반부 심연 -->
+    <path d="M 160,126 Q 184,126 206,132 L 200,198 Q 180,218 160,218 Z"
+          fill="url(#tc-ivory)" opacity="0.88" />
+    <!-- 가면 눈 & 세 번째 눈 -->
+    <path d="M 130,164 Q 141,154 150,164 Q 141,173 130,164 Z" fill="#f0abfc" />
+    <path d="M 170,164 Q 179,154 190,164 Q 179,173 170,164 Z" fill="#3b0764" />
+    <polygon points="160,136 167,148 160,158 153,148" fill="#e879f9" stroke="url(#tc-gold)" stroke-width="1.2" />
+    <path d="M 140,190 Q 160,202 180,188" fill="none" stroke="url(#tc-gold)" stroke-width="2.2" />
+  </g>
+
+  <!-- 회전하는 쌍둥이 마법 주사위 -->
+  <g filter="url(#tc-glow)">
+    <!-- 좌측 주사위 -->
+    <g transform="translate(86, 248) rotate(-14)">
+      <polygon points="0,-24 22,-11 22,14 0,27 -22,14 -22,-11" fill="#3b0764" stroke="url(#tc-gold)" stroke-width="2.4" />
+      <polygon points="0,-24 22,-11 0,2 -22,-11" fill="#7e22ce" />
+      <polygon points="0,2 22,-11 22,14 0,27" fill="#4c1d95" />
+      <circle cx="0" cy="-11" r="3" fill="#fef08a" />
+      <circle cx="-11" cy="8" r="2.5" fill="#f0abfc" />
+      <circle cx="11" cy="8" r="2.5" fill="#f0abfc" />
+      <circle cx="11" cy="-1" r="2.5" fill="#f0abfc" />
+    </g>
+    <!-- 우측 주사위 -->
+    <g transform="translate(234, 248) rotate(14)">
+      <polygon points="0,-24 22,-11 22,14 0,27 -22,14 -22,-11" fill="#3b0764" stroke="url(#tc-gold)" stroke-width="2.4" />
+      <polygon points="0,-24 22,-11 0,2 -22,-11" fill="#7e22ce" />
+      <polygon points="0,2 22,-11 22,14 0,27" fill="#4c1d95" />
+      <circle cx="-7" cy="-12" r="2.4" fill="#fef08a" />
+      <circle cx="7" cy="-10" r="2.4" fill="#fef08a" />
+      <circle cx="-11" cy="4" r="2.4" fill="#f0abfc" />
+      <circle cx="-11" cy="14" r="2.4" fill="#f0abfc" />
+      <circle cx="11" cy="9" r="2.8" fill="#fef08a" />
+    </g>
+    <!-- 하단 초승달 & 별자리 추 -->
+    <path d="M 142,276 A 22,22 0 1,0 178,276 A 16,16 0 1,1 142,276 Z" fill="url(#tc-gold)" />
+  </g>
+
+  <g fill="#f5d0fe" opacity="0.85">
+    <polygon points="56,112 59,119 66,122 59,125 56,132 53,125 46,122 53,119" />
+    <polygon points="264,112 267,119 274,122 267,125 264,132 261,125 254,122 261,119" />
+    <circle cx="96" cy="54" r="2" />
+    <circle cx="224" cy="54" r="2" />
+  </g>
+
+  <rect x="0" y="310" width="320" height="202" fill="url(#tc-bottom-fade)" />
+
+  <rect x="8" y="8" width="304" height="496" rx="14" fill="none" stroke="url(#tc-gold)" stroke-width="4.5" />
+  <rect x="16" y="16" width="288" height="480" rx="10" fill="none" stroke="#e9d5ff" stroke-width="0.9" opacity="0.45" />
+  <g fill="url(#tc-gold)">
+    <polygon points="16,28 24,16 32,28 24,40" />
+    <polygon points="304,28 296,16 288,28 296,40" />
+    <polygon points="16,484 24,472 32,484 24,496" />
+    <polygon points="304,484 296,472 288,484 296,496" />
+  </g>
+</svg>

@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pb-body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e40af" />
+      <stop offset="35%" stop-color="#0f2557" />
+      <stop offset="70%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#09132e" />
+    </linearGradient>
+    <linearGradient id="pb-foil" x1="0%" y1="0%" x2="100%" y2="25%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.06" />
+      <stop offset="38%" stop-color="#93c5fd" stop-opacity="0.28" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="65%" stop-color="#38bdf8" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.22" />
+    </linearGradient>
+    <linearGradient id="pb-silver" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#64748b" />
+      <stop offset="25%" stop-color="#f1f5f9" />
+      <stop offset="50%" stop-color="#94a3b8" />
+      <stop offset="75%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+    <linearGradient id="pb-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="35%" stop-color="#eab308" />
+      <stop offset="70%" stop-color="#854d0e" />
+      <stop offset="100%" stop-color="#fde047" />
+    </linearGradient>
+    <pattern id="pb-crimp" width="10" height="40" patternUnits="userSpaceOnUse">
+      <rect width="5" height="40" fill="#000000" opacity="0.22" />
+      <rect x="5" width="5" height="40" fill="#ffffff" opacity="0.14" />
+    </pattern>
+    <filter id="pb-glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+  </defs>
+
+  <!-- 팩 그림자 & 외곽 실루엣 -->
+  <rect x="26" y="14" width="268" height="452" rx="8" fill="#040814" opacity="0.45" />
+  <path d="M 24,10 L 296,10 L 296,48 L 288,54 L 288,426 L 296,432 L 296,470 L 24,470 L 24,432 L 32,426 L 32,54 L 24,48 Z"
+        fill="url(#pb-body)" stroke="#93c5fd" stroke-width="1.5" />
+
+  <!-- 상/하단 호일 압착 크림프 실링 -->
+  <rect x="25" y="11" width="270" height="36" rx="2" fill="url(#pb-silver)" opacity="0.88" />
+  <rect x="25" y="11" width="270" height="36" rx="2" fill="url(#pb-crimp)" />
+  <line x1="24" y1="47" x2="296" y2="47" stroke="#e2e8f0" stroke-width="1.8" />
+
+  <rect x="25" y="433" width="270" height="36" rx="2" fill="url(#pb-silver)" opacity="0.88" />
+  <rect x="25" y="433" width="270" height="36" rx="2" fill="url(#pb-crimp)" />
+  <line x1="24" y1="433" x2="296" y2="433" stroke="#e2e8f0" stroke-width="1.8" />
+
+  <!-- 팩 내부 장식 테두리 & 마법진 -->
+  <rect x="40" y="58" width="240" height="364" rx="8" fill="none" stroke="url(#pb-gold)" stroke-width="2.5" />
+  <rect x="47" y="65" width="226" height="350" rx="5" fill="none" stroke="#60a5fa" stroke-width="1" opacity="0.45" />
+  <circle cx="160" cy="235" r="88" fill="none" stroke="url(#pb-gold)" stroke-width="1.4" stroke-dasharray="6 4" opacity="0.55" />
+  <circle cx="160" cy="235" r="68" fill="none" stroke="#93c5fd" stroke-width="1" opacity="0.4" />
+
+  <!-- 상단 보석 배너 -->
+  <polygon points="100,72 220,72 206,96 114,96" fill="#0f172a" stroke="url(#pb-gold)" stroke-width="1.8" />
+  <polygon points="160,76 168,84 160,92 152,84" fill="#38bdf8" stroke="url(#pb-gold)" stroke-width="1.2" />
+
+  <!-- 천사 날개 & 타워 실드 엠블럼 -->
+  <g filter="url(#pb-glow)">
+    <path d="M 116,216 C 82,198 62,168 58,144 C 76,162 96,174 114,178 C 86,184 72,194 64,208 C 86,204 102,210 116,226 Z"
+          fill="url(#pb-silver)" stroke="url(#pb-gold)" stroke-width="1.3" />
+    <path d="M 204,216 C 238,198 258,168 262,144 C 244,162 224,174 206,178 C 234,184 248,194 256,208 C 234,204 218,210 204,226 Z"
+          fill="url(#pb-silver)" stroke="url(#pb-gold)" stroke-width="1.3" />
+    <path d="M 112,162 L 208,162 L 208,242 Q 208,292 160,318 Q 112,292 112,242 Z"
+          fill="#0f172a" stroke="url(#pb-gold)" stroke-width="4" />
+    <path d="M 122,172 L 198,172 L 198,238 Q 198,280 160,302 Q 122,280 122,238 Z"
+          fill="#1e3a8a" stroke="#60a5fa" stroke-width="1.2" />
+    <!-- 방패 십자 & 천칭 포인트 -->
+    <path d="M 160,180 L 160,290 M 130,222 L 190,222" stroke="url(#pb-gold)" stroke-width="3" />
+    <polygon points="160,204 176,222 160,240 144,222" fill="#38bdf8" stroke="url(#pb-gold)" stroke-width="1.8" />
+    <circle cx="160" cy="222" r="5" fill="#e0f2fe" />
+  </g>
+
+  <!-- 하단 씰 -->
+  <polygon points="116,386 204,386 218,406 102,406" fill="#0f172a" stroke="url(#pb-gold)" stroke-width="1.6" />
+  <circle cx="160" cy="396" r="4.5" fill="#38bdf8" />
+  <circle cx="130" cy="396" r="2.5" fill="url(#pb-gold)" />
+  <circle cx="190" cy="396" r="2.5" fill="url(#pb-gold)" />
+
+  <!-- 전체 호일 스페큘러 광택 -->
+  <path d="M 32,54 L 288,54 L 288,426 L 32,426 Z" fill="url(#pb-foil)" pointer-events="none" />
+  <line x1="34" y1="54" x2="34" y2="426" stroke="#ffffff" stroke-width="2" opacity="0.24" />
+</svg>

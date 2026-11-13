@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pl-body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3f2e0a" />
+      <stop offset="30%" stop-color="#141008" />
+      <stop offset="68%" stop-color="#422006" />
+      <stop offset="100%" stop-color="#090704" />
+    </linearGradient>
+    <radialGradient id="pl-aura" cx="50%" cy="48%" r="44%">
+      <stop offset="0%" stop-color="#fef08a" stop-opacity="0.58" />
+      <stop offset="50%" stop-color="#eab308" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#eab308" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="pl-foil" x1="0%" y1="0%" x2="100%" y2="25%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.06" />
+      <stop offset="36%" stop-color="#fef08a" stop-opacity="0.34" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.45" />
+      <stop offset="64%" stop-color="#f59e0b" stop-opacity="0.24" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.2" />
+    </linearGradient>
+    <linearGradient id="pl-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fefce8" />
+      <stop offset="28%" stop-color="#facc15" />
+      <stop offset="60%" stop-color="#a16207" />
+      <stop offset="100%" stop-color="#fef08a" />
+    </linearGradient>
+    <pattern id="pl-crimp" width="10" height="40" patternUnits="userSpaceOnUse">
+      <rect width="5" height="40" fill="#000000" opacity="0.25" />
+      <rect x="5" width="5" height="40" fill="#ffffff" opacity="0.2" />
+    </pattern>
+    <filter id="pl-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4.5" result="blur" />
+      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+  </defs>
+
+  <rect x="26" y="14" width="268" height="452" rx="8" fill="#050402" opacity="0.55" />
+  <path d="M 24,10 L 296,10 L 296,48 L 288,54 L 288,426 L 296,432 L 296,470 L 24,470 L 24,432 L 32,426 L 32,54 L 24,48 Z"
+        fill="url(#pl-body)" stroke="url(#pl-gold)" stroke-width="2" />
+
+  <!-- 순금 크림프 실링 -->
+  <rect x="25" y="11" width="270" height="36" rx="2" fill="url(#pl-gold)" />
+  <rect x="25" y="11" width="270" height="36" rx="2" fill="url(#pl-crimp)" />
+  <line x1="24" y1="47" x2="296" y2="47" stroke="#fef9c3" stroke-width="2" />
+
+  <rect x="25" y="433" width="270" height="36" rx="2" fill="url(#pl-gold)" />
+  <rect x="25" y="433" width="270" height="36" rx="2" fill="url(#pl-crimp)" />
+  <line x1="24" y1="433" x2="296" y2="433" stroke="#fef9c3" stroke-width="2" />
+
+  <circle cx="160" cy="238" r="130" fill="url(#pl-aura)" />
+  <rect x="40" y="58" width="240" height="364" rx="8" fill="none" stroke="url(#pl-gold)" stroke-width="3" />
+  <rect x="48" y="66" width="224" height="348" rx="5" fill="none" stroke="#fef08a" stroke-width="1" opacity="0.55" />
+
+  <!-- 신성 후광 룬 링 & 광선 -->
+  <g stroke="url(#pl-gold)" fill="none" opacity="0.72">
+    <circle cx="160" cy="238" r="96" stroke-width="2" stroke-dasharray="8 4" />
+    <circle cx="160" cy="238" r="82" stroke-width="1.2" />
+    <line x1="160" y1="112" x2="160" y2="364" stroke-width="0.9" opacity="0.45" />
+    <line x1="56" y1="238" x2="264" y2="238" stroke-width="0.9" opacity="0.45" />
+  </g>
+
+  <polygon points="94,72 226,72 210,98 110,98" fill="#141008" stroke="url(#pl-gold)" stroke-width="2" />
+  <polygon points="160,76 170,85 160,94 150,85" fill="#fef08a" stroke="#ffffff" stroke-width="1" />
+
+  <!-- 삼위 성좌 삼각형 문장 (청/적/자 세 진영의 융합) -->
+  <g filter="url(#pl-glow)">
+    <polygon points="160,148 242,292 78,292" fill="#120e07" stroke="url(#pl-gold)" stroke-width="4" />
+    <polygon points="160,168 224,282 96,282" fill="none" stroke="#fef08a" stroke-width="1.2" opacity="0.65" />
+    <!-- 3대 코너 보석: 상단(정의 청), 좌하단(열의 적), 우하단(혼돈 자) -->
+    <circle cx="160" cy="148" r="11" fill="#38bdf8" stroke="url(#pl-gold)" stroke-width="2.5" />
+    <circle cx="78" cy="292" r="11" fill="#ef4444" stroke="url(#pl-gold)" stroke-width="2.5" />
+    <circle cx="242" cy="292" r="11" fill="#c084fc" stroke="url(#pl-gold)" stroke-width="2.5" />
+    <!-- 중앙 성좌 태양 코어 -->
+    <polygon points="160,204 176,232 204,238 176,244 160,272 144,244 116,238 144,232"
+             fill="url(#pl-gold)" stroke="#ffffff" stroke-width="1" />
+    <circle cx="160" cy="238" r="9" fill="#ffffff" />
+  </g>
+
+  <polygon points="110,386 210,386 226,408 94,408" fill="#141008" stroke="url(#pl-gold)" stroke-width="1.8" />
+  <circle cx="160" cy="397" r="5" fill="#fef08a" />
+  <circle cx="128" cy="397" r="3" fill="#38bdf8" />
+  <circle cx="192" cy="397" r="3" fill="#ef4444" />
+
+  <path d="M 32,54 L 288,54 L 288,426 L 32,426 Z" fill="url(#pl-foil)" pointer-events="none" />
+  <line x1="34" y1="54" x2="34" y2="426" stroke="#ffffff" stroke-width="2.4" opacity="0.3" />
+</svg>

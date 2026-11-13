@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="icon-bg" cx="50%" cy="42%" r="58%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="55%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#060911" />
+    </radialGradient>
+    <linearGradient id="icon-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="30%" stop-color="#facc15" />
+      <stop offset="65%" stop-color="#a16207" />
+      <stop offset="100%" stop-color="#fde047" />
+    </linearGradient>
+    <linearGradient id="icon-steel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="50%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#475569" />
+    </linearGradient>
+    <radialGradient id="icon-gem" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#e0f2fe" />
+      <stop offset="45%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </radialGradient>
+  </defs>
+
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#icon-bg)" stroke="url(#icon-gold)" stroke-width="18" />
+  <rect x="48" y="48" width="416" height="416" rx="74" fill="none" stroke="#38bdf8" stroke-width="3" opacity="0.45" />
+  <circle cx="256" cy="256" r="168" fill="none" stroke="url(#icon-gold)" stroke-width="4" stroke-dasharray="14 8" opacity="0.65" />
+
+  <!-- 교차 대검 -->
+  <g transform="translate(256,262) rotate(-42)">
+    <polygon points="0,-176 18,-132 14,72 -14,72 -18,-132" fill="url(#icon-steel)" stroke="#e2e8f0" stroke-width="2" />
+    <rect x="-46" y="72" width="92" height="16" rx="6" fill="url(#icon-gold)" />
+    <rect x="-10" y="88" width="20" height="46" rx="4" fill="#1e293b" stroke="url(#icon-gold)" stroke-width="3" />
+    <circle cx="0" cy="144" r="14" fill="url(#icon-gold)" />
+  </g>
+  <g transform="translate(256,262) rotate(42)">
+    <polygon points="0,-176 18,-132 14,72 -14,72 -18,-132" fill="url(#icon-steel)" stroke="#e2e8f0" stroke-width="2" />
+    <rect x="-46" y="72" width="92" height="16" rx="6" fill="url(#icon-gold)" />
+    <rect x="-10" y="88" width="20" height="46" rx="4" fill="#1e293b" stroke="url(#icon-gold)" stroke-width="3" />
+    <circle cx="0" cy="144" r="14" fill="url(#icon-gold)" />
+  </g>
+
+  <!-- 중앙 방패 & 사파이어 코어 -->
+  <path d="M 184,186 L 328,186 L 328,266 Q 328,334 256,374 Q 184,334 184,266 Z"
+        fill="#0f172a" stroke="url(#icon-gold)" stroke-width="12" />
+  <polygon points="256,216 298,268 256,322 214,268" fill="url(#icon-gem)" stroke="url(#icon-gold)" stroke-width="6" />
+  <circle cx="256" cy="268" r="12" fill="#f0f9ff" />
+</svg>

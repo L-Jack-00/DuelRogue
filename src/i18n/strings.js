@@ -22,7 +22,7 @@ const ko = {
   'ui.title.continue': '이어서 하기',
   'ui.title.newRun': '새로운 듀얼 런 개시',
   'ui.title.binder': '3×3 콜렉션 바인더 열람',
-  'ui.title.badges': '카드 516종 • 3대 운명과 보스 • 성향이 바뀌는 상대',
+  'ui.title.badges': '카드 516종 • 3대 운명과 보스',
   'ui.binder.all': '전체',
   'ui.binder.ownedOnly': '보유만',
 

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 480" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pn-body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#57534e" />
+      <stop offset="35%" stop-color="#292524" />
+      <stop offset="70%" stop-color="#3f3f46" />
+      <stop offset="100%" stop-color="#141413" />
+    </linearGradient>
+    <linearGradient id="pn-foil" x1="0%" y1="0%" x2="100%" y2="25%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.06" />
+      <stop offset="38%" stop-color="#d6d3d1" stop-opacity="0.24" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.3" />
+      <stop offset="65%" stop-color="#a8a29e" stop-opacity="0.16" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.22" />
+    </linearGradient>
+    <linearGradient id="pn-bronze" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#57534e" />
+      <stop offset="28%" stop-color="#e7e5e4" />
+      <stop offset="52%" stop-color="#78716c" />
+      <stop offset="78%" stop-color="#f5f5f4" />
+      <stop offset="100%" stop-color="#292524" />
+    </linearGradient>
+    <linearGradient id="pn-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7" />
+      <stop offset="35%" stop-color="#d97706" />
+      <stop offset="70%" stop-color="#78350f" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <pattern id="pn-crimp" width="10" height="40" patternUnits="userSpaceOnUse">
+      <rect width="5" height="40" fill="#000000" opacity="0.24" />
+      <rect x="5" width="5" height="40" fill="#ffffff" opacity="0.14" />
+    </pattern>
+    <filter id="pn-glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+    </filter>
+  </defs>
+
+  <rect x="26" y="14" width="268" height="452" rx="8" fill="#0c0a09" opacity="0.48" />
+  <path d="M 24,10 L 296,10 L 296,48 L 288,54 L 288,426 L 296,432 L 296,470 L 24,470 L 24,432 L 32,426 L 32,54 L 24,48 Z"
+        fill="url(#pn-body)" stroke="#a8a29e" stroke-width="1.5" />
+
+  <rect x="25" y="11" width="270" height="36" rx="2" fill="url(#pn-bronze)" opacity="0.88" />
+  <rect x="25" y="11" width="270" height="36" rx="2" fill="url(#pn-crimp)" />
+  <line x1="24" y1="47" x2="296" y2="47" stroke="#e7e5e4" stroke-width="1.8" />
+
+  <rect x="25" y="433" width="270" height="36" rx="2" fill="url(#pn-bronze)" opacity="0.88" />
+  <rect x="25" y="433" width="270" height="36" rx="2" fill="url(#pn-crimp)" />
+  <line x1="24" y1="433" x2="296" y2="433" stroke="#e7e5e4" stroke-width="1.8" />
+
+  <rect x="40" y="58" width="240" height="364" rx="8" fill="none" stroke="url(#pn-gold)" stroke-width="2.5" />
+  <rect x="47" y="65" width="226" height="350" rx="5" fill="none" stroke="#a8a29e" stroke-width="1" opacity="0.45" />
+
+  <!-- 배경 비전 톱니바퀴 -->
+  <g stroke="url(#pn-gold)" fill="none" opacity="0.65">
+    <circle cx="160" cy="235" r="78" stroke-width="10" stroke-dasharray="14 10" />
+    <circle cx="160" cy="235" r="66" stroke-width="2.5" />
+  </g>
+
+  <polygon points="100,72 220,72 206,96 114,96" fill="#1c1917" stroke="url(#pn-gold)" stroke-width="1.8" />
+  <polygon points="160,76 168,84 160,92 152,84" fill="#84cc16" stroke="url(#pn-gold)" stroke-width="1.2" />
+
+  <!-- 기계 늑대 머리 문장 -->
+  <g filter="url(#pn-glow)">
+    <polygon points="160,152 212,216 190,298 160,318 130,298 108,216"
+             fill="#1c1917" stroke="url(#pn-gold)" stroke-width="3" />
+    <!-- 늑대 귀 -->
+    <polygon points="122,188 106,136 144,174" fill="#57534e" stroke="url(#pn-gold)" stroke-width="2" />
+    <polygon points="198,188 214,136 176,174" fill="#57534e" stroke="url(#pn-gold)" stroke-width="2" />
+    <!-- 안면 갑주 -->
+    <polygon points="160,174 194,218 178,274 160,294 142,274 126,218"
+             fill="#44403c" stroke="#d6d3d1" stroke-width="1.4" />
+    <polygon points="136,214 152,222 140,228" fill="#bef264" />
+    <polygon points="184,214 168,222 180,228" fill="#bef264" />
+    <polygon points="152,262 168,262 160,278" fill="#1c1917" stroke="url(#pn-gold)" stroke-width="1" />
+  </g>
+
+  <polygon points="116,386 204,386 218,406 102,406" fill="#1c1917" stroke="url(#pn-gold)" stroke-width="1.6" />
+  <circle cx="160" cy="396" r="4.5" fill="#a3e635" />
+  <circle cx="130" cy="396" r="2.5" fill="url(#pn-gold)" />
+  <circle cx="190" cy="396" r="2.5" fill="url(#pn-gold)" />
+
+  <path d="M 32,54 L 288,54 L 288,426 L 32,426 Z" fill="url(#pn-foil)" pointer-events="none" />
+  <line x1="34" y1="54" x2="34" y2="426" stroke="#ffffff" stroke-width="2" opacity="0.22" />
+</svg>

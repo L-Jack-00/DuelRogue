@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 160" width="100%" height="100%">
+  <defs>
+    <radialGradient id="mc-glow" cx="50%" cy="46%" r="52%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.3" />
+      <stop offset="65%" stop-color="#6b21a8" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="#06080c" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="mc-hood" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#312e81" />
+      <stop offset="55%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+    <linearGradient id="mc-trim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a7f3d0" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+  </defs>
+  <circle cx="70" cy="80" r="64" fill="url(#mc-glow)" />
+  <!-- 암시장 망토 & 후드 -->
+  <path d="M 24,154 C 26,112 48,92 70,92 C 92,92 114,112 116,154 Z" fill="url(#mc-hood)" stroke="url(#mc-trim)" stroke-width="1.8" />
+  <path d="M 40,94 C 38,52 54,28 70,26 C 86,28 102,52 100,94 Z" fill="url(#mc-hood)" stroke="url(#mc-trim)" stroke-width="1.8" />
+  <ellipse cx="70" cy="66" rx="18" ry="22" fill="#04060c" />
+  <!-- 어둠 속 번뜩이는 두 눈 -->
+  <polygon points="58,64 66,66 60,69" fill="#34d399" />
+  <polygon points="82,64 74,66 80,69" fill="#34d399" />
+  <!-- 펼쳐 든 금단의 카드 부채 -->
+  <rect x="84" y="100" width="20" height="30" rx="2.5" transform="rotate(-14 94 115)" fill="#4c1d95" stroke="#c084fc" stroke-width="1.4" />
+  <rect x="94" y="98" width="20" height="30" rx="2.5" transform="rotate(8 104 113)" fill="#064e3b" stroke="#34d399" stroke-width="1.4" />
+  <circle cx="104" cy="113" r="4" fill="#fde047" />
+</svg>

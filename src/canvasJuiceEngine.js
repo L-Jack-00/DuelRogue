@@ -44,6 +44,11 @@ export class CanvasJuiceEngine {
     this.shakeRot = 0;
     this.wasShaking = false;
     this.appContainer = null;
+    this.viewWidth = 1280;
+    this.viewHeight = 800;
+
+    // 배경 대기 파티클 (은은한 비전 입자)
+    this.ambientMotes = Array.from({ length: 24 }, () => this._createAmbientMote(true));
 
     // 튜너 설정 연동
     this.settings = {
@@ -52,6 +57,23 @@ export class CanvasJuiceEngine {
       shatterShards: 18,
       pierceSpeed: 1.0,
       hitstopMs: 50,
+      ambientFxMult: 1.0,
+    };
+  }
+
+  _createAmbientMote(randomY = false) {
+    const w = this.viewWidth || 1280;
+    const h = this.viewHeight || 800;
+    const palette = ['#38bdf8', '#c084fc', '#fbbf24'];
+    return {
+      x: Math.random() * w,
+      y: randomY ? Math.random() * h : h + 10,
+      vx: (Math.random() - 0.5) * 14,
+      vy: -(8 + Math.random() * 18),
+      size: 1.2 + Math.random() * 2.0,
+      alpha: 0.08 + Math.random() * 0.16,
+      phase: Math.random() * Math.PI * 2,
+      color: palette[Math.floor(Math.random() * palette.length)],
     };
   }
 
@@ -65,10 +87,18 @@ export class CanvasJuiceEngine {
 
   resize() {
     if (!this.canvas) return;
+    if (!this._resizeBound && typeof window !== 'undefined') {
+      this._resizeBound = true;
+      window.addEventListener('resize', () => this.resize());
+    }
     const rect = this.canvas.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width || this.canvas.parentElement?.clientWidth || window.innerWidth || 1280));
+    const h = Math.max(1, Math.round(rect.height || this.canvas.parentElement?.clientHeight || window.innerHeight || 800));
+    this.viewWidth = w;
+    this.viewHeight = h;
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    this.canvas.width = 1280 * dpr;
-    this.canvas.height = 800 * dpr;
+    this.canvas.width = w * dpr;
+    this.canvas.height = h * dpr;
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
@@ -182,6 +212,7 @@ export class CanvasJuiceEngine {
       const sp = this.impactSparks[i];
       sp.x += sp.vx * dt;
       sp.y += sp.vy * dt;
+      if (sp.gravity) sp.vy += sp.gravity * dt;
       sp.vx *= 0.94;
       sp.vy *= 0.94;
       sp.life -= dt;
@@ -307,6 +338,20 @@ export class CanvasJuiceEngine {
         this.dustRings.splice(i, 1);
       }
     }
+
+    // 9. 배경 대기 비전 입자 업데이트
+    const ambMult = Math.max(0, Number(this.settings.ambientFxMult ?? 1.0));
+    if (ambMult > 0) {
+      for (let i = 0; i < this.ambientMotes.length; i++) {
+        const m = this.ambientMotes[i];
+        m.phase += dt * 1.8;
+        m.x += (m.vx + Math.sin(m.phase) * 6) * dt;
+        m.y += m.vy * dt;
+        if (m.y < -12 || m.x < -20 || m.x > this.viewWidth + 20) {
+          this.ambientMotes[i] = this._createAmbientMote(false);
+        }
+      }
+    }
   }
 
   // ============================================================================
@@ -314,11 +359,26 @@ export class CanvasJuiceEngine {
   // ============================================================================
   render() {
     const ctx = this.ctx;
-    ctx.clearRect(0, 0, 1280, 800);
+    ctx.clearRect(0, 0, this.viewWidth || 1920, this.viewHeight || 1080);
 
     ctx.save();
     // 뷰포트 전체(#game-app)가 CSS translate3d/rotate로 흔들리므로
     // #game-fx-canvas도 함께 진동하여 ctx.translate 중복 없이 1:1 완벽 정렬됨.
+
+    // 0. 배경 대기 파티클 (은은한 깊이감)
+    const ambMult = Math.max(0, Number(this.settings.ambientFxMult ?? 1.0));
+    if (ambMult > 0) {
+      ctx.save();
+      for (const m of this.ambientMotes) {
+        const pulse = 0.55 + 0.45 * Math.sin(m.phase * 1.4);
+        ctx.globalAlpha = Math.min(0.45, m.alpha * ambMult * pulse);
+        ctx.fillStyle = m.color;
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
 
     // 1. 대상 카드 오라 렌더링
     this.renderAuras(ctx);
@@ -940,6 +1000,58 @@ export class CanvasJuiceEngine {
         };
       })
       .filter((a) => a.rect.width > 0 && a.rect.height > 0);
+  }
+
+  /**
+   * 12. 소환·마법 발동 룬 펄스 버스트 (아군/상대 공통 연출)
+   */
+  spawnSummonBurst(x, y, color = '#38bdf8', radius = 95) {
+    if (!this.canvas) return;
+    this.spawnShockwave(x, y, radius, color);
+    this.spawnShockwave(x, y, radius * 0.58, '#ffffff');
+    this.spawnImpactStarburst(x, y, 22, color);
+  }
+
+  /**
+   * 13. 결투·런 승리 황금빛 폭죽 및 상승 스파크 연출
+   */
+  spawnVictoryCelebration(cx, cy) {
+    if (!this.canvas) return;
+    const w = this.viewWidth || 1280;
+    const h = this.viewHeight || 800;
+    const centerX = cx ?? w * 0.5;
+    const centerY = cy ?? h * 0.44;
+    const palette = ['#fbbf24', '#fde047', '#38bdf8', '#f472b6', '#ffffff'];
+
+    const burstAt = (bx, by, sparkCount, ringRadius, tint) => {
+      this.spawnShockwave(bx, by, ringRadius, tint);
+      this.spawnShockwave(bx, by, ringRadius * 0.62, '#ffffff');
+      this.spawnImpactStarburst(bx, by, Math.min(24, sparkCount), tint);
+      for (let i = 0; i < sparkCount; i++) {
+        const angle = (i / sparkCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.45;
+        const speed = 150 + Math.random() * 340;
+        const col = palette[i % palette.length];
+        const maxLife = 0.75 + Math.random() * 0.55;
+        this.impactSparks.push({
+          x: bx,
+          y: by,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 90,
+          gravity: 210,
+          size: 2.2 + Math.random() * 3.0,
+          color: col,
+          alpha: 1,
+          life: maxLife,
+          maxLife,
+        });
+      }
+    };
+
+    this.triggerScreenShake(8);
+    burstAt(centerX, centerY, 44, 210, '#fbbf24');
+    setTimeout(() => burstAt(centerX - w * 0.16, centerY - h * 0.08, 32, 160, '#38bdf8'), 190);
+    setTimeout(() => burstAt(centerX + w * 0.16, centerY - h * 0.08, 32, 160, '#f472b6'), 380);
+    setTimeout(() => burstAt(centerX, centerY - h * 0.05, 40, 230, '#fde047'), 600);
   }
 
   clearTargetAura() {

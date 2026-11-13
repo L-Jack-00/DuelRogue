@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="tz-sky" cx="50%" cy="35%" r="72%">
+      <stop offset="0%" stop-color="#991b1b" />
+      <stop offset="48%" stop-color="#450a0a" />
+      <stop offset="85%" stop-color="#1c0609" />
+      <stop offset="100%" stop-color="#0b0305" />
+    </radialGradient>
+    <radialGradient id="tz-halo" cx="50%" cy="40%" r="42%">
+      <stop offset="0%" stop-color="#fde047" stop-opacity="0.72" />
+      <stop offset="40%" stop-color="#f97316" stop-opacity="0.34" />
+      <stop offset="100%" stop-color="#ef4444" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="tz-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="30%" stop-color="#eab308" />
+      <stop offset="65%" stop-color="#92400e" />
+      <stop offset="100%" stop-color="#fbbf24" />
+    </linearGradient>
+    <linearGradient id="tz-blade" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff7ed" />
+      <stop offset="45%" stop-color="#fdba74" />
+      <stop offset="100%" stop-color="#9a3412" />
+    </linearGradient>
+    <linearGradient id="tz-flame" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#dc2626" />
+      <stop offset="50%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#fef08a" />
+    </linearGradient>
+    <linearGradient id="tz-bottom-fade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0b0305" stop-opacity="0" />
+      <stop offset="100%" stop-color="#0b0305" stop-opacity="0.94" />
+    </linearGradient>
+    <filter id="tz-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="320" height="512" rx="16" fill="url(#tz-sky)" />
+  <circle cx="160" cy="200" r="150" fill="url(#tz-halo)" />
+
+  <!-- 배경 태양불꽃 방사선 & 고딕 아치 -->
+  <g stroke="#fb923c" stroke-width="1.2" opacity="0.24">
+    <line x1="160" y1="195" x2="160" y2="28" />
+    <line x1="160" y1="195" x2="48" y2="55" />
+    <line x1="160" y1="195" x2="272" y2="55" />
+    <line x1="160" y1="195" x2="28" y2="145" />
+    <line x1="160" y1="195" x2="292" y2="145" />
+    <line x1="160" y1="195" x2="42" y2="292" />
+    <line x1="160" y1="195" x2="278" y2="292" />
+  </g>
+  <g fill="none" stroke="url(#tz-gold)" opacity="0.62">
+    <circle cx="160" cy="198" r="106" stroke-width="1.6" stroke-dasharray="10 4" />
+    <circle cx="160" cy="198" r="88" stroke-width="1" />
+    <path d="M 48,350 L 48,142 Q 48,55 160,38 Q 272,55 272,142 L 272,350" stroke-width="1.8" opacity="0.52" />
+  </g>
+
+  <!-- 불꽃 오라 & 상승 불씨 -->
+  <g filter="url(#tz-glow)" opacity="0.9">
+    <path d="M 160,55 Q 198,118 182,175 Q 222,145 215,212 Q 204,268 160,296 Q 116,268 105,212 Q 98,145 138,175 Q 122,118 160,55 Z"
+          fill="url(#tz-flame)" opacity="0.48" />
+  </g>
+
+  <!-- 불타는 대검 -->
+  <g filter="url(#tz-glow)">
+    <polygon points="160,52 174,84 170,255 150,255 146,84" fill="url(#tz-blade)" stroke="#fef08a" stroke-width="1" />
+    <line x1="160" y1="68" x2="160" y2="250" stroke="#ffffff" stroke-width="1.5" opacity="0.75" />
+    <!-- 용익 가드 -->
+    <path d="M 96,252 Q 130,234 160,254 Q 190,234 224,252 L 204,272 L 160,264 L 116,272 Z"
+          fill="url(#tz-gold)" stroke="#450a0a" stroke-width="1.2" />
+    <rect x="154" y="264" width="12" height="40" rx="3" fill="#280909" stroke="url(#tz-gold)" stroke-width="1.3" />
+    <polygon points="160,304 171,316 160,328 149,316" fill="url(#tz-gold)" />
+  </g>
+
+  <!-- 검을 휘감는 진홍의 드래곤 실루엣 -->
+  <g filter="url(#tz-glow)">
+    <!-- 용 날개 좌우 -->
+    <path d="M 145,176 C 102,150 66,110 58,86 C 78,108 98,118 118,122 C 92,132 76,142 64,158 C 90,152 114,158 136,184 Z"
+          fill="#7f1d1d" stroke="url(#tz-gold)" stroke-width="1.6" />
+    <path d="M 175,176 C 218,150 254,110 262,86 C 242,108 222,118 202,122 C 228,132 244,142 256,158 C 230,152 206,158 184,184 Z"
+          fill="#7f1d1d" stroke="url(#tz-gold)" stroke-width="1.6" />
+    <!-- 휘감긴 용의 몸통 -->
+    <path d="M 136,246 C 104,226 112,192 152,186 C 194,180 208,148 178,124 C 154,104 128,118 138,142"
+          fill="none" stroke="url(#tz-gold)" stroke-width="11" stroke-linecap="round" opacity="0.92" />
+    <path d="M 136,246 C 104,226 112,192 152,186 C 194,180 208,148 178,124 C 154,104 128,118 138,142"
+          fill="none" stroke="#b91c1c" stroke-width="7" stroke-linecap="round" />
+    <!-- 드래곤 헤드 & 불꽃 숨결 -->
+    <path d="M 124,132 L 146,118 L 164,126 L 154,144 L 130,148 Z" fill="#dc2626" stroke="url(#tz-gold)" stroke-width="1.6" />
+    <polygon points="148,118 158,100 156,120" fill="url(#tz-gold)" />
+    <polygon points="136,122 142,104 146,120" fill="url(#tz-gold)" />
+    <circle cx="144" cy="132" r="2.6" fill="#fef08a" />
+  </g>
+
+  <!-- 부유 불씨 파티클 -->
+  <g fill="#fef08a" opacity="0.85">
+    <circle cx="84" cy="210" r="2.2" />
+    <circle cx="236" cy="214" r="2.2" />
+    <circle cx="102" cy="94" r="1.8" />
+    <circle cx="218" cy="94" r="1.8" />
+    <polygon points="160,34 163,41 170,44 163,47 160,54 157,47 150,44 157,41" />
+  </g>
+
+  <rect x="0" y="310" width="320" height="202" fill="url(#tz-bottom-fade)" />
+
+  <rect x="8" y="8" width="304" height="496" rx="14" fill="none" stroke="url(#tz-gold)" stroke-width="4.5" />
+  <rect x="16" y="16" width="288" height="480" rx="10" fill="none" stroke="#fca5a5" stroke-width="0.9" opacity="0.45" />
+  <g fill="url(#tz-gold)">
+    <polygon points="16,28 24,16 32,28 24,40" />
+    <polygon points="304,28 296,16 288,28 296,40" />
+    <polygon points="16,484 24,472 32,484 24,496" />
+    <polygon points="304,484 296,472 288,484 296,496" />
+  </g>
+</svg>

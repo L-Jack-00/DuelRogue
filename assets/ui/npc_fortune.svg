@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 220" width="100%" height="100%">
+  <defs>
+    <radialGradient id="ft-aura" cx="50%" cy="46%" r="50%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.45" />
+      <stop offset="60%" stop-color="#4c1d95" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#0f0720" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="ft-cloak" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#581c87" />
+      <stop offset="50%" stop-color="#2e1065" />
+      <stop offset="100%" stop-color="#0f0720" />
+    </linearGradient>
+    <linearGradient id="ft-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#854d0e" />
+    </linearGradient>
+    <radialGradient id="ft-orb" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#f5d0fe" />
+      <stop offset="35%" stop-color="#a855f7" />
+      <stop offset="75%" stop-color="#4c1d95" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </radialGradient>
+  </defs>
+  <circle cx="90" cy="108" r="84" fill="url(#ft-aura)" />
+  <circle cx="90" cy="96" r="68" fill="none" stroke="url(#ft-gold)" stroke-width="1" stroke-dasharray="5 4" opacity="0.45" />
+  <!-- 떠다니는 타로 3장 -->
+  <g opacity="0.9">
+    <rect x="22" y="54" width="22" height="34" rx="3" transform="rotate(-18 33 71)" fill="#1e1b4b" stroke="#38bdf8" stroke-width="1.4" />
+    <rect x="136" y="54" width="22" height="34" rx="3" transform="rotate(18 147 71)" fill="#1e1b4b" stroke="#f87171" stroke-width="1.4" />
+    <rect x="79" y="18" width="22" height="34" rx="3" fill="#1e1b4b" stroke="url(#ft-gold)" stroke-width="1.4" />
+  </g>
+  <!-- 점쟁이 로브 실루엣 -->
+  <path d="M 32,210 C 34,158 54,132 90,132 C 126,132 146,158 148,210 Z" fill="url(#ft-cloak)" stroke="url(#ft-gold)" stroke-width="2" />
+  <path d="M 54,124 C 52,82 66,56 90,56 C 114,56 128,82 126,124 Z" fill="url(#ft-cloak)" stroke="url(#ft-gold)" stroke-width="2" />
+  <!-- 후드 내부 어둠 & 빛나는 두 눈 -->
+  <ellipse cx="90" cy="94" rx="22" ry="26" fill="#090514" />
+  <circle cx="81" cy="93" r="2.8" fill="#e879f9" />
+  <circle cx="99" cy="93" r="2.8" fill="#e879f9" />
+  <polygon points="90,64 95,72 90,80 85,72" fill="url(#ft-gold)" />
+  <!-- 수정구 받침 & 수정구 -->
+  <path d="M 66,192 L 114,192 L 106,178 L 74,178 Z" fill="url(#ft-gold)" stroke="#422006" stroke-width="1.4" />
+  <circle cx="90" cy="154" r="26" fill="url(#ft-orb)" stroke="#d8b4fe" stroke-width="1.8" />
+  <ellipse cx="81" cy="144" rx="7" ry="4" transform="rotate(-25 81 144)" fill="#ffffff" opacity="0.55" />
+</svg>
