@@ -7075,3 +7075,40 @@ body {
 @media (max-width: 1100px) {
   .binder-book-header .binder-status-legend { display: none; }
 }
+
+
+/* ==========================================================================
+   배경·초상·아이콘 아트 (assets/asset_manifest.json)
+   그림 파일이 없으면 url() 층이 비어 기존 그라디언트가 그대로 보인다.
+   ========================================================================== */
+#view-title-lobby { background: linear-gradient(180deg, rgba(6, 8, 14, 0.35), rgba(6, 8, 14, 0.8)), url('assets/ui/bg_lobby.webp') center / cover no-repeat; }
+#view-fortune-teller { background: linear-gradient(180deg, rgba(10, 6, 18, 0.45), rgba(10, 6, 18, 0.85)), url('assets/ui/bg_fortune.webp') center / cover no-repeat; }
+#view-checkpoint { background: linear-gradient(180deg, rgba(8, 11, 18, 0.55), rgba(8, 11, 18, 0.88)), url('assets/ui/bg_hub.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
+#view-checkpoint-encounter { background: linear-gradient(180deg, rgba(8, 11, 18, 0.55), rgba(8, 11, 18, 0.88)), url('assets/ui/bg_encounter.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
+#view-checkpoint-shop { background: linear-gradient(180deg, rgba(14, 10, 6, 0.5), rgba(10, 8, 6, 0.88)), url('assets/ui/bg_shop.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
+#view-checkpoint-merchant { background: linear-gradient(180deg, rgba(6, 10, 8, 0.5), rgba(6, 8, 8, 0.88)), url('assets/ui/bg_merchant.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
+#view-checkpoint-deck-editor { background: linear-gradient(180deg, rgba(10, 9, 8, 0.6), rgba(8, 8, 8, 0.9)), url('assets/ui/bg_deck.webp') center / cover no-repeat, radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%); }
+#view-duel-arena { background: linear-gradient(180deg, rgba(5, 7, 12, 0.35), rgba(5, 7, 12, 0.6)), url('assets/ui/bg_duel.webp') center / cover no-repeat, var(--bg-dark); }
+body[data-boss='BOSS_RED_UNSTOPPABLE_AGGRO'] #view-duel-arena { background: linear-gradient(180deg, rgba(14, 4, 4, 0.45), rgba(8, 4, 4, 0.7)), url('assets/ui/bg_boss_red.webp') center / cover no-repeat, var(--bg-dark); }
+body[data-boss='BOSS_BLUE_FORTRESS_CONTROL'] #view-duel-arena { background: linear-gradient(180deg, rgba(4, 8, 16, 0.45), rgba(4, 6, 12, 0.7)), url('assets/ui/bg_boss_blue.webp') center / cover no-repeat, var(--bg-dark); }
+body[data-boss='BOSS_PURPLE_RIGGED_FATE'] #view-duel-arena { background: linear-gradient(180deg, rgba(10, 4, 16, 0.45), rgba(8, 4, 12, 0.7)), url('assets/ui/bg_boss_purple.webp') center / cover no-repeat, var(--bg-dark); }
+body[data-view='VIEW_RUN_SUMMARY'] #view-run-summary { background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.8)), url('assets/ui/bg_defeat.webp') center / cover no-repeat; }
+body[data-view='VIEW_RUN_SUMMARY'].run-victory #view-run-summary { background: linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.75)), url('assets/ui/bg_victory.webp') center / cover no-repeat; }
+
+.art-fallback-hidden { display: none !important; }
+.npc-portrait-img { width: 100%; height: 100%; object-fit: contain; object-position: bottom center; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6)); }
+.npc-avatar:has(.npc-portrait-img) { width: 180px; height: 220px; font-size: 0; background: none; border: none; box-shadow: none; }
+.merchant-npc-icon:has(.npc-portrait-img) { width: 120px; height: 150px; flex: 0 0 120px; background: none; border: none; }
+.shopkeeper-portrait { width: 64px; height: 64px; display: inline-flex; align-items: flex-end; justify-content: center; font-size: 2.2rem; margin-right: 10px; }
+.shopkeeper-portrait:has(.npc-portrait-img) { width: 120px; height: 140px; margin-top: -40px; }
+.subpage-title-group:has(.shopkeeper-portrait) { display: flex; flex-wrap: wrap; align-items: flex-end; column-gap: 4px; }
+.subpage-title-group:has(.shopkeeper-portrait) .subpage-sub { flex-basis: 100%; }
+.tarot-art { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.tarot-art-img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+.tarot-back { position: relative; }
+.tarot-back:has(.tarot-art-img) .symbol { visibility: hidden; }
+.tarot-back > h3, .tarot-back > .sub { position: relative; z-index: 1; text-shadow: 0 2px 6px #000; }
+.portal-art-img { width: 44px; height: 44px; object-fit: contain; vertical-align: middle; }
+.pack-art-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55)); }
+.pack-visual-neutral { background: linear-gradient(160deg, #3f6212 0%, #1a2e05 100%); }
+.card-back-inner { background-image: url('assets/ui/card_back.webp'); background-size: cover; background-position: center; }

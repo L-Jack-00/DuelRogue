@@ -10,6 +10,21 @@ export class ProceduralAudioHarness {
     this.enabled = true;
   }
 
+  /** 효과음 출력 노드. 음량 조절(SFX 볼륨)은 이 노드의 gain으로 한다. */
+  output() {
+    if (!this.outNode && this.ctx) {
+      this.outNode = this.ctx.createGain();
+      this.outNode.gain.value = this.outputVolume ?? 1;
+      this.outNode.connect(this.ctx.destination);
+    }
+    return this.outNode || this.ctx.destination;
+  }
+
+  setOutputVolume(v) {
+    this.outputVolume = v;
+    if (this.outNode) this.outNode.gain.value = v;
+  }
+
   init() {
     if (!this.ctx) {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -40,7 +55,7 @@ export class ProceduralAudioHarness {
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.output());
 
     osc.start(now);
     osc.stop(now + 0.08);
@@ -64,7 +79,7 @@ export class ProceduralAudioHarness {
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.output());
 
     osc.start(now);
     osc.stop(now + 0.18);
@@ -88,7 +103,7 @@ export class ProceduralAudioHarness {
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.output());
 
     osc.start(now);
     osc.stop(now + 0.12);
@@ -113,7 +128,7 @@ export class ProceduralAudioHarness {
       gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.35);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.output());
 
       osc.start(startTime);
       osc.stop(startTime + 0.35);
@@ -138,7 +153,7 @@ export class ProceduralAudioHarness {
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.output());
 
     osc.start(now);
     osc.stop(now + 0.25);
@@ -163,7 +178,7 @@ export class ProceduralAudioHarness {
     gain1.gain.setValueAtTime(Math.min(0.6, 0.25 * intensity), now);
     gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
     osc1.connect(gain1);
-    gain1.connect(this.ctx.destination);
+    gain1.connect(this.output());
     osc1.start(now);
     osc1.stop(now + 0.28);
 
@@ -177,7 +192,7 @@ export class ProceduralAudioHarness {
       gain2.gain.setValueAtTime(0.4, now);
       gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
       osc2.connect(gain2);
-      gain2.connect(this.ctx.destination);
+      gain2.connect(this.output());
       osc2.start(now);
       osc2.stop(now + 0.45);
     }
@@ -199,7 +214,7 @@ export class ProceduralAudioHarness {
     gain.gain.setValueAtTime(0.15, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.06);
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.output());
     osc.start(now);
     osc.stop(now + 0.06);
   }
@@ -224,7 +239,7 @@ export class ProceduralAudioHarness {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24 + i * 0.03);
 
       osc.connect(gain);
-      gain.connect(this.ctx.destination);
+      gain.connect(this.output());
       osc.start(now + i * 0.02);
       osc.stop(now + 0.25 + i * 0.03);
     });
@@ -250,7 +265,7 @@ export class ProceduralAudioHarness {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.output());
     osc.start(now);
     osc.stop(now + 0.6);
   }
@@ -274,7 +289,7 @@ export class ProceduralAudioHarness {
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
 
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.output());
     osc.start(now);
     osc.stop(now + 0.3);
   }
@@ -298,7 +313,7 @@ export class ProceduralAudioHarness {
     gain.gain.setValueAtTime(Math.min(0.5, 0.35 * intensity), now);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
     osc.connect(gain);
-    gain.connect(this.ctx.destination);
+    gain.connect(this.output());
     osc.start(now);
     osc.stop(now + 0.32);
 
@@ -324,7 +339,7 @@ export class ProceduralAudioHarness {
 
       whiteNoise.connect(filter);
       filter.connect(noiseGain);
-      noiseGain.connect(this.ctx.destination);
+      noiseGain.connect(this.output());
 
       whiteNoise.start(now);
       whiteNoise.stop(now + 0.25);

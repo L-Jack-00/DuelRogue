@@ -17,13 +17,16 @@ import { attackableTargets, canAttackHero } from './src/duel/duelCore.js';
 import { RunSaveStore } from './src/runSave.js';
 import { installBrowserInterferenceGuard, SafeCardPointerController } from './src/desktopHarness.js';
 import { ProceduralAudioHarness } from './src/audioHarness.js';
+import { SoundBank } from './src/audio/soundBank.js';
 import { CanvasJuiceEngine } from './src/canvasJuiceEngine.js';
 
 // 1. 브라우저 개입 원천 차단기 (우클릭, F5, Ctrl+R, 줌 차단)
 installBrowserInterferenceGuard(window);
 
 // 2. 프로시저럴 사운드 엔진
-const audio = new ProceduralAudioHarness();
+// 효과음 파일이 있으면 파일을, 없으면 합성음을 재생한다 (src/audio/soundBank.js)
+const audio = new SoundBank(new ProceduralAudioHarness());
+audio.load();
 
 // 2-1. [LJack 60FPS Game FX Canvas] 전용 캔버스 2D 주스 엔진 인스턴스화
 const fxCanvas = document.getElementById('game-fx-canvas');
@@ -41,6 +44,42 @@ const binder = new BinderCore({
 });
 let engine = new DuelRogueEngine(binder, DEFAULT_CARD_CATALOG);
 const runSaves = new RunSaveStore(window.localStorage);
+
+/**
+ * 그림 파일이 있으면 그림을, 없으면 대체 표시(이모지 등)를 보여 주는 HTML.
+ * 파일이 없어도 깨진 그림 아이콘이 나오지 않는다.
+ */
+function artImg(src, className, fallbackHtml) {
+  if (!src) return fallbackHtml;
+  return `<img src="${src}" class="${className}" alt="" draggable="false" onerror="this.remove(); this.nextElementSibling && this.nextElementSibling.classList.remove('art-fallback-hidden');" onload="this.nextElementSibling && this.nextElementSibling.classList.add('art-fallback-hidden');" /><span class="art-fallback">${fallbackHtml}</span>`;
+}
+
+const PACK_ART = {
+  PACK_BLUE: 'assets/ui/pack_blue.webp',
+  PACK_RED: 'assets/ui/pack_red.webp',
+  PACK_PURPLE: 'assets/ui/pack_purple.webp',
+  PACK_WILD: 'assets/ui/pack_neutral.webp',
+  PACK_LEGEND: 'assets/ui/pack_legend.webp',
+};
+
+/** 상점 주인·수상한 상인 초상화: 라운드마다 다른 모습이 나온다 */
+const NPC_VARIANTS = { shop: 4, merchant: 4 };
+function npcPortraitSrc(kind, round, mood = null) {
+  const n = NPC_VARIANTS[kind];
+  if (!n) return null;
+  const idx = mood != null ? mood : ((round || 1) - 1) % n;
+  return `assets/npc/${kind === 'shop' ? 'shopkeeper' : 'merchant'}_${idx + 1}.webp`;
+}
+
+/** index.html에 미리 넣어 둔 그림 슬롯([data-art])을 채운다 */
+function hydrateStaticArt(root = document) {
+  root.querySelectorAll('[data-art]').forEach((el) => {
+    if (el.dataset.hydrated) return;
+    el.dataset.hydrated = '1';
+    el.innerHTML = artImg(el.dataset.art, el.dataset.artClass || 'static-art-img', el.innerHTML);
+  });
+}
+hydrateStaticArt();
 
 /** index.html의 data-i18n="키" 요소를 현재 언어 사전의 문구로 바꾼다 */
 function applyStaticTranslations(root = document) {
@@ -282,10 +321,30 @@ class DuelTurnTimer {
 
 const duelTurnTimer = new DuelTurnTimer();
 
+// 화면별 배경음
+const VIEW_BGM = {
+  VIEW_TITLE_LOBBY: 'BGM_TITLE',
+  VIEW_FORTUNE_TELLER: 'BGM_TITLE',
+  VIEW_CHECKPOINT: 'BGM_HUB',
+  VIEW_CHECKPOINT_ENCOUNTER: 'BGM_HUB',
+  VIEW_CHECKPOINT_DECK_EDITOR: 'BGM_HUB',
+  VIEW_CHECKPOINT_SHOP: 'BGM_SHOP',
+  VIEW_CHECKPOINT_MERCHANT: 'BGM_MERCHANT',
+  VIEW_MERCHANT_EVENT: 'BGM_MERCHANT',
+  VIEW_PACK_OPENING: 'BGM_SHOP',
+};
+
 function switchView(viewKey) {
   if (viewKey !== 'VIEW_DUEL_ARENA') {
     duelTurnTimer.stop();
   }
+  const phase = engine?.state?.phase;
+  let bgm = VIEW_BGM[viewKey];
+  if (viewKey === 'VIEW_DUEL_ARENA') bgm = phase === 'STAGE_5_FINAL_BOSS' ? 'BGM_BOSS' : 'BGM_DUEL';
+  if (viewKey === 'VIEW_RUN_SUMMARY') bgm = phase === 'RUN_VICTORY' ? 'BGM_VICTORY' : 'BGM_DEFEAT';
+  if (bgm) audio.playBgm(bgm);
+  document.body.dataset.view = viewKey;
+  document.body.dataset.boss = phase === 'STAGE_5_FINAL_BOSS' ? engine.state.assignedFinalBoss || '' : '';
   Object.values(views).forEach((v) => v?.classList.remove('active'));
   if (views[viewKey]) {
     views[viewKey].classList.add('active');
@@ -473,20 +532,19 @@ document.getElementById('btn-opt-playground')?.addEventListener('click', () => {
   if (btn) btn.click();
 });
 
-// 볼륨 슬라이더
-const optMasterVol = document.getElementById('opt-master-vol');
-const optMasterVolVal = document.getElementById('opt-master-vol-val');
-optMasterVol?.addEventListener('input', (e) => {
-  const val = e.target.value;
-  if (optMasterVolVal) optMasterVolVal.textContent = `${val}%`;
-});
-
-const optSfxVol = document.getElementById('opt-sfx-vol');
-const optSfxVolVal = document.getElementById('opt-sfx-vol-val');
-optSfxVol?.addEventListener('input', (e) => {
-  const val = e.target.value;
-  if (optSfxVolVal) optSfxVolVal.textContent = `${val}%`;
-});
+// 볼륨 슬라이더 (마스터 / 배경음 / 효과음) — 값은 브라우저에 저장된다
+for (const [layer, inputId] of [['master', 'opt-master-vol'], ['bgm', 'opt-bgm-vol'], ['sfx', 'opt-sfx-vol']]) {
+  const input = document.getElementById(inputId);
+  const label = document.getElementById(`${inputId}-val`);
+  if (!input) continue;
+  input.value = String(Math.round(audio.volume[layer] * 100));
+  if (label) label.textContent = `${input.value}%`;
+  input.addEventListener('input', (e) => {
+    const val = Number(e.target.value);
+    if (label) label.textContent = `${val}%`;
+    audio.setVolume(layer, val / 100);
+  });
+}
 
 // ============================================================================
 // [묘지(Graveyard) 상세 뷰어: 파괴된 카드 역순(최신순) 나열 모달]
@@ -668,7 +726,7 @@ function showCpuMoodBubble(shift) {
   bubble.classList.add('is-visible');
   clearTimeout(showCpuMoodBubble.timer);
   showCpuMoodBubble.timer = setTimeout(() => bubble.classList.remove('is-visible'), 3600);
-  audio.playCardPickup?.();
+  audio.playMoodShift();
 }
 
 /** 상대 성향 배지 갱신 */
@@ -2945,6 +3003,17 @@ function renderCheckpointEncounterSubpage(snap) {
 
 /** 3. 카드팩 상점 전용 페이지 */
 function renderCheckpointShopSubpage(snap) {
+  const shopPortrait = document.getElementById('shopkeeper-portrait');
+  if (shopPortrait) {
+    const allSold = (snap.checkpointShopStock || []).every((p) => p.stock <= 0);
+    const hasLegend = (snap.checkpointShopStock || []).some((p) => p.faction === 'ALL' && p.stock > 0);
+    const mood = allSold ? 3 : hasLegend ? 2 : null;
+    const src = npcPortraitSrc('shop', snap.roundNumber, mood);
+    if (shopPortrait.dataset.src !== src) {
+      shopPortrait.dataset.src = src;
+      shopPortrait.innerHTML = artImg(src, 'npc-portrait-img', '<span class="npc-emoji">🧔</span>');
+    }
+  }
   const goldEl = document.getElementById('shop-subpage-gold');
   if (goldEl) goldEl.textContent = (snap.gold ?? 0).toLocaleString();
 
@@ -2971,6 +3040,10 @@ function renderCheckpointShopSubpage(snap) {
       visualClass = 'pack-visual-purple';
       symbol = '🎲';
       tagline = '혼돈 & 도박 룰렛 테마';
+    } else if (pack.id === 'PACK_WILD') {
+      visualClass = 'pack-visual-neutral';
+      symbol = '🐺';
+      tagline = '야수 · 기계 · 정령 · 언데드 · 용병';
     } else if (pack.id === 'PACK_LEGEND') {
       visualClass = 'pack-visual-legend';
       symbol = '👑';
@@ -2982,7 +3055,7 @@ function renderCheckpointShopSubpage(snap) {
 
     packEl.innerHTML = `
       <div class="pack-visual-box ${visualClass}">
-        <span class="pack-symbol-art">${symbol}</span>
+        ${artImg(PACK_ART[pack.id], 'pack-art-img', `<span class="pack-symbol-art">${symbol}</span>`)}
         <div class="pack-foil-shimmer"></div>
       </div>
       <div class="pack-info-wrap">
@@ -3362,6 +3435,15 @@ function updateTradeModalState(snap) {
 }
 
 function renderCheckpointMerchantSubpage(snap) {
+  const merchantIcon = document.querySelector('#merchant-dialogue-banner .merchant-npc-icon');
+  if (merchantIcon) {
+    const done = (snap.suspiciousMerchant?.deals || []).filter((d) => d.completed).length;
+    const src = npcPortraitSrc('merchant', snap.roundNumber, done > 0 ? 3 : null);
+    if (merchantIcon.dataset.src !== src) {
+      merchantIcon.dataset.src = src;
+      merchantIcon.innerHTML = artImg(src, 'npc-portrait-img', '🕵️');
+    }
+  }
   const goldEl = document.getElementById('merchant-subpage-gold');
   if (goldEl) goldEl.textContent = (snap.gold ?? 0).toLocaleString();
 
@@ -3882,6 +3964,7 @@ document.getElementById('btn-merchant-train')?.addEventListener('click', () => {
 // 7. VIEW_RUN_SUMMARY (런 완주 / 명예의 전당)
 // ============================================================================
 function renderRunSummary(snap, isVictory) {
+  document.body.classList.toggle('run-victory', !!isVictory);
   const badgeEl = document.getElementById('summary-badge');
   const titleEl = document.getElementById('summary-title');
   const descEl = document.getElementById('summary-desc');

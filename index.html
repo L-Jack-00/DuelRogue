@@ -54,7 +54,7 @@
     <section id="view-fortune-teller" class="screen">
       <div class="fortune-container">
         <div class="fortune-dialogue">
-          <div class="npc-avatar">🔮</div>
+          <div class="npc-avatar" data-art="assets/npc/fortune_teller.webp" data-art-class="npc-portrait-img">🔮</div>
           <h2>운명의 점쟁이</h2>
           <p>"당신의 앞길을 시험할 세 장의 운명 카드가 놓여 있소. 어느 길을 걷겠소?"</p>
         </div>
@@ -63,6 +63,7 @@
           <!-- 파란색: 정의 -->
           <div class="tarot-card card-blue" data-destiny="BLUE_JUSTICE">
             <div class="tarot-back">
+              <span class="tarot-art" data-art="assets/ui/tarot_justice.webp" data-art-class="tarot-art-img"></span>
               <span class="symbol">⚖️</span>
               <h3>정의</h3>
               <span class="sub">BLUE JUSTICE</span>
@@ -79,6 +80,7 @@
           <!-- 빨간색: 열의 -->
           <div class="tarot-card card-red" data-destiny="RED_ZEAL">
             <div class="tarot-back">
+              <span class="tarot-art" data-art="assets/ui/tarot_zeal.webp" data-art-class="tarot-art-img"></span>
               <span class="symbol">🔥</span>
               <h3>열의</h3>
               <span class="sub">RED ZEAL</span>
@@ -95,6 +97,7 @@
           <!-- 보라색: 혼돈 -->
           <div class="tarot-card card-purple" data-destiny="PURPLE_CHAOS">
             <div class="tarot-back">
+              <span class="tarot-art" data-art="assets/ui/tarot_chaos.webp" data-art-class="tarot-art-img"></span>
               <span class="symbol">🎲</span>
               <h3>혼돈</h3>
               <span class="sub">PURPLE CHAOS</span>
@@ -148,7 +151,7 @@
           <!-- 거점 1: 다음 듀얼 인카운터 -->
           <div class="hub-portal-card portal-encounter" id="card-nav-encounter">
             <div class="portal-badge-row">
-              <span class="portal-icon">⚔️</span>
+              <span class="portal-icon" data-art="assets/ui/portal_arena.webp" data-art-class="portal-art-img">⚔️</span>
               <span class="portal-tag tag-battle" id="hub-encounter-stars">★☆☆☆☆ (Lv 1~2)</span>
             </div>
             <div class="portal-main-info">
@@ -174,7 +177,7 @@
           <!-- 거점 2: 정발 카드팩 상점 -->
           <div class="hub-portal-card portal-shop" id="card-nav-shop">
             <div class="portal-badge-row">
-              <span class="portal-icon">🏪</span>
+              <span class="portal-icon" data-art="assets/ui/portal_shop.webp" data-art-class="portal-art-img">🏪</span>
               <span class="portal-tag tag-shop">2000년대 부스터팩</span>
             </div>
             <div class="portal-main-info">
@@ -199,7 +202,7 @@
           <!-- 거점 3: 수상한 상인의 뒷골목 -->
           <div class="hub-portal-card portal-merchant" id="card-nav-merchant">
             <div class="portal-badge-row">
-              <span class="portal-icon">🕵️</span>
+              <span class="portal-icon" data-art="assets/ui/portal_alley.webp" data-art-class="portal-art-img">🕵️</span>
               <span class="portal-tag tag-merchant" id="hub-merchant-status-badge">방문 중</span>
             </div>
             <div class="portal-main-info">
@@ -222,7 +225,7 @@
           <!-- 거점 4: 가방 & 덱 편집 (트렁크) -->
           <div class="hub-portal-card portal-deck" id="card-nav-deck">
             <div class="portal-badge-row">
-              <span class="portal-icon">🎒</span>
+              <span class="portal-icon" data-art="assets/ui/portal_trunk.webp" data-art-class="portal-art-img">🎒</span>
               <span class="portal-tag tag-deck">콘솔 스타일 트렁크</span>
             </div>
             <div class="portal-main-info">
@@ -329,6 +332,7 @@
         <header class="subpage-header">
           <button id="btn-shop-back-hub" class="btn secondary-btn back-btn">🏠 체크포인트로 돌아가기</button>
           <div class="subpage-title-group">
+            <div class="shopkeeper-portrait" id="shopkeeper-portrait"><span class="npc-emoji">🧔</span></div>
             <h2>🏪 2000년대 정발 카드팩 상점</h2>
             <span class="subpage-sub">팩에서 뽑은 모든 카드는 플레이어의 🎒 가방(트렁크)에 안전하게 보관됩니다.</span>
           </div>
@@ -746,6 +750,11 @@
               <label for="opt-master-vol">마스터 볼륨</label>
               <input type="range" id="opt-master-vol" min="0" max="100" value="80" class="options-slider">
               <span id="opt-master-vol-val">80%</span>
+            </div>
+            <div class="options-slider-row">
+              <label for="opt-bgm-vol">배경음 (BGM)</label>
+              <input type="range" id="opt-bgm-vol" min="0" max="100" value="60" class="options-slider">
+              <span id="opt-bgm-vol-val">60%</span>
             </div>
             <div class="options-slider-row">
               <label for="opt-sfx-vol">효과음 (SFX)</label>
