@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="100%" height="100%">
+  <defs>
+    <!-- 외곽 그림자 -->
+    <filter id="shadow-drop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+
+    <!-- [유희왕 2기 스타일 광폭 3D 양각 필터 (은은한 웜 톤 양각)] -->
+    <filter id="yugioh-emboss-wide" x="-15%" y="-15%" width="130%" height="130%">
+      <!-- 박스 전체가 붕 떠오르는 묵직한 하단/우측 드롭 섀도우 -->
+      <feDropShadow dx="2" dy="3.5" stdDeviation="3.5" flood-color="#3d2714" flood-opacity="0.6" result="box-shadow" />
+      <!-- 상단/좌측 은은한 반사광 (빛을 차분하게 약화) -->
+      <feDropShadow dx="-1.5" dy="-1.5" stdDeviation="2" flood-color="#fff8eb" flood-opacity="0.4" result="light-glow" />
+      <feMerge>
+        <feMergeNode in="box-shadow" />
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="light-glow" />
+      </feMerge>
+    </filter>
+
+    <!-- 종이가 깊게 파인 내부 음각 그림자 필터 (할퀸 자국용) -->
+    <filter id="paper-carved-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="-0.8" dy="-0.8" stdDeviation="0.8" flood-color="#ffffff" flood-opacity="0.75" result="light-edge" />
+      <feDropShadow dx="1.2" dy="1.8" stdDeviation="1.5" flood-color="#150003" flood-opacity="0.9" result="deep-cavity" />
+      <feMerge>
+        <feMergeNode in="deep-cavity" />
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="light-edge" />
+      </feMerge>
+    </filter>
+
+    <!-- 카드 최외곽용 앤틱 골드 금속 외곽선 그라디언트 -->
+    <linearGradient id="metal-gold-bevel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff8cc" />
+      <stop offset="25%" stop-color="#dfba4e" />
+      <stop offset="50%" stop-color="#7a5c1a" />
+      <stop offset="80%" stop-color="#d4af37" />
+      <stop offset="100%" stop-color="#2c1e05" />
+    </linearGradient>
+
+    <!-- 고풍스러운 양피지 종이 질감 바탕 -->
+    <linearGradient id="paper-parchment-base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5ede0" />
+      <stop offset="35%" stop-color="#ece0c8" />
+      <stop offset="70%" stop-color="#ded0b2" />
+      <stop offset="100%" stop-color="#c9b896" />
+    </linearGradient>
+
+    <!-- 유희왕 2기 스타일 볼록 솟아오른 양각 레터박스 전용 그라디언트 -->
+    <linearGradient id="paper-embossed-box" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="25%" stop-color="#fcf6ec" />
+      <stop offset="75%" stop-color="#f2e5cb" />
+      <stop offset="100%" stop-color="#e2d0ad" />
+    </linearGradient>
+
+    <!-- 광폭 양각 베벨 상단/좌측 하이라이트 그라디언트 (빛 경사면) -->
+    <linearGradient id="bevel-light-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1.0" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- 광폭 양각 베벨 하단/우측 그림자 그라디언트 (그림자 경사면) -->
+    <linearGradient id="bevel-shadow-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7a532d" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#422912" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- 깊게 파여나간 종이 홈 내부 그라디언트 (핏빛 + 어두운 홈) -->
+    <linearGradient id="carved-groove-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f0205" />
+      <stop offset="25%" stop-color="#590d15" />
+      <stop offset="60%" stop-color="#b51726" />
+      <stop offset="85%" stop-color="#e63946" />
+      <stop offset="100%" stop-color="#3a0409" />
+    </linearGradient>
+
+    <!-- 횡단 찢김 획 내부 그라디언트 -->
+    <linearGradient id="cross-carved-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a0307" />
+      <stop offset="25%" stop-color="#6a0f19" />
+      <stop offset="65%" stop-color="#cc1e30" />
+      <stop offset="85%" stop-color="#ff4d5e" />
+      <stop offset="100%" stop-color="#3b050a" />
+    </linearGradient>
+
+    <!-- [할퀸 자국 세로 1획 심볼] -->
+    <g id="claw-single-stroke">
+      <g transform="rotate(16, 12, 22)">
+        <!-- 1. 종이 뜯김 림 -->
+        <path d="M 9,1 C 11,8 15,18 16,30 C 16.5,36 14,41 12,43 C 9,41 7,37 6,32 C 4,24 4,12 7,3 Z" fill="#ffeded" opacity="0.9" />
+        <!-- 2. 파인 홈 -->
+        <path d="M 10,3 C 12,9 15,19 15,29 C 15.5,35 13.5,39 12,41 C 9.5,39 8,35 7,30 C 5.5,23 5.5,13 8,5 Z" fill="url(#carved-groove-grad)" />
+        <!-- 3. 깊은 음영 -->
+        <path d="M 10,6 C 12.5,16 13,26 11,38" stroke="#100103" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.95" />
+        <!-- 4. 파열 코어 림 -->
+        <path d="M 10.5,8 C 12.5,17 12.8,26 11.2,36" stroke="#ff8585" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.8" />
+      </g>
+    </g>
+
+    <!-- [할퀸 자국 대각선 횡단 획 심볼] -->
+    <g id="claw-cross-stroke">
+      <!-- 1. 외곽 뜯김 림 -->
+      <path d="M 2,34 C 16,28 38,18 71,7 C 73,9 71,13 68,14 C 42,23 20,33 4,39 Z" fill="#ffeded" opacity="0.85" />
+      <!-- 2. 파여나간 홈 -->
+      <path d="M 4,33 C 18,27 40,17 69,9 C 69,11 67,13 65,14 C 41,22 21,31 6,37 Z" fill="url(#cross-carved-grad)" />
+      <!-- 3. 깊은 그림자 틈새 -->
+      <path d="M 5,34 C 24,25 46,15 67,10" stroke="#100103" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.95" />
+      <!-- 4. 하이라이트 림 -->
+      <path d="M 6,33 C 24,24 45,15 65,11" stroke="#ff8585" stroke-width="1.0" stroke-linecap="round" fill="none" opacity="0.85" />
+    </g>
+  </defs>
+
+  <!-- ========================================== -->
+  <!-- LAYER 2: 종이 질감 바디 + 유희왕 광폭 양각 레터박스 -->
+  <!-- ========================================== -->
+  <g id="layer2-frame-body">
+    <!-- 카드 최외곽 바디 (두껍고 묵직한 앤틱 금속 테두리: stroke-width 8.0) -->
+    <path fill-rule="evenodd" fill="url(#paper-parchment-base)" stroke="url(#metal-gold-bevel)" stroke-width="8"
+          filter="url(#shadow-drop)"
+          d="M 22,8
+             L 378,8
+             A 14,14 0 0 1 392,22
+             L 392,538
+             A 14,14 0 0 1 378,552
+             L 22,552
+             A 14,14 0 0 1 8,538
+             L 8,22
+             A 14,14 0 0 1 22,8 Z
+             M 22,70
+             L 378,70
+             L 378,420
+             L 22,420 Z" />
+
+    <!-- 묵직한 이중 금속 인셋 림 (외곽 두께감 극대화) -->
+    <rect x="13" y="13" width="374" height="534" rx="11" ry="11"
+          fill="none" stroke="#3b2b08" stroke-width="3.0" opacity="0.85" />
+
+    <!-- ======================================================== -->
+    <!-- [1. 최상단 이름 바: 유희왕 2기 스타일 광폭 양각(Emboss)] -->
+    <!-- (x:22, y:14, w:356, h:50, 광폭 베벨 폭 6px)            -->
+    <!-- ======================================================== -->
+    <g id="top-name-emboss-box" filter="url(#yugioh-emboss-wide)">
+      <!-- 볼록 솟아오른 양각 베이스 플레이트 -->
+      <rect x="22" y="14" width="356" height="50" rx="8" ry="8"
+            fill="url(#paper-embossed-box)" />
+
+      <!-- [광폭 베벨 1단계: 외부 샤프 하이라이트 림 (상/좌)] -->
+      <path d="M 30,15 L 370,15 A 7,7 0 0 1 377,22 L 377,25 L 23,25 L 23,22 A 7,7 0 0 1 30,15 Z" fill="#ffffff" opacity="0.95" />
+      <path d="M 23,22 L 23,56 L 26,56 L 26,22 Z" fill="#ffffff" opacity="0.85" />
+
+      <!-- [광폭 베벨 2단계: 완만한 내부 경사면 슬로프 (상/좌, 폭 6px)] -->
+      <path d="M 24,25 L 376,25 L 370,30 L 30,30 L 30,56 L 24,56 Z" fill="url(#bevel-light-grad)" opacity="0.5" />
+
+      <!-- [광폭 베벨 1단계: 외부 섀도우 림 (하/우)] -->
+      <path d="M 23,62 L 370,62 A 7,7 0 0 0 377,55 L 377,63 L 30,63 A 7,7 0 0 1 23,62 Z" fill="#422912" opacity="0.75" />
+      <path d="M 375,22 L 375,56 L 378,56 L 378,22 Z" fill="#422912" opacity="0.75" />
+
+      <!-- [광폭 베벨 2단계: 완만한 내부 그림자 슬로프 (하/우, 폭 6px)] -->
+      <path d="M 30,58 L 370,58 L 376,53 L 376,25 L 371,30 L 371,53 L 30,53 Z" fill="url(#bevel-shadow-grad)" opacity="0.45" />
+    </g>
+
+    <!-- [중단: 일러스트 윈도우 금속 테두리] -->
+    <rect x="21" y="69" width="358" height="352" rx="4" ry="4"
+          fill="none" stroke="url(#metal-gold-bevel)" stroke-width="3" />
+    <rect x="23" y="71" width="354" height="348" rx="2" ry="2"
+          fill="none" stroke="#22180e" stroke-width="1.5" opacity="0.75" />
+
+    <!-- ======================================================== -->
+    <!-- [2. 하단 좌측: 태그 박스 (유희왕 광폭 양각 종이 플레이트)] -->
+    <!-- (x:22, y:428, w:172, h:116, 광폭 베벨 폭 6px)           -->
+    <!-- ======================================================== -->
+    <g id="bottom-tag-emboss-box" filter="url(#yugioh-emboss-wide)">
+      <rect x="22" y="428" width="172" height="116" rx="8" ry="8"
+            fill="url(#paper-embossed-box)" />
+
+      <!-- 상/좌 광폭 베벨 하이라이트 (외곽 림 + 슬로프) -->
+      <path d="M 30,429 L 186,429 A 7,7 0 0 1 193,436 L 193,439 L 23,439 L 23,436 A 7,7 0 0 1 30,429 Z" fill="#ffffff" opacity="0.95" />
+      <path d="M 23,436 L 23,536 L 26,536 L 26,436 Z" fill="#ffffff" opacity="0.85" />
+      <path d="M 24,439 L 192,439 L 186,444 L 30,444 L 30,536 L 24,536 Z" fill="url(#bevel-light-grad)" opacity="0.5" />
+
+      <!-- 하/우 광폭 베벨 그림자 (외곽 림 + 슬로프) -->
+      <path d="M 23,542 L 186,542 A 7,7 0 0 0 193,535 L 193,543 L 30,543 A 7,7 0 0 1 23,542 Z" fill="#422912" opacity="0.75" />
+      <path d="M 191,436 L 191,536 L 194,536 L 194,436 Z" fill="#422912" opacity="0.75" />
+      <path d="M 30,538 L 186,538 L 192,533 L 192,439 L 187,444 L 187,533 L 30,533 Z" fill="url(#bevel-shadow-grad)" opacity="0.45" />
+
+      <!-- 양각 플레이트 상단 앤틱 잉크 라벨 -->
+      <text x="32" y="447" font-family="'Noto Sans KR', sans-serif" font-size="10" font-weight="900" fill="#8c734b" letter-spacing="1.5">TAGS</text>
+    </g>
+
+    <!-- ======================================================== -->
+    <!-- [3. 하단 우측: 공/수 박스 (보석 제거 -> 평범한 종이 양각)]  -->
+    <!-- (x:206, y:428, w:172, h:116, 유희왕 정통 종이 양각 플레이트) -->
+    <!-- ======================================================== -->
+    <g id="bottom-stat-emboss-box" filter="url(#yugioh-emboss-wide)">
+      <rect x="206" y="428" width="172" height="116" rx="8" ry="8"
+            fill="url(#paper-embossed-box)" />
+
+      <!-- 상/좌 광폭 베벨 하이라이트 (외곽 림 + 슬로프) -->
+      <path d="M 214,429 L 370,429 A 7,7 0 0 1 377,436 L 377,439 L 207,439 L 207,436 A 7,7 0 0 1 214,429 Z" fill="#ffffff" opacity="0.95" />
+      <path d="M 207,436 L 207,536 L 210,536 L 210,436 Z" fill="#ffffff" opacity="0.85" />
+      <path d="M 208,439 L 376,439 L 370,444 L 214,444 L 214,536 L 208,536 Z" fill="url(#bevel-light-grad)" opacity="0.5" />
+
+      <!-- 하/우 광폭 베벨 그림자 (외곽 림 + 슬로프) -->
+      <path d="M 207,542 L 370,542 A 7,7 0 0 0 377,535 L 377,543 L 214,543 A 7,7 0 0 1 207,542 Z" fill="#422912" opacity="0.75" />
+      <path d="M 375,436 L 375,536 L 378,536 L 378,436 Z" fill="#422912" opacity="0.75" />
+      <path d="M 214,538 L 370,538 L 376,533 L 376,439 L 371,444 L 371,533 L 214,533 Z" fill="url(#bevel-shadow-grad)" opacity="0.45" />
+
+      <!-- 플레이트 내부 은은한 분할선 (유희왕 스타일 공/수 단락 구분) -->
+      <line x1="216" y1="486" x2="368" y2="486" stroke="#d5c29d" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.8" />
+    </g>
+  </g>
+
+  <!-- ========================================== -->
+  <!-- LAYER 3: 텍스트 및 라벨 & [요청 반영: 레벨 표기 벡터 그래픽] -->
+  <!-- ========================================== -->
+  <g id="layer3-dynamic-labels">
+    <!-- 카드 이름 (유희왕 양각 명판 위 짙은 브라운 잉크 텍스트) -->
+    <text class="card-name" x="36" y="47" font-family="'Cinzel', 'Noto Serif KR', serif"
+          font-weight="900" font-size="19" fill="#1b0f05" letter-spacing="1">심연의 수호기사</text>
+
+    <!-- ============================================================== -->
+    <!-- [요청 반영: 레벨 표기 벡터 그래픽 (종이가 깊게 파인 할퀸 자국 5진법 탤리)] -->
+    <!-- 상단 이름 바 우측 (RTL: 우측에서 좌측으로 채워지는 구조)         -->
+    <!-- 4개 세로 홈 (간격 좁힘) + 1개 대각선 횡단 찢김 홈               -->
+    <!-- ============================================================== -->
+    <g id="card-level-claw-marks" filter="url(#paper-carved-shadow)">
+      <!-- 세로 획 1 (가장 우측) -->
+      <use href="#claw-single-stroke" transform="translate(346, 21) scale(0.82)" />
+      <!-- 세로 획 2 -->
+      <use href="#claw-single-stroke" transform="translate(334, 21) scale(0.82)" />
+      <!-- 세로 획 3 -->
+      <use href="#claw-single-stroke" transform="translate(322, 21) scale(0.82)" />
+      <!-- 세로 획 4 -->
+      <use href="#claw-single-stroke" transform="translate(310, 21) scale(0.82)" />
+      <!-- 횡단 크로스 획 (4개 획을 사정없이 횡단하여 찢어발김, 5레벨 완성) -->
+      <use href="#claw-cross-stroke" transform="translate(306, 21) scale(0.82)" />
+    </g>
+
+    <!-- 하단 좌측 태그 (양각 종이 박스 위 잉크 텍스트) -->
+    <text class="card-tags" x="32" y="482" font-family="'Noto Sans KR', sans-serif"
+          font-weight="800" font-size="14" fill="#2c1d0c" letter-spacing="1">
+      <tspan x="32" dy="0">#골렘  #불멸</tspan>
+      <tspan x="32" dy="24">#고대_석상</tspan>
+    </text>
+
+    <!-- [하단 우측: 유희왕 정통 스타일 공격력 / 수비력 잉크 텍스트] -->
+    <!-- 공격력 영역 (상단 단락: ATK / 7) -->
+    <g class="stat-attack-group" transform="translate(218, 468)">
+      <text font-family="'Cinzel', 'Noto Sans KR', sans-serif" font-size="13" font-weight="900" fill="#8c252a" letter-spacing="1">공 / </text>
+      <text x="50" y="0" font-family="'Cinzel', serif" font-size="24" font-weight="900" fill="#1a0f05">7</text>
+    </g>
+
+    <!-- 수비력 영역 (하단 단락: DEF / 9) -->
+    <g class="stat-defense-group" transform="translate(218, 520)">
+      <text font-family="'Cinzel', 'Noto Sans KR', sans-serif" font-size="13" font-weight="900" fill="#1d4e89" letter-spacing="1">수 / </text>
+      <text x="50" y="0" font-family="'Cinzel', serif" font-size="24" font-weight="900" fill="#1a0f05">9</text>
+    </g>
+  </g>
+</svg>

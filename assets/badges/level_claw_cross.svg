@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 74 44" width="100%" height="100%">
+  <defs>
+    <linearGradient id="cross-carved-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a0307" />
+      <stop offset="25%" stop-color="#6a0f19" />
+      <stop offset="65%" stop-color="#cc1e30" />
+      <stop offset="85%" stop-color="#ff4d5e" />
+      <stop offset="100%" stop-color="#3b050a" />
+    </linearGradient>
+  </defs>
+
+  <!-- 4개 홈 위를 대각선으로 사정없이 찢어발기며 깊게 파인 횡단 스크래치 -->
+  <g>
+    <!-- 종이 찢긴 외곽 흰색/크림색 들뜸 림 -->
+    <path d="M 2,34 
+             C 16,28 38,18 71,7 
+             C 73,9 71,13 68,14 
+             C 42,23 20,33 4,39 Z" 
+          fill="#ffeded" opacity="0.85" />
+
+    <!-- 파여나간 홈 -->
+    <path d="M 4,33 
+             C 18,27 40,17 69,9 
+             C 69,11 67,13 65,14 
+             C 41,22 21,31 6,37 Z" 
+          fill="url(#cross-carved-grad)" />
+
+    <!-- 깊은 그림자 틈새 -->
+    <path d="M 5,34 C 24,25 46,15 67,10" 
+          stroke="#100103" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.95" />
+    <!-- 찢겨나간 중앙 하이라이트 -->
+    <path d="M 6,33 C 24,24 45,15 65,11" 
+          stroke="#ff8585" stroke-width="1.0" stroke-linecap="round" fill="none" opacity="0.85" />
+  </g>
+</svg>

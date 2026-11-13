@@ -1,0 +1,14 @@
+# 빌드 산출물
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# 의존성 / 캐시
+node_modules/
+.deno/
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

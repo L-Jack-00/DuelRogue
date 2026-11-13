@@ -1,0 +1,6972 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-dark: #0b0e14;
+  --bg-panel: #131722;
+  --border-color: #1e293b;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent-blue: #38bdf8;
+  --accent-red: #f87171;
+  --accent-purple: #c084fc;
+  --accent-gold: #facc15;
+  --accent-green: #4ade80;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-main);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+#game-app {
+  width: 1280px;
+  height: 800px;
+  background: radial-gradient(circle at 50% 30%, #151a28 0%, #080a0f 100%);
+  border: 1px solid #1e293b;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transform: translate3d(var(--screen-shake-x, 0px), var(--screen-shake-y, 0px), 0) rotate(var(--screen-shake-rot, 0deg));
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+/* 1. 커스텀 다크 타이틀바 */
+#desktop-titlebar {
+  height: 34px;
+  background: #090c12;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 12px;
+  z-index: 10000;
+  -webkit-app-region: drag;
+  cursor: grab;
+}
+
+.titlebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #94a3b8;
+}
+
+.titlebar-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-action-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.titlebar-action-btn:hover {
+  background: #334155;
+  color: #fff;
+  border-color: #64748b;
+}
+
+.titlebar-btn {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  width: 28px;
+  height: 22px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  transition: all 0.15s;
+}
+
+.titlebar-btn:hover {
+  background: #1e293b;
+  color: #fff;
+}
+
+.titlebar-btn.close-btn:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* 2. 화면 전환 뷰 컨테이너 */
+.screen {
+  display: none;
+  width: 100%;
+  height: calc(100% - 34px);
+  position: absolute;
+  top: 34px;
+  left: 0;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* 공통 버튼 */
+.btn {
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primary-btn {
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.secondary-btn {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+}
+
+.secondary-btn:hover:not(:disabled) {
+  background: #334155;
+}
+
+.accent-btn {
+  background: #9333ea;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(147, 51, 234, 0.4);
+}
+
+.accent-btn:hover:not(:disabled) {
+  background: #7e22ce;
+  transform: translateY(-2px);
+}
+
+.test-btn {
+  background: #15803d;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ================= 1. VIEW_TITLE_LOBBY ================= */
+#view-title-lobby {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.game-logo {
+  font-size: 4.2rem;
+  letter-spacing: 8px;
+  font-weight: 900;
+  color: #f8fafc;
+  text-shadow: 0 0 35px rgba(56, 189, 248, 0.5);
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  color: #94a3b8;
+  font-size: 1.2rem;
+  margin-bottom: 45px;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 280px;
+  margin: 0 auto 40px auto;
+}
+
+.game-info-badge {
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+/* ================= 2. VIEW_FORTUNE_TELLER ================= */
+#view-fortune-teller {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.fortune-dialogue {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.npc-avatar {
+  font-size: 3.5rem;
+  margin-bottom: 12px;
+}
+
+.fortune-dialogue h2 {
+  font-size: 1.6rem;
+  margin-bottom: 8px;
+  color: #e2e8f0;
+}
+
+.fortune-dialogue p {
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+.tarot-card-row {
+  display: flex;
+  gap: 36px;
+}
+
+.tarot-card {
+  width: 260px;
+  height: 400px;
+  border-radius: 14px;
+  background: #111522;
+  border: 2px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  padding: 24px;
+  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+}
+
+.tarot-card:hover {
+  transform: translateY(-14px);
+}
+
+.card-blue { border-color: #0284c7; }
+.card-blue:hover { box-shadow: 0 16px 36px rgba(2, 132, 199, 0.45); border-color: #38bdf8; }
+
+.card-red { border-color: #dc2626; }
+.card-red:hover { box-shadow: 0 16px 36px rgba(220, 38, 38, 0.45); border-color: #f87171; }
+
+.card-purple { border-color: #9333ea; }
+.card-purple:hover { box-shadow: 0 16px 36px rgba(147, 51, 234, 0.45); border-color: #c084fc; }
+
+.tarot-back {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 18px;
+}
+
+.tarot-back .symbol { font-size: 3.8rem; margin-bottom: 12px; }
+.tarot-back h3 { font-size: 1.7rem; letter-spacing: 2px; }
+.tarot-back .sub { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
+
+.tarot-details .role-desc {
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.boss-preview {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.boss-preview strong {
+  display: block;
+  color: #f87171;
+  margin-bottom: 4px;
+}
+
+/* ================= 3. VIEW_DUEL_ARENA (3-Column Layout & Side Panels) ================= */
+#view-duel-arena {
+  display: none;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: stretch;
+  width: 100%;
+  height: calc(100% - 34px);
+  position: absolute;
+  top: 34px;
+  left: 0;
+  overflow: hidden;
+  background: #090d16;
+  z-index: 5;
+}
+
+#view-duel-arena.active {
+  display: flex !important;
+}
+
+/* 중앙 전장 메인 무대 */
+.duel-main-stage, #arena-main-stage {
+  flex: 1 !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  order: 2 !important;
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
+}
+
+/* 듀얼 사이드 패널 공통 */
+.duel-side-panel {
+  background: #0d1117 !important;
+  backdrop-filter: blur(12px) !important;
+  z-index: 10 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  user-select: none !important;
+  color: #f0f6fc !important;
+}
+
+.duel-side-panel .panel-header {
+  height: 44px !important;
+  padding: 0 12px !important;
+  background: #161b22 !important;
+  border-bottom: 1px solid #30363d !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex-shrink: 0 !important;
+}
+
+.duel-side-panel .panel-title-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.duel-side-panel .panel-icon {
+  font-size: 1.1rem !important;
+}
+
+.duel-side-panel .panel-title {
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  color: #f0f6fc !important;
+  letter-spacing: 0.5px !important;
+}
+
+.duel-side-panel .panel-tool-btn {
+  background: #21262d !important;
+  border: 1px solid #30363d !important;
+  color: #c9d1d9 !important;
+  border-radius: 6px !important;
+  padding: 3px 8px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.duel-side-panel .panel-tool-btn:hover {
+  background: #30363d !important;
+  border-color: #58a6ff !important;
+  color: #58a6ff !important;
+}
+
+/* ============================================================================
+ * [스케치 2 좌측]: 카드 상세 & 효과 확인창 (Card Inspector)
+ * ============================================================================ */
+#card-inspector-panel {
+  width: 280px !important;
+  min-width: 280px !important;
+  max-width: 280px !important;
+  height: 100% !important;
+  border-right: 2px solid #1e293b !important;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.6) !important;
+  order: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.inspector-card-preview-container {
+  padding: 6px 6px 10px 6px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background: radial-gradient(circle at center, rgba(30, 41, 59, 0.5) 0%, rgba(13, 17, 23, 0.95) 100%) !important;
+  border-bottom: 1px solid #21262d !important;
+  flex-shrink: 0 !important;
+}
+
+#inspector-card-preview .card-composite-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 400 / 560 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75) !important;
+}
+
+.inspector-effect-section {
+  flex: 1 !important;
+  padding: 10px 10px 58px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  gap: 10px !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+}
+
+.effect-tags-section {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+}
+
+.tags-container {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+
+/* 1. 기능 키워드 배지 (# 없음: 도발, 돌진, 관통, 반격 등) */
+.badge-keyword {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  font-size: 0.74rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.3px !important;
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #fef08a !important;
+  border: 1px solid rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.2) !important;
+  user-select: none !important;
+}
+
+/* 2. 종족 / 소속표 태그 배지 (# 포함: #성역, #보병, #용족 등) */
+.badge-race-tag {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2px !important;
+  background: rgba(14, 165, 233, 0.18) !important;
+  color: #7dd3fc !important;
+  border: 1px solid rgba(14, 165, 233, 0.45) !important;
+  user-select: none !important;
+}
+
+/* 3. 신 급 몬스터 특별 황금/보라 배지 (Level 6 신 카드 3장) */
+.badge-god-tier {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 3px 10px !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.5px !important;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(234, 179, 8, 0.35)) !important;
+  color: #fef08a !important;
+  border: 1.5px solid #eab308 !important;
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.5) !important;
+  user-select: none !important;
+  animation: godTierGlow 2.5s infinite alternate ease-in-out;
+}
+
+@keyframes godTierGlow {
+  0% { box-shadow: 0 0 6px rgba(234, 179, 8, 0.4); }
+  100% { box-shadow: 0 0 14px rgba(234, 179, 8, 0.8), 0 0 8px rgba(168, 85, 247, 0.6); }
+}
+
+.tag-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.3px !important;
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  border: 1px solid #334155 !important;
+  user-select: none !important;
+}
+
+.tag-pill.tag-root {
+  background: rgba(14, 116, 144, 0.3) !important;
+  color: #38bdf8 !important;
+  border-color: #0284c7 !important;
+}
+
+.tag-pill.tag-child {
+  background: rgba(49, 46, 129, 0.35) !important;
+  color: #a5b4fc !important;
+  border-color: #4338ca !important;
+}
+
+.tag-pill.tag-subchild {
+  background: rgba(88, 28, 135, 0.35) !important;
+  color: #d8b4fe !important;
+  border-color: #7e22ce !important;
+}
+
+.effect-desc-box {
+  font-size: 0.81rem !important;
+  line-height: 1.55 !important;
+  color: #e2e8f0 !important;
+  background: rgba(10, 15, 26, 0.88) !important;
+  border: 1px solid #1e293b !important;
+  border-radius: 6px !important;
+  padding: 10px 12px !important;
+  height: auto !important;
+  min-height: fit-content !important;
+  flex-shrink: 0 !important; /* 텍스트 내용보다 작게 줄어들지 않도록 강제 (겹침 현상 원천 차단) */
+  word-break: keep-all !important;
+  overflow-wrap: break-word !important;
+}
+
+/* [조건] / [대상] / [효과] 전용 구조화 레이아웃 */
+.rule-block {
+  margin-bottom: 8px !important;
+  line-height: 1.55 !important;
+}
+
+.rule-block:last-child {
+  margin-bottom: 0 !important;
+}
+
+.rule-badge-target {
+  display: inline-block !important;
+  font-weight: 800 !important;
+  font-size: 0.76rem !important;
+  color: #fb7185 !important;
+  background: rgba(244, 63, 94, 0.16) !important;
+  border: 1px solid rgba(244, 63, 94, 0.45) !important;
+  border-radius: 4px !important;
+  padding: 1px 6px !important;
+  margin-right: 6px !important;
+}
+
+.rule-content-target {
+  color: #fecdd3 !important;
+  font-size: 0.81rem !important;
+  font-weight: 600 !important;
+}
+
+.rule-badge-condition {
+  display: inline-block !important;
+  font-weight: 800 !important;
+  font-size: 0.76rem !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.16) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  border-radius: 4px !important;
+  padding: 1px 6px !important;
+  margin-right: 6px !important;
+}
+
+.rule-content-condition {
+  color: #e0f2fe !important;
+  font-size: 0.81rem !important;
+  font-weight: 600 !important;
+}
+
+.rule-badge-effect {
+  display: inline-block !important;
+  font-weight: 800 !important;
+  font-size: 0.76rem !important;
+  color: #4ade80 !important;
+  background: rgba(74, 222, 128, 0.16) !important;
+  border: 1px solid rgba(74, 222, 128, 0.45) !important;
+  border-radius: 4px !important;
+  padding: 1px 6px !important;
+  margin-right: 6px !important;
+}
+
+.rule-content-effect {
+  color: #f8fafc !important;
+  font-size: 0.81rem !important;
+  font-weight: 500 !important;
+}
+
+.rule-fizzle-clause {
+  margin-top: 10px !important;
+  padding: 6px 9px !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-left: 3px solid #ef4444 !important;
+  border-radius: 4px !important;
+  font-size: 0.73rem !important;
+  color: #fca5a5 !important;
+  line-height: 1.45 !important;
+}
+
+.fizzle-icon {
+  margin-right: 4px !important;
+}
+
+.frame-tag-pill.keyword-pill {
+  color: #f59e0b !important;
+  font-weight: 800 !important;
+}
+
+/* ============================================================================
+ * [전투 로그 팝업 UI & 동일 좌표 고정 토글 버튼]
+ * - 기본 상태: 접힘 (is-collapsed)
+ * - 버튼 좌표: 우측 상단 고정으로 폈다 접었다를 동일한 위치에서 원클릭 제어
+ * - 전장을 밀어내지 않는 글래스모피즘 오버레이 팝업
+ * ============================================================================ */
+/* ============================================================================
+ * [화면 하단 컨트롤: 좌측 하단 모서리 옵션 버튼 & 우측 하단 플레이어 LP 및 전투 로그 버튼]
+ * ============================================================================ */
+.bottom-corner-option-btn {
+  position: fixed;
+  left: 14px;
+  right: auto;
+  bottom: 14px;
+  z-index: 501;
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid #334155;
+  color: #f8fafc;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-app-region: no-drag;
+}
+
+.bottom-corner-option-btn:hover {
+  background: #1e293b;
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
+}
+
+.bottom-corner-option-btn.active {
+  background: #0f172a;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.bottom-right-meta-group {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.player-log-toggle-btn {
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1.5px solid #334155;
+  color: #f8fafc;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  -webkit-app-region: no-drag;
+}
+
+.player-log-toggle-btn:hover {
+  background: #1e293b;
+  border-color: #38bdf8;
+  color: #38bdf8;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.35);
+}
+
+.player-log-toggle-btn.active {
+  background: #0f172a;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* ============================================================================
+ * [임시 게임 설정 & 옵션 모달]
+ * ============================================================================ */
+.in-game-options-modal {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  visibility: visible;
+  opacity: 1;
+}
+
+.in-game-options-modal.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.options-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(3, 7, 18, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.options-modal-card {
+  position: relative;
+  z-index: 2;
+  width: 90%;
+  max-width: 460px;
+  margin: auto;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1.5px solid #38bdf8;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 24px rgba(56, 189, 248, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modal-pop-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes modal-pop-in {
+  from { opacity: 0; transform: scale(0.94) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.options-modal-header {
+  padding: 14px 20px;
+  background: rgba(30, 41, 59, 0.8);
+  border-bottom: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.options-modal-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.options-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.options-modal-close:hover {
+  background: #334155;
+  color: #f43f5e;
+}
+
+.options-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.options-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.options-section-title {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: -0.3px;
+  text-transform: uppercase;
+}
+
+.btn-abandon-danger {
+  background: linear-gradient(135deg, #e11d48, #be123c);
+  border: 1px solid #f43f5e;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.92rem;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.4);
+  transition: all 0.18s;
+  width: 100%;
+}
+
+.btn-abandon-danger:hover {
+  background: linear-gradient(135deg, #f43f5e, #e11d48);
+  box-shadow: 0 6px 20px rgba(225, 29, 72, 0.6);
+  transform: translateY(-1px);
+}
+
+.options-hint {
+  font-size: 0.74rem;
+  color: #64748b;
+  margin-top: 4px;
+  margin-bottom: 0;
+  line-height: 1.35;
+}
+
+.options-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.options-slider-row label {
+  min-width: 80px;
+}
+
+.options-slider {
+  flex: 1;
+  accent-color: #38bdf8;
+  height: 6px;
+  background: #1e293b;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.options-slider-row span {
+  min-width: 40px;
+  text-align: right;
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: #38bdf8;
+}
+
+.options-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.options-btn-group .btn {
+  flex: 1;
+  min-width: 110px;
+  font-size: 0.78rem;
+  padding: 8px 10px;
+}
+
+.combat-log-popup {
+  position: fixed;
+  bottom: 110px;
+  right: 14px;
+  width: 350px;
+  height: 520px;
+  max-height: calc(100vh - 130px);
+  z-index: 500;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(14px);
+  border: 1.5px solid #334155;
+  border-radius: 12px;
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.8), 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+              visibility 0.22s ease;
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* 기본값: 접힘 상태 */
+.combat-log-popup.is-collapsed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(10px) scale(0.96);
+}
+
+.popup-log-header {
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.7);
+  border-bottom: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.popup-log-header .header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.close-tool-btn {
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.close-tool-btn:hover {
+  color: #ef4444;
+}
+
+.combat-log-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  background: rgba(10, 14, 22, 0.8);
+}
+
+.log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #cbd5e1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border-left: 3px solid #475569;
+  animation: logEntryFade 0.2s ease-out;
+}
+
+@keyframes logEntryFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.log-entry.log-attack { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.08); }
+.log-entry.log-destroy { border-left-color: #f97316; background: rgba(249, 115, 22, 0.1); }
+.log-entry.log-spell { border-left-color: #a855f7; background: rgba(168, 85, 247, 0.08); }
+.log-entry.log-system { border-left-color: #38bdf8; background: rgba(56, 189, 248, 0.08); }
+.log-entry.log-turn { border-left-color: #eab308; background: rgba(234, 179, 8, 0.1); font-weight: 700; }
+
+.log-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.badge-sys { background: #0369a1; color: #e0f2fe; }
+.badge-atk { background: #991b1b; color: #fee2e2; }
+.badge-dst { background: #c2410c; color: #ffedd5; }
+.badge-spl { background: #6b21a8; color: #f3e8ff; }
+.badge-trn { background: #854d0e; color: #fef9c3; }
+
+.log-msg {
+  flex: 1;
+  word-break: break-all;
+}
+
+/* 하단 접기/펼치기 토글 바 (스케치 2: 접었다 폈다 가능) */
+.drawer-toggle-bar {
+  padding: 8px 12px;
+  background: rgba(22, 27, 34, 0.95);
+  border-top: 1px solid #21262d;
+  flex-shrink: 0;
+}
+
+.drawer-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.drawer-toggle-btn:hover {
+  background: #30363d;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.drawer-toggle-arrow {
+  font-size: 0.9rem;
+  transition: transform 0.2s ease;
+}
+
+/* ================= 듀얼리스트 HUD ================= */
+
+.duel-duelist {
+  height: 140px;
+  padding: 12px 30px;
+  background: rgba(11, 14, 20, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cpu-duelist {
+  position: relative;
+  border-bottom: 1px solid #1e293b;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 30px;
+}
+
+.player-duelist {
+  position: relative;
+  border-top: 1px solid #1e293b;
+  height: 215px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8px 24px;
+}
+
+/* ============================================================================
+ * [대각 대칭형 1v1 PvP 헤드업 HUD 레이아웃]
+ * 상대 플레이어 정보: 좌측 상단 (Top-Left)
+ * 내 플레이어 정보: 우측 하단 (Bottom-Right)
+ * 상대 손패: 중앙 상단 (중앙 정렬 + 호버 매수 팝업)
+ * 상대 덱/묘지: 우측 상단 (Top-Right)
+ * 내 덱/묘지: 좌측 하단 (Bottom-Left)
+ * ============================================================================ */
+.duelist-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1.5px solid #334155;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  min-width: 160px;
+  max-width: 178px;
+}
+
+/* 상대 플레이어 정보: 좌측 상단 */
+.duelist-meta.top-left-meta {
+  position: absolute;
+  left: 24px;
+  top: 12px;
+  z-index: 25;
+}
+
+/* 내 플레이어 정보: 우측 하단 (그룹 내부 배치) */
+.duelist-meta.bottom-right-meta {
+  position: relative;
+  right: auto;
+  bottom: auto;
+  z-index: 25;
+}
+
+/* 중앙 상단: 상대 손패 컨테이너 & 호버 툴팁 */
+.cpu-hand-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 4px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cpu-hand-container .cpu-hand {
+  position: relative;
+  left: auto;
+  top: auto;
+}
+
+.cpu-hand-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid #38bdf8;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #e0f2fe;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 100;
+}
+
+.cpu-hand-container:hover .cpu-hand-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(2px);
+}
+
+/* 상대 우측: 상대 묘지 & 상대 덱 */
+.cpu-duelist .graveyard-zone {
+  position: absolute;
+  right: 114px;
+  top: 12px;
+  z-index: 15;
+}
+
+.cpu-duelist .deck-zone {
+  position: absolute;
+  right: 24px;
+  top: 4px;
+  z-index: 15;
+}
+
+/* 플레이어 좌측: 내 덱 & 내 묘지 */
+.player-duelist .deck-zone {
+  position: absolute;
+  left: 24px;
+  bottom: 16px;
+  z-index: 15;
+}
+
+.player-duelist .graveyard-zone {
+  position: absolute;
+  left: 114px;
+  bottom: 16px;
+  z-index: 15;
+}
+
+/* 플레이어 손패 트레이 (하단 중앙: 좌측 덱/묘지와 우측 라이프 HUD를 엄격히 회피하는 전용 안전 구역) */
+.player-duelist .player-interaction-tray {
+  margin: 0 auto;
+  width: auto;
+  max-width: 490px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  position: relative;
+  z-index: 10;
+  height: 165px;
+}
+
+/* ============================================================================
+ * [덱(Deck) 존 및 3D 카드 스택 비주얼]
+ * ============================================================================ */
+.deck-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+}
+
+.deck-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: -0.3px;
+}
+
+.deck-stack {
+  position: relative;
+  width: 72px;
+  height: 102px;
+}
+
+.deck-card-layer {
+  position: absolute;
+  border-radius: 6px;
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.deck-card-layer.dynamic-rim {
+  width: 100%;
+  height: 100%;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.deck-card-layer.layer-top {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.deck-card-layer.empty-deck {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 1.5px dashed #475569;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: #64748b;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+/* 클릭 가능한 묘지 호버 인터랙션 */
+.clickable-graveyard {
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.clickable-graveyard:hover {
+  transform: translateY(-2px);
+  filter: drop-shadow(0 4px 12px rgba(56, 189, 248, 0.45));
+}
+
+.clickable-graveyard:active {
+  transform: translateY(0);
+}
+
+/* ============================================================================
+ * [묘지(Graveyard) 상세 뷰어 모달 (역순/최신순 나열)]
+ * ============================================================================ */
+.graveyard-viewer-modal {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  visibility: visible;
+  opacity: 1;
+}
+
+.graveyard-viewer-modal.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.graveyard-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(3, 7, 18, 0.82);
+  backdrop-filter: blur(6px);
+}
+
+.graveyard-modal-card {
+  position: relative;
+  z-index: 2;
+  margin: auto;
+  width: 92%;
+  max-width: 580px;
+  max-height: 82vh;
+  background: rgba(15, 23, 42, 0.97);
+  border: 1.5px solid #64748b;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 24px rgba(100, 116, 139, 0.3);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modal-pop-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.graveyard-modal-header {
+  padding: 14px 20px;
+  background: rgba(30, 41, 59, 0.85);
+  border-bottom: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.graveyard-modal-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gy-count-tag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.graveyard-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.graveyard-modal-close:hover {
+  background: #334155;
+  color: #f43f5e;
+}
+
+.graveyard-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  max-height: calc(82vh - 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.empty-gy-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 20px;
+  color: #64748b;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.empty-gy-icon {
+  font-size: 2.2rem;
+  opacity: 0.7;
+}
+
+.gy-card-entry {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+}
+
+.gy-card-entry:hover {
+  background: rgba(51, 65, 85, 0.85);
+  border-color: #38bdf8;
+  transform: translateX(3px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.gy-card-badge {
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #94a3b8;
+  min-width: 44px;
+}
+
+.latest-tag {
+  background: #e11d48;
+  color: #fff;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.gy-card-mini-preview {
+  width: 48px;
+  height: 68px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gy-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.gy-card-name-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gy-card-name {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gy-card-type-tag {
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+.gy-card-type-tag.tag-monster {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  border: 1px solid #0284c7;
+}
+
+.gy-card-type-tag.tag-spell {
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  border: 1px solid #7e22ce;
+}
+
+.gy-card-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 0.76rem;
+  color: #cbd5e1;
+}
+
+.gy-card-stats .stat-atk strong { color: #f87171; }
+.gy-card-stats .stat-def strong { color: #38bdf8; }
+
+.gy-card-desc {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.empty-deck-icon {
+  font-size: 1.2rem;
+  color: #64748b;
+}
+
+.empty-deck-text {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.deck-count-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid #38bdf8;
+  border-radius: 5px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #38bdf8;
+  font-family: monospace;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.deck-hover-tooltip {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid #38bdf8;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #e0f2fe;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.75);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 100;
+}
+
+#player-deck-zone .deck-hover-tooltip {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.deck-zone:hover .deck-hover-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(2px);
+}
+
+#player-deck-zone:hover .deck-hover-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.deck-zone:hover .deck-card-layer.layer-top {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(56, 189, 248, 0.4);
+}
+
+.duelist-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.duelist-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.name-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.duelist-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #f8fafc;
+}
+
+.badge {
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.stat-pills {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.stat-pill {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.lp-pill strong { color: #22c55e; font-size: 1rem; }
+.mana-pill strong { color: #38bdf8; font-size: 1rem; }
+.summon-pill strong { color: #f59e0b; font-size: 1rem; }
+
+/* 중앙 전장 (중앙 영역을 컴팩트하게 좁혀 필드 유닛 카드들의 시인성과 집중도 극대화) */
+.duel-arena-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 24px;
+  background: radial-gradient(circle, rgba(23, 29, 43, 0.5) 0%, transparent 85%);
+  transition: all 0.25s ease;
+}
+
+.duel-arena-field.drop-target-active {
+  /* 필드 전체 초록불 플러드 연출 제거 - 시각적 피로도 방지 및 집중도 유지 */
+  background: radial-gradient(circle, rgba(23, 29, 43, 0.5) 0%, transparent 85%);
+  box-shadow: none;
+}
+
+.board-zone {
+  width: 100%;
+  max-width: 920px;
+  height: 156px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 20px;
+  padding-bottom: 6px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  transition: border-color 0.2s;
+}
+
+.board-zone.cpu-board {
+  margin-top: 14px;
+}
+
+.duel-arena-field.drop-target-active .player-board {
+  border-color: rgba(255, 255, 255, 0.25);
+  border-style: dashed;
+}
+
+.arena-center-hud {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  padding: 0 10px;
+  width: 100%;
+  max-width: 880px;
+}
+
+.turn-indicator {
+  background: #1e293b;
+  padding: 5px 14px;
+  border-radius: 14px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.narrative-log {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+/* ============================================================================
+ * [스케치 1]: 카드 비주얼 구체화 ("평소" vs "인게임")
+ * 비조작 카드 기본 상태: 기울기 없는 깔끔한 탑다운 뷰 (Flat Top-down)로 가독성 극대화
+ * 조작/공격/피격 시에만 다이내믹 3D 및 방향별 직접 내리치기 발동
+ * ============================================================================ */
+
+/* --- 공통 하단 스탯 바 (좌측 원형 칼 배지, 우측 방패 배지, 중앙 태그 바) --- */
+.card-bottom-stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  margin-top: auto;
+  z-index: 5;
+}
+
+/* 좌측 공격력 배지: 원형 림 + 교차된 칼(검) 아이콘 */
+.card-stat-badge.badge-atk {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(circle at 35% 35%, #991b1b, #450a0a);
+  border: 2px solid #ef4444;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.82rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 8px rgba(239, 68, 68, 0.4);
+  z-index: 3;
+  flex-shrink: 0;
+}
+
+.card-stat-badge.badge-atk .sword-icon {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  font-size: 0.8rem;
+  transform: rotate(-35deg);
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.8));
+}
+
+/* 우측 수비력 배지: 방패 실루엣 */
+.card-stat-badge.badge-def {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(circle at 35% 35%, #1e3a8a, #0f172a);
+  border: 2px solid #38bdf8;
+  clip-path: polygon(50% 0%, 100% 15%, 100% 70%, 50% 100%, 0% 70%, 0% 15%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: 0.82rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 8px rgba(56, 189, 248, 0.4);
+  z-index: 3;
+  flex-shrink: 0;
+}
+
+/* 중앙 태그 바: 좌우 배지 사이 연결 바 */
+.card-stat-tag-bar {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1.5px solid #334155;
+  border-bottom: 1.5px solid #334155;
+  margin: 0 -4px;
+  padding: 2px 4px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #94a3b8;
+  z-index: 2;
+  letter-spacing: -0.2px;
+}
+
+/* ============================================================================
+ * [3-Layered Vector Card Composite Architecture]
+ * Layer 1: Art Window (WebP Illustration / Procedural Fallback)
+ * Layer 2: Frame (assets/frames/card_frame_unit_blank.svg or card_frame_spell_blank.svg)
+ * Layer 3: Dynamic Labels & 5-Base Claw Level Tally Badges
+ * ============================================================================ */
+.card-composite-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 400 / 560;
+  border-radius: 8px;
+  overflow: hidden;
+  user-select: none;
+  background: #090d16;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.layer-1-art {
+  position: absolute;
+  top: 12.5%;
+  left: 5.5%;
+  width: 89.0%;
+  height: 62.5%;
+  border-radius: 4px;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+  background: #06080d;
+}
+
+.layer-1-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.procedural-art-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.procedural-art-icon {
+  font-size: calc(var(--card-scale-font, 1) * 44px);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.95));
+}
+
+.procedural-archetype-pill {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: calc(var(--card-scale-font, 1) * 9.5px);
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #38bdf8;
+  border: 1px solid #334155;
+  letter-spacing: 0.5px;
+}
+
+.layer-2-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.layer-2-frame img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: high-quality;
+  shape-rendering: geometricPrecision;
+}
+
+.layer-3-dynamic-labels {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* 카드 이름 (상단 바 전체 영역 활용 & 레벨 영역 포함 & 글씨 좌우 압축 우겨넣기) */
+.overlay-name {
+  position: absolute;
+  top: 3.2%;
+  left: 7.2%;
+  width: 85.6%;
+  height: 7.8%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-family: 'Cinzel', 'Noto Serif KR', serif;
+  font-weight: 900;
+  font-size: calc(var(--card-scale-font, 1) * 14.5px);
+  color: #1a0f05;
+  -webkit-text-stroke: calc(var(--card-scale-font, 1) * 2.2px) #ffffff;
+  paint-order: stroke fill;
+  text-shadow: 0 0 2px #ffffff, 0 1px 3px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  overflow: visible; /* ... 축약 제거 */
+  line-height: 1;
+  pointer-events: none;
+  z-index: 25 !important;
+}
+
+.overlay-name.spell {
+  color: #064e3b;
+  -webkit-text-stroke: calc(var(--card-scale-font, 1) * 2.2px) #ffffff;
+  paint-order: stroke fill;
+  text-shadow: 0 0 2px #ffffff, 0 1px 3px rgba(0, 0, 0, 0.45);
+  z-index: 25 !important;
+}
+
+.overlay-name .card-name-text {
+  display: inline-block;
+  white-space: nowrap;
+  transform-origin: left center;
+}
+
+/* 상단 바 전체가 카드 이름 전용 영역으로 확장됨에 따른 레벨 할퀸 자국 숨김 처리 */
+.overlay-claw-level {
+  display: none !important;
+}
+
+.claw-tally-bundle {
+  position: relative;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 0;
+  height: 100%;
+}
+
+.claw-stroke {
+  height: 100%;
+  width: auto;
+  display: block;
+  margin-left: -2px;
+  filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, 0.85));
+}
+
+.claw-cross {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 108%;
+  height: auto;
+  pointer-events: none;
+  filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, 0.95));
+}
+
+/* 하단 태그 (프레임 좌측 양각 박스 정렬 및 유연한 래핑) */
+.overlay-tags {
+  position: absolute;
+  top: 77.2%;
+  left: 7.0%;
+  width: 41%;
+  height: 18.8%;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--card-scale-font, 1) * 11px);
+  color: #2c1d0c;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+  gap: 3px 6px;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  text-align: center;
+  overflow: hidden;
+}
+
+.overlay-tags .frame-tag-pill {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* 하단 공격력 (프레임 우측 상단 분할 박스 정중앙 배치) */
+.overlay-attack-group {
+  position: absolute;
+  top: 77.0%;
+  left: 52.5%;
+  width: 41%;
+  height: 9.4%;
+  font-family: 'Cinzel', 'Noto Serif KR', serif;
+  font-weight: 900;
+  font-size: calc(var(--card-scale-font, 1) * 18px);
+  color: #1a0f05;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.stat-label-atk {
+  font-family: 'Cinzel', 'Noto Sans KR', sans-serif;
+  font-size: calc(var(--card-scale-font, 1) * 11px);
+  font-weight: 900;
+  color: #8c252a;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+/* 하단 수비력 (프레임 우측 하단 분할 박스 정중앙 배치) */
+.overlay-defense-group {
+  position: absolute;
+  top: 87.2%;
+  left: 52.5%;
+  width: 41%;
+  height: 9.4%;
+  font-family: 'Cinzel', 'Noto Serif KR', serif;
+  font-weight: 900;
+  font-size: calc(var(--card-scale-font, 1) * 18px);
+  color: #1a0f05;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.stat-label-def {
+  font-family: 'Cinzel', 'Noto Sans KR', sans-serif;
+  font-size: calc(var(--card-scale-font, 1) * 11px);
+  font-weight: 900;
+  color: #1d4e89;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+
+/* 마법 효과문 (마법 프레임 하단 광폭 양각 박스 정중앙 배치) */
+.overlay-spell-effect {
+  position: absolute;
+  top: 77.2%;
+  left: 7.0%;
+  width: 86%;
+  height: 18.8%;
+  font-family: 'Noto Serif KR', serif;
+  font-weight: 700;
+  font-size: calc(var(--card-scale-font, 1) * 10.5px);
+  color: #064e3b;
+  line-height: 1.4;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ============================================================================
+ * [손패 & 전장 필드 전용: 하단 좌측 공격력 / 하단 우측 수비력 분리 표기]
+ * - 상세 정보(인스펙터)는 기존 정통 프레임 양식을 그대로 유지하고,
+ * - 손패(Hand) 및 필드(Board)에서는 모서리 대형 스탯 배지 형태로 직관적 표기
+ * ============================================================================ */
+.card-composite-wrapper.battlefield-view {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  -webkit-font-smoothing: antialiased;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+.card-composite-wrapper.battlefield-view .overlay-attack-group,
+.card-composite-wrapper.battlefield-view .overlay-defense-group,
+.card-composite-wrapper.battlefield-view .overlay-tags {
+  display: none !important;
+}
+
+.overlay-stat-badge {
+  position: absolute;
+  top: 76.43%;
+  width: 43.0%;
+  height: 20.71%;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 28;
+  pointer-events: none;
+}
+
+.overlay-stat-badge.atk-badge {
+  left: 5.5%;
+  /* 기본 카드 프레임 양각 슬롯(x:22, y:428, w:172, h:116)에 딱 맞게 정렬 */
+  background: rgba(140, 29, 34, 0.05);
+}
+
+.overlay-stat-badge.def-badge {
+  right: 5.5%;
+  /* 기본 카드 프레임 양각 슬롯(x:206, y:428, w:172, h:116)에 딱 맞게 정렬 */
+  background: rgba(12, 74, 110, 0.05);
+}
+
+.stat-badge-num {
+  font-family: 'Cinzel', 'Noto Serif KR', serif;
+  font-size: calc(var(--card-scale-font, 1) * 64px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-stat-badge.atk-badge .stat-badge-num {
+  color: #8c1d22;
+  -webkit-text-stroke: calc(var(--card-scale-font, 1) * 2.2px) #ffffff;
+  paint-order: stroke fill;
+  text-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.45);
+}
+
+.overlay-stat-badge.def-badge .stat-badge-num {
+  color: #0c4a6e;
+  -webkit-text-stroke: calc(var(--card-scale-font, 1) * 2.2px) #ffffff;
+  paint-order: stroke fill;
+  text-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.45);
+}
+
+.overlay-spell-badge {
+  position: absolute;
+  top: 76.43%;
+  left: 5.5%;
+  width: 89.0%;
+  height: 20.71%;
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.95) 0%, rgba(2, 44, 34, 0.95) 100%);
+  border: 1.5px solid #10b981;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ecfdf5;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 800;
+  font-size: calc(var(--card-scale-font, 1) * 11px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.8);
+  z-index: 28;
+  pointer-events: none;
+  padding: 0 10px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+  padding: 0 6px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================================
+ * [카드 뒷면 (Card Back) 컴포넌트: 정교한 다크 그레이 메탈릭 아케인 테두리]
+ * ============================================================================ */
+.card-back-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 400 / 560;
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #334155;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+.card-back-inner {
+  width: 90%;
+  height: 92%;
+  border: 1.5px solid #475569;
+  border-radius: 5px;
+  background: radial-gradient(circle, #1a2234 0%, #0d121d 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.card-back-rim {
+  width: 84%;
+  height: 86%;
+  border: 1px dashed #64748b;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.card-back-emblem {
+  width: 58%;
+  height: 58%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-back-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8));
+}
+
+.cpu-card-back {
+  width: 44px;
+  height: 60px;
+  cursor: default;
+  transition: transform 0.2s ease;
+}
+
+.cpu-card-back + .cpu-card-back {
+  margin-left: -12px;
+}
+
+.cpu-card-back:hover {
+  transform: translateY(2px);
+  z-index: 5;
+}
+
+/* ============================================================================
+ * [세트된 마법 카드 실물 렌더링 (Physical Face-Down Set Spell)]
+ * 중앙 슬롯도 몬스터 앞 세트와 마찬가지로 가로방향(횡방향)으로 눕혀 세트 (시인성을 위해 크기 확대)
+ * ============================================================================ */
+.field-central-set-slot {
+  width: 152px;
+  height: 108px;
+  border: 1.5px dashed #475569;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.5);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: visible;
+  cursor: pointer;
+}
+
+/* 세트된 카드는 두툼한 덱 형태가 아닌 카드 한 장이 뒤집힌 모습으로 렌더링 */
+.field-central-set-slot.has-set-card {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.physical-set-card {
+  width: 152px;
+  height: 108px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.75));
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.physical-set-card:hover {
+  transform: translateY(-3px) scale(1.04);
+}
+
+.horizontal-card-rotator.central-rotator {
+  position: absolute;
+  width: 76px;
+  height: 108px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.horizontal-card-rotator.central-rotator .card-back-wrapper {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75);
+  border: 1.5px solid #64748b;
+  border-radius: 6px;
+}
+
+/* ============================================================================
+ * [세트 카드 사악한 오라 연출: 상·하·좌·우 모든 방향으로 은은하게 퍼지는 미아즈마]
+ * ============================================================================ */
+.sinister-dark-aura {
+  position: absolute;
+  inset: -12px;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.75)) drop-shadow(0 0 14px rgba(225, 29, 72, 0.45));
+}
+
+.sinister-omni-mist {
+  position: absolute;
+  inset: -4px;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at center, rgba(147, 51, 234, 0.55) 0%, rgba(225, 29, 72, 0.3) 50%, transparent 75%);
+  animation: sinister-omni-pulse 2.2s infinite alternate ease-in-out;
+  mix-blend-mode: screen;
+}
+
+@keyframes sinister-omni-pulse {
+  0% { transform: scale(0.92); opacity: 0.35; filter: blur(3px); }
+  100% { transform: scale(1.12); opacity: 0.85; filter: blur(6px); }
+}
+
+.sinister-wisp {
+  position: absolute;
+  border-radius: 50%;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.sinister-wisp.wisp-top {
+  top: -8px;
+  left: 15%;
+  width: 70%;
+  height: 18px;
+  background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.8), transparent 70%);
+  animation: wisp-float-top 2.2s infinite ease-in-out;
+}
+
+.sinister-wisp.wisp-bottom {
+  bottom: -8px;
+  left: 15%;
+  width: 70%;
+  height: 18px;
+  background: radial-gradient(ellipse at center, rgba(225, 29, 72, 0.8), transparent 70%);
+  animation: wisp-float-bottom 2.4s infinite ease-in-out 0.4s;
+}
+
+.sinister-wisp.wisp-left {
+  left: -8px;
+  top: 15%;
+  width: 18px;
+  height: 70%;
+  background: radial-gradient(ellipse at center, rgba(147, 51, 234, 0.75), transparent 70%);
+  animation: wisp-float-left 2.3s infinite ease-in-out 0.7s;
+}
+
+.sinister-wisp.wisp-right {
+  right: -8px;
+  top: 15%;
+  width: 18px;
+  height: 70%;
+  background: radial-gradient(ellipse at center, rgba(192, 38, 211, 0.75), transparent 70%);
+  animation: wisp-float-right 2.5s infinite ease-in-out 1s;
+}
+
+@keyframes wisp-float-top {
+  0%, 100% { transform: translateY(0) scale(0.95); opacity: 0.4; }
+  50% { transform: translateY(-7px) scale(1.1); opacity: 0.9; }
+}
+
+@keyframes wisp-float-bottom {
+  0%, 100% { transform: translateY(0) scale(0.95); opacity: 0.4; }
+  50% { transform: translateY(7px) scale(1.1); opacity: 0.9; }
+}
+
+@keyframes wisp-float-left {
+  0%, 100% { transform: translateX(0) scale(0.95); opacity: 0.4; }
+  50% { transform: translateX(-7px) scale(1.1); opacity: 0.9; }
+}
+
+@keyframes wisp-float-right {
+  0%, 100% { transform: translateX(0) scale(0.95); opacity: 0.4; }
+  50% { transform: translateX(7px) scale(1.1); opacity: 0.9; }
+}
+
+.set-card-glow-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.set-card-label-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid #a855f7;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  color: #f3e8ff;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  z-index: 10;
+}
+  border: 1px solid #a855f7;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #d8b4fe;
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.empty-set-slot-frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* --- [스케치 1 좌측]: "평소" 카드 프레임 (Card Idle Frame) --- */
+.card-idle-frame {
+  width: 190px !important;
+  height: 266px !important;
+  border-radius: 10px !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.85) !important;
+  position: relative !important;
+  user-select: none !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  margin: 0 auto !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* 상단 이름 박스 */
+.card-idle-name-box {
+  background: rgba(30, 41, 59, 0.95) !important;
+  border: 1.5px solid #64748b !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+  font-size: 0.82rem !important;
+  font-weight: 900 !important;
+  color: #f8fafc !important;
+  text-align: center !important;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* 중앙 일러스트 박스 */
+.card-idle-art-box {
+  flex: 1 !important;
+  background: radial-gradient(circle at center, #1e293b 25%, #080d1a 100%) !important;
+  border: 1.5px solid #334155 !important;
+  border-radius: 6px !important;
+  margin: 6px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.card-idle-art-box .art-icon-big {
+  font-size: 3.4rem !important;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85)) !important;
+}
+
+.card-idle-art-box .art-archetype-tag {
+  position: absolute !important;
+  top: 4px !important;
+  right: 4px !important;
+  font-size: 0.62rem !important;
+  font-weight: 800 !important;
+  padding: 2px 5px !important;
+  border-radius: 4px !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #38bdf8 !important;
+  border: 1px solid #334155 !important;
+}
+
+/* 평소 카드 프레임 내부 배지 크기 확대 */
+.card-idle-frame .card-bottom-stats-bar {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  height: 34px !important;
+}
+
+.card-idle-frame .card-stat-badge.badge-atk {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 1rem !important;
+  border-width: 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.card-idle-frame .card-stat-badge.badge-atk .sword-icon {
+  font-size: 0.95rem !important;
+  top: -8px !important;
+  left: -8px !important;
+}
+.card-idle-frame .card-stat-badge.badge-def {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 1rem !important;
+  border-width: 2px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.card-idle-frame .card-stat-tag-bar {
+  height: 24px !important;
+  font-size: 0.7rem !important;
+  margin: 0 -5px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* --- [스케치 1 우측]: "인게임" 필드 몬스터 유닛 카드 (Unit Field Card - 시인성 강화를 위해 확대) --- */
+.unit-field-card {
+  width: 108px;
+  height: 150px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  transform-style: flat;
+  transform-origin: 50% 90% !important; /* 하단 앵커 (내리치기 모션) */
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* 비조작 기본 상태: 기울기 없는 수직 탑다운 뷰 */
+  transform: translate3d(var(--card-tx, 0px), var(--card-ty, 0px), var(--card-tz, 0px))
+             rotateZ(var(--slam-rot-z, 0deg))
+             rotateX(var(--slam-rot-x, 0deg))
+             scale(var(--slam-scale, 1));
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
+}
+
+.unit-field-card .card-composite-wrapper {
+  position: relative;
+  z-index: 5;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+}
+
+/* 상단 이름 바가 제거되고 시원하게 상단을 채우는 인게임 일러스트 윈도우 */
+.unit-field-art-window {
+  flex: 1;
+  width: 100%;
+  background: radial-gradient(circle at center, #1e293b 15%, #080d1a 100%);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+
+.unit-field-art-window .unit-field-icon {
+  font-size: 2.3rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.85));
+}
+
+/* 바닥 평면 접지 그림자 (가독성을 해치지 않는 은은한 그림자) */
+.unit-field-card::before {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 6%;
+  width: 88%;
+  height: 10px;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.6) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  z-index: -1;
+}
+
+/* 바닥 접지 발판 림 라인 */
+.unit-field-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: 10%;
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.7), transparent);
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* 마우스 호버 시: 흐릿함(뿌옇게 변함) 없이 100% 선명하고 또렷하게 확대(scale 1.1) 및 선택 피드백 제공 */
+.unit-field-card:hover:not(.slam-windup):not(.slam-down):not(.is-dragging-attacker) {
+  transform: translateY(-8px) scale(1.1) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.92), 0 0 0 2px #38bdf8 !important;
+  z-index: 50 !important;
+}
+
+.unit-field-card.can-attack {
+  border-color: #22c55e;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 12px rgba(34, 197, 94, 0.45);
+}
+
+.unit-field-card.can-attack:hover {
+  border-color: #4ade80 !important;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.96), 0 0 0 2px #4ade80 !important;
+}
+
+/* 공격자 카드 드래그 이동 중 상태 */
+.unit-field-card.is-dragging-attacker {
+  border-color: #facc15 !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.95), 0 0 25px rgba(250, 204, 21, 0.85) !important;
+  z-index: 10000 !important;
+  cursor: grabbing !important;
+  transition: none !important;
+}
+
+/* 드래그 호버 중인 타겟 하이라이트 */
+.unit-field-card.target-drag-hovered,
+#cpu-seat.target-drag-hovered,
+#cpu-meta.target-drag-hovered,
+#cpu-avatar.target-drag-hovered,
+.avatar-box.target-drag-hovered {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 28px #ef4444, inset 0 0 14px rgba(239, 68, 68, 0.6) !important;
+  animation: targetPulseHarmful 0.5s infinite alternate !important;
+}
+
+@keyframes targetPulseHarmful {
+  0% { transform: scale(1.0); filter: brightness(1); }
+  100% { transform: scale(1.08); filter: brightness(1.3); }
+}
+
+/* 덱 마스터 몬스터 전용 황금 테두리 & 왕관 뱃지 */
+.unit-field-card.is-deck-master {
+  border-color: #facc15 !important;
+  box-shadow: 0 0 18px rgba(250, 204, 21, 0.7), inset 0 0 10px rgba(250, 204, 21, 0.4) !important;
+}
+
+.deck-master-crown-badge {
+  display: none !important;
+}
+
+/* 일반 소환권 모두 소모 또는 소환 불가 시: 투명화 대신 은은하고 또렷한 Dull(톤다운/채도감쇄) 처리 */
+.duel-card.card-dull-exhausted {
+  filter: grayscale(82%) brightness(0.72) contrast(0.92);
+  cursor: not-allowed;
+  opacity: 0.96;
+}
+
+.duel-card.card-dull-exhausted:hover {
+  filter: grayscale(48%) brightness(0.88) contrast(0.96);
+}
+
+/* 손패 카드 레이아웃 (부채꼴 3D 비스듬함 & 중앙 정렬) */
+.hand-row {
+  display: flex;
+}
+
+.player-hand {
+  perspective: 1100px;
+  transform-style: flat;
+  isolation: isolate;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: 165px;
+  padding-bottom: 6px;
+  max-width: 490px;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ============================================================================
+ * [3D Hand Card with Fan-Out & Holo Foil]
+ * ============================================================================ */
+.duel-card {
+  width: 105px;
+  height: 147px;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  cursor: grab;
+  touch-action: none;
+  position: relative;
+  z-index: var(--card-z, 1);
+  transform-style: preserve-3d;
+  transform-origin: 50% 120%; /* 손목 앵커에서 부채꼴로 펼쳐짐 */
+  will-change: transform, z-index;
+  transform: translate3d(var(--card-tx, 0px), calc(var(--fan-ty, 0px) + var(--card-ty, 0px)), calc(var(--fan-tz, 0px) + var(--card-tz, 0px)))
+             rotateZ(var(--fan-rz, 0deg))
+             rotateX(calc(var(--fan-rx, 0deg) + var(--card-rx, 0deg) + var(--wobble-rx, 0deg)))
+             rotateY(var(--card-ry, 0deg));
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.75);
+}
+
+/* 손패 카드 하단 호버 히트박스 브릿지: 카드가 위로 36px 부양해도 하단 커서 위치가 유지되어 진동/떨림 현상 완전 방지 */
+.duel-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -48px;
+  height: 52px;
+  pointer-events: auto;
+  background: transparent;
+  z-index: 1;
+}
+
+/* 무지개 홀로그램 호일 광택 레이어 */
+.card-holo-foil {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.22) 35%, rgba(56, 189, 248, 0.35) 45%, rgba(244, 114, 182, 0.35) 55%, rgba(250, 204, 21, 0.35) 65%, transparent 80%);
+  background-size: 250% 250%;
+  background-position: var(--glare-x, 50%) var(--glare-y, 50%);
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+  border-radius: 7px;
+  opacity: 0.35;
+  transform: translateZ(32px);
+  transition: opacity 0.2s;
+}
+
+/* 손패 카드 호버 및 클릭 선택 시 똑바로 일어서며 튀어나옴 (선택된 카드는 줄어들지 않고 팝업 버튼도 흔들림 없이 고정) */
+.duel-card:hover:not(.is-dragging),
+.duel-card.is-selected:not(.is-dragging) {
+  transform: translate3d(var(--card-tx, 0px), -36px, 120px) rotateZ(0deg) rotateX(0deg) rotateY(0deg) scale(1.15) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 28px 55px rgba(0, 0, 0, 0.95), 0 0 25px rgba(56, 189, 248, 0.7);
+  z-index: 600 !important;
+}
+
+.duel-card:hover .card-holo-foil,
+.duel-card.is-selected .card-holo-foil {
+  opacity: 0.85;
+}
+
+/* 손패 카드를 쥘 때 (드래그 중): 항상 정방향 (기울임 없음), 카드 중앙(50% 50%)을 중심으로 위아래가 흔들리는 효과 */
+.duel-card.is-dragging {
+  cursor: grabbing;
+  border-color: #22c55e !important;
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.95), 0 0 25px rgba(34, 197, 94, 0.8);
+  z-index: 9999 !important;
+  transform-origin: 50% 50% !important; /* 카드 중앙 앵커로 전환 */
+  --fan-rz: 0deg !important; /* 항상 정방향 (부채꼴 Z 회전 없음) */
+  --fan-rx: 0deg !important; /* 기본 기울임 없음 */
+  --fan-ty: 0px !important;
+  --card-ry: 0deg !important; /* 좌우 뒤틀림 없음: 항상 정면을 응시 */
+  transition: none !important;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  transform: translateZ(24px);
+}
+
+.cost-pill {
+  width: 20px;
+  height: 20px;
+  background: #2563eb;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  transform: translateZ(32px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.8);
+  text-align: center;
+  line-height: 20px;
+}
+
+.level-pill {
+  min-width: 44px;
+  height: 20px;
+  background: linear-gradient(135deg, #d97706, #92400e);
+  border: 1px solid #fbbf24;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  transform: translateZ(32px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 6px rgba(251, 191, 36, 0.4);
+  padding: 0 5px;
+  white-space: nowrap;
+}
+
+.spell-pill {
+  min-width: 38px;
+  height: 20px;
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  border: 1px solid #c084fc;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  transform: translateZ(32px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 6px rgba(192, 132, 252, 0.4);
+  padding: 0 5px;
+  white-space: nowrap;
+}
+
+.unit-level-badge {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: linear-gradient(135deg, #d97706, #78350f);
+  border: 1.5px solid #fbbf24;
+  color: #fef08a;
+  font-size: 0.68rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 8px;
+  z-index: 6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(245, 158, 11, 0.5);
+  pointer-events: none;
+}
+
+.unit-field-card.aura-tribute-ready {
+  outline: 2px solid #fbbf24 !important;
+  box-shadow: 0 0 18px rgba(251, 191, 36, 0.85), inset 0 0 14px rgba(251, 191, 36, 0.4) !important;
+  animation: tributePulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes tributePulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.05); filter: brightness(1.25); }
+}
+
+.unit-field-card.tribute-selected {
+  outline: 3px solid #22c55e !important;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.9), inset 0 0 14px rgba(34, 197, 94, 0.5) !important;
+}
+
+.tribute-select-popover {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(15, 23, 42, 0.97);
+  border: 2px solid #f59e0b;
+  border-radius: 14px;
+  padding: 20px 24px;
+  z-index: 1000;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.92), 0 0 24px rgba(245, 158, 11, 0.45);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 320px;
+  max-width: 440px;
+  backdrop-filter: blur(10px);
+}
+
+.tribute-select-header {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fbbf24;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tribute-select-body {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.tribute-select-status {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tribute-select-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.card-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  flex: 1;
+}
+
+.card-text {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  margin-top: auto;
+  line-height: 1.25;
+  transform: translateZ(18px);
+}
+
+
+/* ================= 4. VIEW_PACK_OPENING & VIEW_MERCHANT_EVENT ================= */
+#view-pack-opening, #view-merchant-event, #view-run-summary {
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.modal-dialog-box {
+  width: 720px;
+  background: #111522;
+  border: 2px solid #1e293b;
+  border-radius: 14px;
+  padding: 35px;
+  text-align: center;
+}
+
+.modal-emoji { font-size: 3.5rem; }
+.modal-header h2 { font-size: 1.6rem; margin: 10px 0 8px 0; }
+.modal-header p { font-size: 0.95rem; color: #94a3b8; margin-bottom: 30px; }
+
+.pack-cards-grid {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin-bottom: 30px;
+}
+
+.pack-choice-card {
+  width: 150px;
+  height: 220px;
+  background: #171d2b;
+  border: 2px solid #334155;
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.pack-choice-card:hover {
+  transform: translateY(-8px);
+  border-color: #38bdf8;
+}
+
+.pack-choice-card.selected {
+  border-color: #22c55e;
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+  transform: translateY(-10px);
+}
+
+.merchant-choices-row {
+  display: flex;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.merchant-card-option {
+  flex: 1;
+  background: #171d2b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.merchant-card-option h3 {
+  font-size: 1.1rem;
+  margin-bottom: 14px;
+}
+
+.sparkle-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+
+/* ================= 6. VIEW_RUN_SUMMARY ================= */
+.summary-dialog-box {
+  width: 620px;
+  background: #111522;
+  border: 2px solid #facc15;
+  border-radius: 14px;
+  padding: 35px;
+  text-align: center;
+}
+
+.trophy-badge { font-size: 4.5rem; margin-bottom: 12px; }
+.summary-dialog-box h1 { font-size: 2.2rem; color: #facc15; margin-bottom: 10px; }
+.summary-dialog-box p { font-size: 1rem; color: #94a3b8; margin-bottom: 25px; }
+
+.hall-of-fame-panel {
+  background: #090c12;
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 25px;
+  text-align: left;
+}
+
+.deck-list-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 12px 0;
+}
+
+.deck-list-items li {
+  background: #1e293b;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.hall-payload-box {
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #64748b;
+  background: #05070a;
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+/* ================= 7. OVERLAY_BINDER_BOOK ================= */
+.modal-overlay {
+  display: none;
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 20000;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.binder-book-container {
+  width: 1060px;
+  height: 730px;
+  max-height: 94vh;
+  background: radial-gradient(circle at 50% 30%, #151a28 0%, #080a12 100%);
+  border: 3px solid #1e293b;
+  border-radius: 16px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95), inset 0 0 35px rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 20px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* 실물 가죽 바인더 외곽 스티칭 봉제선 효과 */
+.binder-book-container::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1.5px dashed rgba(100, 116, 139, 0.28);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.binder-book-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  z-index: 5;
+}
+
+.binder-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+
+.binder-title-group h2 {
+  font-family: 'Cinzel', 'Noto Serif KR', serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.binder-page-indicator {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 3px 9px;
+  border-radius: 4px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-family: 'Cinzel', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.binder-status-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 0.78rem;
+  align-items: center;
+}
+
+.legend-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-badge .badge-dot {
+  font-size: 0.75rem;
+}
+
+.legend-badge.unk { color: #64748b; }
+.legend-badge.disc { color: #94a3b8; }
+.legend-badge.own { color: #38bdf8; }
+.legend-badge.mast {
+  color: #facc15;
+  font-weight: 800;
+  text-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+}
+
+.close-icon-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.close-icon-btn:hover {
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* ============================================================================
+ * [3×3 바인더 북 양면 앨범 스프레드 (Album Spread)]
+ * 좌측: 3공 메탈 링 스파인 + 9포켓 아카이벌 슬리브 시트
+ * 중앙: 스파인 북 크리즈 (Crease Divider)
+ * 우측: 정밀 카드 감정 도감 & 숙련도 아카이브 (Collector's Dossier)
+ * ============================================================================ */
+.binder-album-spread {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  gap: 0;
+  position: relative;
+  z-index: 5;
+}
+
+/* 1. 3공 바인더 링 스파인 (Ring Spine) */
+.binder-spine-strip {
+  width: 32px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+  margin-right: 4px;
+}
+
+.binder-ring-assembly {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.binder-ring-hole {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #07090e;
+  border: 2.5px solid #94a3b8;
+  box-shadow: inset 0 3px 6px #000, 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+.binder-metal-ring {
+  position: absolute;
+  left: -8px;
+  width: 26px;
+  height: 24px;
+  border: 3.5px solid #cbd5e1;
+  border-right: none;
+  border-radius: 13px 0 0 13px;
+  box-shadow: -2px 3px 6px rgba(0, 0, 0, 0.8), inset 0 1px 2px #fff;
+  pointer-events: none;
+}
+
+/* 2. 9포켓 투명 비닐 시트 컨테이너 (Ultra-Clear Sleeve Sheet) */
+.binder-sheet-wrapper {
+  width: 430px;
+  flex: 0 0 430px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 12, 19, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.85), 0 8px 24px rgba(0, 0, 0, 0.6);
+  position: relative;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.sheet-plastic-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.62rem;
+  color: #475569;
+  letter-spacing: 1px;
+  font-weight: 800;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* 3x3 바인더 그리드 (9슬롯) */
+.binder-grid-page {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 8px;
+  min-height: 0;
+  height: 100%;
+}
+
+/* 슬리브 포켓 1슬롯 */
+.binder-slot {
+  position: relative;
+  background: rgba(14, 20, 32, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 4px 4px 2px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s ease, border-color 0.2s ease;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8), 0 2px 6px rgba(0, 0, 0, 0.5);
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.binder-slot:hover {
+  transform: translateY(-4px) scale(1.025);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.9), 0 0 12px rgba(56, 189, 248, 0.45);
+  border-color: #38bdf8;
+  z-index: 25;
+}
+
+.binder-slot.selected-slot {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.5), inset 0 0 8px rgba(56, 189, 248, 0.2) !important;
+}
+
+/* 슬리브 상단 투입구 슬릿 (Top-Loading Slit) */
+.pocket-slit {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  right: 6px;
+  height: 2.5px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), rgba(0, 0, 0, 0.7));
+  border-radius: 2px;
+  z-index: 14;
+  pointer-events: none;
+}
+
+/* 슬리브 내부 카드 뷰포트 (정확한 1:1.4 포커 카드 비율 강제) */
+.pocket-inner-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.binder-card-viewport {
+  height: 100%;
+  max-height: 100%;
+  width: auto;
+  aspect-ratio: 400 / 560;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0 auto;
+  transition: filter 0.2s ease;
+}
+
+.binder-slot .card-composite-wrapper {
+  height: 100% !important;
+  width: auto !important;
+  max-height: 100% !important;
+  max-width: 100% !important;
+  aspect-ratio: 400 / 560 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75) !important;
+  margin: 0 auto !important;
+}
+
+/* 3x3 미니 슬롯 카드의 텍스트 최적화 (태그 숨김, 숫자 핏) */
+.binder-slot .overlay-tags {
+  display: none !important;
+}
+
+.binder-slot .overlay-attack-group,
+.binder-slot .overlay-defense-group {
+  gap: 2px !important;
+  letter-spacing: -0.5px !important;
+}
+
+/* 4단계 카드 상태 스타일 */
+/* 0: UNKNOWN (미발견 카드 뒷면 + 봉인 오버레이) */
+.binder-slot.status-0 .binder-card-viewport {
+  filter: brightness(0.68) contrast(0.95);
+}
+
+.unknown-mystery-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(15, 23, 42, 0.7) 0%, rgba(10, 14, 22, 0.92) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.mystery-seal-icon {
+  font-family: 'Cinzel', serif;
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #94a3b8;
+  text-shadow: 0 2px 8px #000;
+}
+
+.mystery-seal-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* 1: DISCOVERED (흑백 모노크롬) */
+.binder-slot.status-1 .binder-card-viewport {
+  filter: grayscale(100%) brightness(0.68) contrast(0.92);
+  opacity: 0.82;
+}
+
+/* 2: OWNED (정식 풀컬러) */
+.binder-slot.status-2 .binder-card-viewport {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.7));
+}
+
+/* 3: MASTERED (골든 오라 글로우 + 홀로그램 포일) */
+.binder-slot.status-3 .binder-card-viewport {
+  filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.8)) drop-shadow(0 4px 14px rgba(0, 0, 0, 0.8));
+  border: 1.5px solid rgba(250, 204, 21, 0.9);
+  border-radius: 6px;
+}
+
+/* 홀로그램 포일 레인보우 쉬머 애니메이션 */
+.holographic-foil-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 12;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 0, 128, 0.25) 20%,
+    rgba(255, 230, 0, 0.3) 35%,
+    rgba(0, 255, 180, 0.3) 50%,
+    rgba(0, 180, 255, 0.3) 65%,
+    rgba(180, 0, 255, 0.25) 80%,
+    transparent 100%
+  );
+  background-size: 250% 250%;
+  mix-blend-mode: color-dodge;
+  opacity: 0.85;
+  animation: holoRainbowFlow 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes holoRainbowFlow {
+  0% {
+    background-position: 0% 0%;
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    background-position: 100% 100%;
+    filter: hue-rotate(90deg);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(180deg);
+  }
+}
+
+/* 비닐 포켓 대각선 유광 반사광 (Glossy Plastic Sheen) */
+.pocket-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.12) 0%,
+    rgba(255, 255, 255, 0.02) 28%,
+    transparent 55%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  pointer-events: none;
+  z-index: 15;
+  border-radius: 6px;
+}
+
+/* 슬리브 하단 번호 & 상태 배지 라인 */
+.pocket-bottom-bar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 3px 0 3px;
+  font-size: 0.62rem;
+  z-index: 16;
+  pointer-events: none;
+}
+
+.slot-idx-tag {
+  color: #64748b;
+  font-family: 'Cinzel', serif;
+  font-weight: 800;
+}
+
+.slot-status-pill {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.slot-status-pill.unk {
+  color: #64748b;
+}
+
+.slot-status-pill.disc {
+  color: #94a3b8;
+  background: rgba(51, 65, 85, 0.5);
+}
+
+.slot-status-pill.own {
+  color: #38bdf8;
+  background: rgba(14, 116, 144, 0.3);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.slot-status-pill.mast {
+  color: #facc15;
+  font-weight: 800;
+  background: rgba(202, 138, 4, 0.35);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  text-shadow: 0 0 6px rgba(250, 204, 21, 0.6);
+}
+
+/* 3. 중앙 바인더 스파인 접힘선 & 음영 */
+.binder-spine-crease {
+  width: 12px;
+  margin: 0 6px;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.85) 50%, rgba(0, 0, 0, 0.5));
+  border-radius: 4px;
+  box-shadow: inset 0 0 6px #000;
+  flex-shrink: 0;
+}
+
+/* 4. 우측 컬렉터 카드 상세 아카이브 (Collector's Dossier: 고대비 및 높은 가시성) */
+.binder-dossier-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #090e1a;
+  border: 2px solid #243247;
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.85), 0 8px 24px rgba(0, 0, 0, 0.7);
+  min-width: 0;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.dossier-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.dossier-eyebrow {
+  font-size: 0.72rem;
+  color: #38bdf8;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  font-family: 'Cinzel', serif;
+}
+
+.dossier-badge {
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.dossier-badge.badge-unk {
+  background: rgba(30, 41, 59, 0.8);
+  color: #94a3b8;
+  border: 1.5px solid #475569;
+}
+
+.dossier-badge.badge-disc {
+  background: rgba(51, 65, 85, 0.8);
+  color: #e2e8f0;
+  border: 1.5px solid #94a3b8;
+}
+
+.dossier-badge.badge-own {
+  background: linear-gradient(135deg, rgba(3, 105, 161, 0.6), rgba(2, 132, 199, 0.8));
+  color: #bae6fd;
+  border: 1.5px solid #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}
+
+.dossier-badge.badge-mast {
+  background: linear-gradient(135deg, rgba(202, 138, 4, 0.6), rgba(161, 98, 7, 0.8));
+  color: #fef08a;
+  border: 1.5px solid #facc15;
+  box-shadow: 0 0 14px rgba(250, 204, 21, 0.5);
+  text-shadow: 0 0 8px rgba(250, 204, 21, 0.7);
+}
+
+.dossier-main-content {
+  display: flex;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 좌측 카드 쇼케이스 */
+.dossier-card-side {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.dossier-card-preview-box {
+  width: 100%;
+  aspect-ratio: 400 / 560;
+  display: flex;
+  justify-content: center;
+}
+
+#binder-dossier-card-preview .card-composite-wrapper {
+  width: auto !important;
+  height: 100% !important;
+  max-width: 180px !important;
+  aspect-ratio: 400 / 560 !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9) !important;
+  margin: 0 auto !important;
+}
+
+/* 공/수 전투 스탯 배너 */
+.dossier-combat-stats-box {
+  width: 100%;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.dossier-stat-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  box-sizing: border-box;
+}
+
+.dossier-stat-pill.stat-pill-atk {
+  background: linear-gradient(135deg, rgba(153, 27, 27, 0.8), rgba(127, 29, 29, 0.9));
+  border: 1.5px solid #ef4444;
+  color: #fee2e2;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.dossier-stat-pill.stat-pill-atk strong {
+  font-size: 1.15rem;
+  color: #fff;
+  font-family: 'Cinzel', sans-serif;
+}
+
+.dossier-stat-pill.stat-pill-def {
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.8), rgba(30, 58, 138, 0.9));
+  border: 1.5px solid #3b82f6;
+  color: #dbeafe;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
+.dossier-stat-pill.stat-pill-def strong {
+  font-size: 1.15rem;
+  color: #fff;
+  font-family: 'Cinzel', sans-serif;
+}
+
+.dossier-stat-pill.stat-pill-spell {
+  background: linear-gradient(135deg, rgba(6, 95, 70, 0.8), rgba(4, 120, 87, 0.9));
+  border: 1.5px solid #10b981;
+  color: #d1fae5;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  font-size: 0.85rem;
+}
+
+/* 우측 상세 정보 패널 */
+.dossier-info-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+.dossier-title-line {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dossier-title {
+  font-family: 'Cinzel', 'Noto Serif KR', serif;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.2;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.dossier-meta-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.meta-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 5px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.meta-pill.archetype {
+  background: rgba(3, 105, 161, 0.5);
+  color: #bae6fd;
+  border: 1.5px solid #0284c7;
+}
+
+.meta-pill.type {
+  background: rgba(109, 40, 217, 0.5);
+  color: #f3e8ff;
+  border: 1.5px solid #8b5cf6;
+}
+
+.meta-pill.cost {
+  background: rgba(180, 83, 9, 0.5);
+  color: #fef3c7;
+  border: 1.5px solid #f59e0b;
+}
+
+.meta-pill.level {
+  background: rgba(161, 98, 7, 0.5);
+  color: #fef08a;
+  border: 1.5px solid #facc15;
+}
+
+/* 숙련도 섹션 */
+.dossier-mastery-section {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid #334155;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.mastery-label-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+.mastery-label-line span {
+  white-space: nowrap;
+}
+
+.mastery-label-line strong {
+  color: #facc15;
+  font-size: 0.95rem;
+  font-family: 'Cinzel', sans-serif;
+  white-space: nowrap;
+}
+
+.mastery-track {
+  width: 100%;
+  height: 8px;
+  background: #090d16;
+  border: 1.5px solid #334155;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.mastery-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fde047);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.7);
+}
+
+.mastery-sub-hint {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+/* 수집 통계 타일 */
+.dossier-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  text-align: center;
+}
+
+.dossier-stat-tile {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-tile-label {
+  font-size: 0.68rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.stat-tile-val {
+  font-size: 1.12rem;
+  font-weight: 900;
+  font-family: 'Cinzel', sans-serif;
+  color: #f8fafc;
+}
+
+.stat-tile-val.highlight-cyan {
+  color: #38bdf8;
+}
+
+.stat-tile-val.highlight-gold {
+  color: #facc15;
+}
+
+/* 상세 룰 & 효과 박스 */
+.dossier-desc-container {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid #334155;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
+.dossier-effect-header {
+  font-size: 0.82rem;
+  color: #38bdf8;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dossier-desc-banner {
+  font-size: 0.85rem;
+  color: #f8fafc;
+  font-weight: 600;
+  line-height: 1.45;
+  background: rgba(8, 12, 20, 0.6);
+  padding: 7px 10px;
+  border-radius: 6px;
+  border-left: 3.5px solid #38bdf8;
+}
+
+.dossier-rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-top: 1px dashed #334155;
+  padding-top: 6px;
+  font-size: 0.76rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.dossier-rule-item {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.dossier-desc-unknown {
+  color: #94a3b8;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  padding: 10px;
+}
+
+.dossier-desc-unknown .sub-hint {
+  color: #64748b;
+  margin-top: 8px;
+  font-size: 0.75rem;
+}
+
+.dossier-effect-header {
+  color: #38bdf8;
+  font-weight: 800;
+  margin-bottom: 3px;
+}
+
+.dossier-effect-body {
+  color: #f1f5f9;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.dossier-rules-list {
+  border-top: 1px dashed #334155;
+  padding-top: 4px;
+  color: #94a3b8;
+  font-size: 0.68rem;
+}
+
+.dossier-rule-item {
+  margin-top: 2px;
+}
+
+/* 5. 바인더 풋터 (페이지 이동 및 전체 수집 진척도 게이지 바) */
+.binder-book-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 8px;
+  z-index: 5;
+}
+
+.binder-summary-stat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.binder-stat-line {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.binder-stat-line strong {
+  color: #38bdf8;
+}
+
+.binder-progress-track {
+  width: 320px;
+  height: 6px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.binder-progress-fill.owned {
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.binder-progress-fill.mastered {
+  background: linear-gradient(90deg, #d97706, #facc15);
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 6px rgba(250, 204, 21, 0.6);
+}
+
+/* ============================================================================
+ * [LJack Game Protocol v1.4.0] 손맛 & 피직스 & 연출 엔진 스타일
+ * ============================================================================ */
+
+/* 1. 묘지 (Graveyard) 영역 & 암전된 잔영 */
+.graveyard-zone {
+  width: 72px;
+  height: 96px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px dashed #334155;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.gy-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 700;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.gy-stack {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+}
+
+.graveyard-card-ghost {
+  position: absolute;
+  top: 4px; left: 4px; right: 4px; bottom: 4px;
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 4px;
+  filter: brightness(0.35) grayscale(1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2px;
+  font-size: 0.6rem;
+  color: #4b5563;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.7);
+}
+
+/* 2. 체력 바 (100 LP HP Bar - 대형 게이지 및 시인성 강화) */
+.lp-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 220px;
+}
+
+.stat-pill.lp-pill {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  letter-spacing: 0.5px;
+}
+
+.lp-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.lp-bar-track {
+  width: 148px;
+  height: 22px;
+  background: #090d16;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid #334155;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lp-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 40%, #22c55e 100%);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.7);
+}
+
+.lp-bar-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  font-family: 'Cinzel', 'Noto Serif KR', monospace;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #ffffff !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 6px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.6px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.lp-bar-text strong {
+  color: #ffffff !important;
+  font-size: 0.96rem;
+  font-weight: 900;
+  margin-left: 4px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.9);
+}
+
+/* 3. 계층형 태그 롤링 티커 (Hierarchical Tag Ticker: n초 간격 롤링) */
+.card-tag-ticker {
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tag-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
+}
+
+.tag-fade-in {
+  animation: tagTickerFade 0.3s cubic-bezier(0.2, 0.9, 0.4, 1);
+}
+
+@keyframes tagTickerFade {
+  0% { opacity: 0; transform: translateY(3px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.tag-badge.level-0 {
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid #475569;
+  color: #f1f5f9;
+}
+
+.tag-badge.level-1 {
+  background: rgba(14, 116, 144, 0.3);
+  border: 1px solid #0284c7;
+  color: #38bdf8;
+}
+
+.tag-badge.level-2 {
+  background: rgba(147, 51, 234, 0.3);
+  border: 1px solid #a855f7;
+  color: #e9d5ff;
+}
+
+.tag-prefix {
+  font-weight: 900;
+  opacity: 0.9;
+}
+
+/* 필드 중앙 좌/우 마법 세트 존 (가로방향 실물 세트 규격 - 확대) */
+.field-central-set-slot {
+  width: 152px;
+  height: 108px;
+  border: 1.5px dashed #475569;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  color: #94a3b8;
+  font-size: 0.62rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  overflow: visible;
+  position: relative;
+}
+
+.field-central-set-slot:hover, .field-central-set-slot.slot-highlight {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  color: #e0f2fe;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.45);
+}
+
+.field-central-set-slot.has-spell {
+  border-style: solid;
+  border-color: #a855f7;
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.55);
+  color: #f3e8ff;
+}
+
+.center-hud-core {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+.central-turn-controller {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.turn-hud-side {
+  background: rgba(15, 23, 42, 0.94);
+  border: 1.5px solid #334155;
+  border-radius: 12px;
+  padding: 5px 13px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.65);
+  letter-spacing: 0.4px;
+}
+
+.turn-hud-left {
+  color: #f8fafc;
+  border-color: #475569;
+  font-family: 'Cinzel', monospace;
+}
+
+.turn-hud-right {
+  color: #38bdf8;
+  border-color: #0284c7;
+}
+
+.hidden-narrative {
+  display: none !important;
+}
+
+/* ============================================================================
+ * [턴 타이머 일시정지 팝업창 모달]
+ * ============================================================================ */
+.timer-pause-modal {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.timer-pause-modal.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.timer-pause-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 8, 16, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.timer-pause-card {
+  position: relative;
+  z-index: 2;
+  margin: auto;
+  background: radial-gradient(circle at 50% 20%, #1e293b, #090d16);
+  border: 1.5px solid #38bdf8;
+  border-radius: 14px;
+  padding: 22px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 24px rgba(56, 189, 248, 0.4);
+  text-align: center;
+  max-width: 420px;
+  animation: modalPopIn 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.timer-pause-badge {
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid #38bdf8;
+  color: #38bdf8;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
+.timer-pause-title {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.timer-pause-desc {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.timer-pause-desc .pause-hint {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
+.btn-resume-timer {
+  margin-top: 6px;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  padding: 7px 20px;
+  font-weight: 800;
+  font-size: 0.86rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-resume-timer:hover {
+  background: linear-gradient(135deg, #0369a1, #1d4ed8);
+  transform: scale(1.04);
+  box-shadow: 0 6px 18px rgba(56, 189, 248, 0.6);
+}
+
+/* ============================================================================
+ * [중앙 턴 종료 버튼 및 12시 시작 반시계방향 턴 타이머 링]
+ * - 12시 방향에서 시작하여 반시계방향(CCW)으로 서서히 소광되는 타이머 링
+ * - 10초 이하 긴박한 붉은 펄스 FX
+ * ============================================================================ */
+.central-turn-timer-wrap {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px 0;
+}
+
+.turn-timer-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.75));
+  transition: filter 0.3s ease;
+}
+
+.timer-track-circle {
+  fill: none;
+  stroke: rgba(30, 41, 59, 0.88);
+  stroke-width: 6;
+}
+
+.timer-progress-ring {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 276.46 276.46;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
+}
+
+.central-turn-timer-wrap.is-urgent .timer-progress-ring {
+  stroke: #ef4444;
+}
+
+.central-turn-timer-wrap.is-urgent .turn-timer-svg {
+  filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.95));
+  animation: timer-urgent-pulse 0.7s infinite alternate ease-in-out;
+}
+
+@keyframes timer-urgent-pulse {
+  from { transform: scale(1.0); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.75)); }
+  to { transform: scale(1.05); filter: drop-shadow(0 0 16px rgba(239, 68, 68, 1)); }
+}
+
+.btn-central-end-turn {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #1e293b, #090d16);
+  border: 2px solid #334155;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  user-select: none;
+  outline: none;
+}
+
+.btn-central-end-turn:hover:not(:disabled) {
+  background: radial-gradient(circle at 35% 35%, #334155, #0f172a);
+  border-color: #38bdf8;
+  transform: scale(1.06);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.5);
+}
+
+.btn-central-end-turn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn-central-end-turn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(70%);
+}
+
+.turn-btn-title {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: #f1f5f9;
+}
+
+.turn-timer-countdown {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.central-turn-timer-wrap.is-urgent .turn-timer-countdown {
+  color: #f87171;
+  font-weight: 900;
+  animation: countdown-urgent-blink 0.5s infinite alternate;
+}
+
+@keyframes countdown-urgent-blink {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0.6; transform: scale(1.08); }
+}
+
+.arena-center-hud {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 40px;
+  margin: 8px 0;
+}
+
+.card-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.card-tag {
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid #334155;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+
+.card-tag.tag-pierce {
+  border-color: #f87171;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.card-tag.tag-holy {
+  border-color: #38bdf8;
+  color: #bae6fd;
+}
+
+.card-tag.tag-titan {
+  border-color: #facc15;
+  color: #fef08a;
+  background: rgba(250, 204, 21, 0.15);
+}
+
+/* ============================================================================
+ * [몬스터 카드 밑 풀사이즈 세트 카드: 동일 규격 우측/하단 빼꼼 중첩 (유저 스케치 100% 재현)]
+ * ============================================================================ */
+.monster-stacked-set-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: translate(12px, 14px);
+  z-index: 2; /* 몬스터 본체 카드(.card-composite-wrapper: z-index 5)보다 바로 아래 계층 */
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.2s ease;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.9));
+  border-radius: 8px;
+  overflow: visible;
+}
+
+.monster-stacked-set-card:hover {
+  transform: translate(18px, 20px);
+  filter: drop-shadow(0 8px 22px rgba(168, 85, 247, 0.95));
+  z-index: 10;
+}
+
+.monster-stacked-set-card .card-composite-wrapper {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  border: 1.5px solid #a855f7;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.65);
+}
+
+.monster-stacked-set-card.enemy .card-composite-wrapper {
+  border-color: #f43f5e;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.65);
+}
+
+/* ============================================================================
+ * [몬스터 부착 세트 카드 오라: 중앙 세트 존과 동일한 사악한 다크 오라 (Sinister Dark Aura)]
+ * 상·하·좌·우 4방향 플로팅 위스프와 전방향 펄스 미아즈마 레이어
+ * ============================================================================ */
+.sinister-dark-aura.monster-set-aura {
+  inset: -14px -22px -24px -14px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 세트 카드가 밑에 부착된 몬스터 카드 본체 외곽선 은은한 보랏빛 글로우 */
+.unit-field-card.has-attached-spell {
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.7), 0 8px 24px rgba(0, 0, 0, 0.85) !important;
+}
+
+.unit-field-card.has-attached-spell > .card-composite-wrapper {
+  border: 1.5px solid rgba(192, 132, 252, 0.85) !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.5) !important;
+}
+
+.front-set-badge-label.enemy-badge,
+.set-card-label-badge.enemy-badge {
+  background: linear-gradient(135deg, #334155, #1e293b);
+  border: 1px solid #64748b;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================================
+ * [카드 드래그 시 낼 수 있는 카드 존 하이라이트 (Valid Drop Zones)]
+ * ============================================================================ */
+.board-zone.valid-drop-zone {
+  border: 2px dashed #38bdf8 !important;
+  background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.16) 0%, rgba(15, 23, 42, 0) 75%) !important;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.4), inset 0 0 16px rgba(56, 189, 248, 0.2) !important;
+  animation: valid-zone-pulse 1.4s infinite ease-in-out alternate;
+}
+
+@keyframes valid-zone-pulse {
+  0% {
+    border-color: #38bdf8;
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.35), inset 0 0 10px rgba(56, 189, 248, 0.15);
+  }
+  100% {
+    border-color: #67e8f9;
+    box-shadow: 0 0 28px rgba(56, 189, 248, 0.65), inset 0 0 20px rgba(56, 189, 248, 0.3);
+  }
+}
+
+.field-central-set-slot.valid-slot-drop {
+  border: 2px dashed #c084fc !important;
+  background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.25) 0%, rgba(15, 23, 42, 0.9) 80%) !important;
+  box-shadow: 0 0 24px rgba(192, 132, 252, 0.7), inset 0 0 14px rgba(168, 85, 247, 0.4) !important;
+  animation: valid-slot-pulse 1.3s infinite ease-in-out alternate;
+  transform: scale(1.05);
+}
+
+@keyframes valid-slot-pulse {
+  0% {
+    border-color: #c084fc;
+    box-shadow: 0 0 16px rgba(192, 132, 252, 0.5);
+  }
+  100% {
+    border-color: #e879f9;
+    box-shadow: 0 0 28px rgba(232, 121, 249, 0.85);
+  }
+}
+
+.unit-field-card.valid-spell-set-target {
+  outline: 2.5px dashed #a855f7 !important;
+  outline-offset: 4px;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.8), inset 0 0 12px rgba(168, 85, 247, 0.4) !important;
+  animation: valid-spell-target-pulse 1.2s infinite ease-in-out alternate;
+}
+
+@keyframes valid-spell-target-pulse {
+  0% {
+    outline-color: #a855f7;
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.6);
+  }
+  100% {
+    outline-color: #c084fc;
+    box-shadow: 0 0 26px rgba(192, 132, 252, 0.95);
+  }
+}
+
+.unit-field-card.valid-evolution-target {
+  outline: 2.5px solid #eab308 !important;
+  outline-offset: 4px;
+  box-shadow: 0 0 22px rgba(234, 179, 8, 0.85), inset 0 0 14px rgba(234, 179, 8, 0.45) !important;
+  animation: valid-evo-pulse 1.2s infinite ease-in-out alternate;
+}
+
+@keyframes valid-evo-pulse {
+  0% {
+    outline-color: #eab308;
+    box-shadow: 0 0 16px rgba(234, 179, 8, 0.7);
+  }
+  100% {
+    outline-color: #fde047;
+    box-shadow: 0 0 28px rgba(253, 224, 71, 0.95);
+  }
+}
+
+/* 전방 세트 마법 뱃지 */
+.unit-front-set-badge {
+  position: absolute;
+  bottom: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #f5f3ff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.7);
+  border: 1px solid #c4b5fd;
+  z-index: 200;
+  white-space: nowrap;
+}
+
+/* 마법 카드 조작 팝오버 메뉴 */
+.spell-action-popover {
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 1000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8), 0 0 14px rgba(56, 189, 248, 0.3);
+  min-width: 140px;
+  pointer-events: auto;
+}
+
+.spell-action-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: transparent;
+  pointer-events: auto;
+}
+
+.spell-popover-btn {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.spell-popover-btn:hover {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.spell-popover-btn.cancel-btn {
+  color: #94a3b8;
+  text-align: center;
+  margin-top: 2px;
+}
+.spell-popover-btn.cancel-btn:hover {
+  background: #dc2626;
+  color: #fff;
+  border-color: #f87171;
+}
+
+/* 4. 마우스 꾹 누를 때 3색 대상 카드 오라 (Aura System) */
+.aura-beneficial {
+  border-color: #22c55e !important;
+  box-shadow: 0 0 20px #22c55e, 0 0 35px rgba(34, 197, 94, 0.6), inset 0 0 12px rgba(34, 197, 94, 0.5) !important;
+  animation: auraPulseGreen 0.9s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100 !important;
+}
+
+.aura-mixed {
+  border-color: #eab308 !important;
+  box-shadow: 0 0 20px #eab308, 0 0 35px rgba(234, 179, 8, 0.6), inset 0 0 12px rgba(234, 179, 8, 0.5) !important;
+  animation: auraPulseYellow 0.9s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100 !important;
+}
+
+.aura-harmful {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 22px #ef4444, 0 0 40px rgba(239, 68, 68, 0.7), inset 0 0 14px rgba(239, 68, 68, 0.5) !important;
+  animation: auraPulseRed 0.8s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100 !important;
+}
+
+@keyframes auraPulseGreen {
+  from { filter: drop-shadow(0 0 4px #22c55e); }
+  to { filter: drop-shadow(0 0 14px #4ade80); }
+}
+
+@keyframes auraPulseYellow {
+  from { filter: drop-shadow(0 0 4px #eab308); }
+  to { filter: drop-shadow(0 0 14px #fde047); }
+}
+
+@keyframes auraPulseRed {
+  from { filter: drop-shadow(0 0 5px #ef4444); }
+  to { filter: drop-shadow(0 0 16px #f87171); }
+}
+
+/* 5. 손패 카드 호버 및 이동 물리 반응성 (모든 카드의 확대/복귀 속도를 균일하게 통일) */
+.duel-card,
+.duel-card.cost-light,
+.duel-card.cost-medium,
+.duel-card.cost-heavy {
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease, border-color 0.2s ease !important;
+}
+
+/* 6. 카드의 밑부분 앵커 & 직접 내리치는 방향별 공격 모션 (Directional Direct Slam Down) */
+.unit-field-card {
+  transform-origin: 50% 90% !important; /* 밑부분을 쥐고 휘두르는 앵커 */
+}
+
+.unit-field-card.slam-windup,
+.unit-field-card.slam-down,
+.unit-field-card.is-dragging-attacker {
+  will-change: transform;
+  transform-style: preserve-3d !important;
+}
+
+.unit-field-card.slam-windup {
+  transition: transform var(--windup-duration, 0.16s) cubic-bezier(0.2, 1.4, 0.5, 1) !important;
+  transform: translate3d(var(--windup-tx, 0px), var(--windup-ty, 0px), 70px)
+             rotateZ(var(--slam-rot-z, 0deg))
+             rotateX(-42deg)
+             scale(1.16) !important;
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.95), 0 0 24px rgba(250, 204, 21, 0.8) !important;
+  z-index: 10000 !important;
+}
+
+.unit-field-card.slam-down {
+  transition: transform var(--slam-duration, 0.12s) cubic-bezier(0.4, 0, 0.8, 0.2) !important;
+  transform: translate3d(var(--target-dx, 0px), var(--target-dy, 0px), 18px)
+             rotateZ(var(--slam-rot-z, 0deg))
+             rotateX(38deg)
+             scale(1.12) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(239, 68, 68, 0.9) !important;
+  z-index: 10000 !important;
+}
+
+.unit-field-card.slam-return {
+  transition: transform 0.28s cubic-bezier(0.25, 1, 0.5, 1) !important;
+  transform: translate3d(0px, 0px, 0px) rotateZ(0deg) rotateX(0deg) scale(1) !important;
+  z-index: 50 !important;
+}
+
+.unit-field-card.slam-hit-target {
+  animation: targetHitFlash 0.24s cubic-bezier(0.2, 0.9, 0.4, 1);
+}
+
+.avatar-box.slam-hit-target, .duelist-avatar.slam-hit-target {
+  animation: avatarHitFlash 0.28s cubic-bezier(0.2, 0.9, 0.4, 1);
+}
+
+@keyframes targetHitFlash {
+  0% {
+    filter: brightness(2.8) contrast(1.4);
+    transform: scale(0.96);
+  }
+  40% {
+    filter: brightness(1.6) contrast(1.2);
+    transform: scale(1.02);
+  }
+  100% {
+    filter: brightness(1) contrast(1);
+    transform: scale(1);
+  }
+}
+
+@keyframes avatarHitFlash {
+  0% {
+    filter: brightness(2.8) contrast(1.4);
+    box-shadow: 0 0 38px rgba(226, 232, 240, 0.8), 0 0 20px #ef4444;
+    transform: scale(0.95);
+  }
+  40% {
+    filter: brightness(1.6) contrast(1.2);
+    box-shadow: 0 0 25px rgba(148, 163, 184, 0.4);
+    transform: scale(1.03);
+  }
+  100% {
+    filter: brightness(1) contrast(1);
+    box-shadow: none;
+    transform: scale(1);
+  }
+}
+
+/* 7. 공격력 비례 화면 진동 (Screen Shake) */
+.screen-shake-light {
+  animation: shakeLight 0.15s ease-out;
+}
+
+.screen-shake-medium {
+  animation: shakeMedium 0.24s ease-out;
+}
+
+.screen-shake-heavy {
+  animation: shakeHeavy 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shakeLight {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 3px); }
+  50% { transform: translate(3px, -2px); }
+  75% { transform: translate(-2px, -1px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes shakeMedium {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-7px, 6px); }
+  40% { transform: translate(6px, -6px); }
+  60% { transform: translate(-5px, 3px); }
+  80% { transform: translate(3px, -2px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes shakeHeavy {
+  0% { transform: translate(0, 0); }
+  15% { transform: translate(-16px, 14px) rotate(-1deg); }
+  30% { transform: translate(14px, -12px) rotate(1deg); }
+  45% { transform: translate(-10px, 9px); }
+  60% { transform: translate(8px, -6px); }
+  75% { transform: translate(-4px, 3px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* 8. 60FPS 전용 게임 FX 캔버스 레이어 (모달 위에서도 이펙트 가시화) */
+#game-fx-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1280px;
+  height: 800px;
+  pointer-events: none;
+  z-index: 25000;
+}
+
+.fx-layer {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* 9. 카드 파괴: 순백색 화이트아웃 */
+.card-whiteout {
+  animation: whiteoutFlash 0.32s forwards cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@keyframes whiteoutFlash {
+  0% { filter: brightness(1) drop-shadow(0 0 0 white); }
+  60% { filter: brightness(3.5) contrast(2) drop-shadow(0 0 25px #ffffff); opacity: 1; }
+  100% { filter: brightness(5) contrast(3) drop-shadow(0 0 45px #ffffff); opacity: 0; transform: scale(1.08); }
+}
+
+/* 10. 산산조각 파편 (Shatter Fragment Shards) */
+.shard-fragment {
+  position: absolute;
+  background: linear-gradient(135deg, #f1f5f9 0%, #38bdf8 50%, #1e293b 100%);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(56, 189, 248, 0.6);
+  pointer-events: none;
+  transition: transform 0.55s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.55s ease-out;
+}
+
+/* 11. 영혼의 형태 (Ethereal Soul Wisp) */
+.soul-orb {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  background: radial-gradient(circle, #ffffff 15%, #38bdf8 60%, transparent 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 20px #38bdf8, 0 0 40px #818cf8, 0 0 60px rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+  z-index: 10000;
+  transition: transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), opacity 0.6s ease-out;
+}
+
+.soul-orb::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px; width: 18px; height: 18px;
+  background: radial-gradient(circle, rgba(255,255,255,0.9), transparent 70%);
+  border-radius: 50%;
+  animation: soulPulse 0.4s infinite alternate;
+}
+
+@keyframes soulPulse {
+  from { transform: scale(0.85); opacity: 0.7; }
+  to { transform: scale(1.2); opacity: 1; }
+}
+
+/* 12. 관통 에너지 볼트 (Piercing Energy Bolt) - Ease-In 가속도 */
+.pierce-energy-bolt {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  background: radial-gradient(circle, #ffffff 20%, #ef4444 65%, transparent 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 22px #ef4444, 0 0 45px #f87171, 0 0 70px rgba(255, 255, 255, 0.9);
+  pointer-events: none;
+  z-index: 10001;
+  transition: transform 0.36s cubic-bezier(0.55, 0.055, 0.675, 0.19), opacity 0.36s; /* Ease-In 가속 비행 */
+}
+
+.pierce-energy-bolt::before {
+  content: '';
+  position: absolute;
+  top: -6px; left: -6px; right: -6px; bottom: -6px;
+  border-radius: 50%;
+  border: 2px solid rgba(239, 68, 68, 0.8);
+  animation: boltRing 0.25s infinite linear;
+}
+
+@keyframes boltRing {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* 13. 충격파 링 (Shockwave Ripple) */
+.shockwave-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.8), inset 0 0 10px rgba(56, 189, 248, 0.6);
+  pointer-events: none;
+  animation: shockwaveExpand 0.45s ease-out forwards;
+}
+
+@keyframes shockwaveExpand {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 1; border-width: 5px; }
+  100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; border-width: 1px; }
+}
+
+/* 14. [F1] 실시간 손맛 튜너 모달 */
+.tuner-container {
+  width: 480px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(14px);
+  border: 1px solid #38bdf8;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(56, 189, 248, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tuner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 10px;
+}
+
+.tuner-header h3 {
+  font-size: 1.05rem;
+  color: #38bdf8;
+}
+
+.tuner-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tuner-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tuner-label-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.tuner-label-line strong {
+  color: #38bdf8;
+}
+
+.tuner-row input[type="range"] {
+  width: 100%;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+.tuner-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #1e293b;
+  padding-top: 14px;
+  margin-top: 6px;
+}
+
+/* ============================================================================
+ * [9. LJack 내리치기 연출 수치별 테스트 룸 (Slam FX Playground)]
+ * ============================================================================ */
+.playground-container {
+  width: 1140px;
+  height: 720px;
+  background: radial-gradient(circle at 40% 30%, #151b2b 0%, #090d16 100%);
+  border: 2px solid #334155;
+  border-radius: 14px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 35px rgba(56, 189, 248, 0.25);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 24px;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.playground-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 12px;
+}
+
+.playground-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.playground-icon {
+  font-size: 1.8rem;
+}
+
+.playground-header h3 {
+  font-size: 1.2rem;
+  color: #38bdf8;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.playground-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.playground-body {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 좌측: 실시간 시각적 인터랙티브 스테이지 */
+.playground-stage-pane {
+  flex: 1.35;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stage-arena {
+  flex: 1;
+  background: radial-gradient(ellipse at 50% 50%, #172033 0%, #0c101a 100%);
+  border: 1px solid #1e293b;
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 20px;
+  perspective: 1000px;
+  overflow: visible;
+}
+
+/* 방사형 그리드 배경 장식 */
+.stage-arena::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  border-radius: 10px;
+}
+
+.stage-defenders-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  z-index: 10;
+}
+
+.stage-target-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.stage-target-slot.selected {
+  background: rgba(56, 189, 248, 0.12);
+  outline: 2px dashed rgba(56, 189, 248, 0.6);
+}
+
+.stage-target-slot .slot-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.stage-target-slot.selected .slot-label {
+  color: #38bdf8;
+}
+
+.stage-attacker-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 20;
+}
+
+.stage-attacker-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage-attacker-slot .slot-label {
+  font-size: 0.75rem;
+  color: #facc15;
+  font-weight: 700;
+}
+
+/* 묘지 슬롯 */
+.stage-graveyard-slot {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  width: 78px;
+  height: 98px;
+  border: 2px dashed #475569;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #64748b;
+  padding: 4px;
+}
+
+/* 아바타 박스 */
+.avatar-box {
+  width: 78px;
+  height: 98px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid #dc2626;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s;
+}
+
+.avatar-box .avatar-icon {
+  font-size: 1.8rem;
+}
+
+.avatar-box .avatar-hp-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #f87171;
+}
+
+/* 실시간 연출 텔레메트리 바 */
+.playground-telemetry-bar {
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  color: #38bdf8;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 우측: 수치 조절 및 프리셋 패널 */
+.playground-controls-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.pg-control-section {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pg-control-section h4 {
+  font-size: 0.85rem;
+  color: #e2e8f0;
+  font-weight: 700;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+}
+
+.pg-badge {
+  font-size: 0.75rem;
+  color: #facc15;
+  font-weight: 700;
+}
+
+.pg-radio-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pg-btn-pill, .pg-btn-target-select {
+  flex: 1;
+  min-width: 60px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  padding: 4px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pg-btn-pill:hover, .pg-btn-target-select:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.pg-btn-pill.active, .pg-btn-target-select.active {
+  background: #2563eb;
+  border-color: #38bdf8;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.pg-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  cursor: pointer;
+}
+
+.pg-checkbox-label input {
+  accent-color: #facc15;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.pg-dual-sliders {
+  display: flex;
+  gap: 12px;
+}
+
+.tuner-row.compact {
+  flex: 1;
+}
+
+/* 프리셋 그리드 */
+.pg-preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pg-preset-btn {
+  background: #131b2e;
+  border: 1px solid #1e293b;
+  border-radius: 7px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.18s;
+  text-align: left;
+}
+
+.pg-preset-btn:hover {
+  background: #1e293b;
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.preset-emoji {
+  font-size: 1.4rem;
+}
+
+.preset-text strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #e2e8f0;
+}
+
+.preset-text small {
+  display: block;
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+/* 푸터 액션 */
+.pg-footer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pg-footer-actions .slam-execute-btn {
+  flex: 1.5;
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  box-shadow: 0 4px 18px rgba(225, 29, 72, 0.5);
+  font-size: 0.95rem;
+}
+
+.pg-footer-actions .slam-execute-btn:hover {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(244, 63, 94, 0.6);
+}
+
+/* ============================================================================
+   [체크포인트 메인 허브 & 4대 전용 서브페이지 (VIEW_CHECKPOINT_*)]
+   - 허브 포털: 인카운터 결전, 정발 카드팩 상점, 수상한 상인, 가방 & 덱 편집(트렁크)
+   - 유희왕 콘솔 스타일: 덱 ⇄ 가방(트렁크) 2분할 덱 에디터
+   ============================================================================ */
+
+/* 공통 서브페이지 래퍼 */
+#view-checkpoint,
+#view-checkpoint-encounter,
+#view-checkpoint-shop,
+#view-checkpoint-merchant,
+#view-checkpoint-deck-editor {
+  flex-direction: column;
+  background: radial-gradient(circle at 50% 15%, #14192b 0%, #080b12 100%);
+  padding: 16px 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  width: 100%;
+  height: calc(100% - 34px);
+}
+
+.subpage-container {
+  max-width: 1220px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.subpage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #111624;
+  border: 1px solid #222d42;
+  border-radius: 12px;
+  padding: 10px 18px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.subpage-title-group h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.subpage-sub {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.subpage-stat-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.back-btn {
+  padding: 7px 14px;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.back-btn:hover {
+  background: #1e3a8a;
+  color: #fff;
+}
+
+.subpage-quick-btn {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  background: #1e293b;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+/* ============================================================================
+   1. 체크포인트 메인 허브 (#view-checkpoint)
+   ============================================================================ */
+.checkpoint-hub-layout {
+  max-width: 1220px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.checkpoint-hub-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #101522;
+  border: 1px solid #232e44;
+  border-radius: 12px;
+  padding: 12px 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+
+.hub-round-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hub-camp-icon {
+  font-size: 2.2rem;
+  background: #172033;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid #2e3e60;
+}
+
+.hub-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hub-title-row h2 {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.checkpoint-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.hub-sub-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 2px;
+  display: block;
+}
+
+.hub-topbar-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hub-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.gold-pill {
+  background: linear-gradient(135deg, #2b2112 0%, #1a1409 100%);
+  border: 1px solid #d97706;
+  color: #fde047;
+}
+
+.gold-pill strong {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fde047;
+  text-shadow: 0 0 6px rgba(253, 224, 71, 0.4);
+}
+
+.deck-pill {
+  background: #151e30;
+  border: 1px solid #2d4168;
+  color: #93c5fd;
+}
+
+.deck-pill.deck-warning {
+  border-color: #ef4444;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.15);
+  animation: pulse-border-danger 2s infinite;
+}
+
+.trunk-pill {
+  background: #181d2e;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+}
+
+/* 4대 포털 카드 그리드 (2x2 대칭 레이아웃) */
+.hub-portals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.hub-portal-card {
+  background: #101522;
+  border: 1px solid #202b3f;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.hub-portal-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* 각 포털별 테마 테두리 및 글로우 */
+.portal-encounter {
+  border-color: #2b3d60;
+  background: linear-gradient(180deg, #131a2b 0%, #0d121e 100%);
+}
+.portal-encounter:hover { border-color: #3b82f6; }
+
+.portal-shop {
+  border-color: #3a2c52;
+  background: linear-gradient(180deg, #181427 0%, #0d0a17 100%);
+}
+.portal-shop:hover { border-color: #a855f7; }
+
+.portal-merchant {
+  border-color: #3c2a38;
+  background: linear-gradient(180deg, #1a121c 0%, #0d080e 100%);
+}
+.portal-merchant:hover { border-color: #ec4899; }
+
+.portal-deck {
+  border-color: #1e3845;
+  background: linear-gradient(180deg, #0e1b24 0%, #071017 100%);
+}
+.portal-deck:hover { border-color: #06b6d4; }
+
+.portal-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.portal-icon {
+  font-size: 1.8rem;
+}
+
+.portal-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.tag-battle { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
+.tag-shop { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; }
+.tag-merchant { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid #ec4899; }
+.tag-deck { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid #06b6d4; }
+
+.portal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.portal-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  line-height: 1.4;
+  margin: 8px 0;
+}
+
+.portal-opp-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid #23314a;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.portal-opp-avatar { font-size: 1.8rem; }
+.portal-opp-meta { display: flex; flex-direction: column; }
+.opp-title { font-size: 0.72rem; color: #94a3b8; }
+.opp-name { font-size: 0.95rem; color: #f8fafc; }
+
+.portal-pack-preview-art {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.mini-pack-art {
+  width: 44px;
+  height: 52px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.mini-pack-art.blue { background: #1e3a8a; border: 1px solid #3b82f6; }
+.mini-pack-art.red { background: #7f1d1d; border: 1px solid #ef4444; }
+.mini-pack-art.purple { background: #581c87; border: 1px solid #a855f7; }
+.mini-pack-art.gold { background: #713f12; border: 1px solid #eab308; }
+
+.portal-merchant-visual {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(20, 10, 25, 0.6);
+  border: 1px solid #3c2445;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.shadowy-figure-icon { font-size: 1.6rem; }
+.secret-card-glint { font-size: 0.8rem; font-weight: 700; color: #f472b6; }
+
+.portal-deck-summary-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: rgba(10, 20, 30, 0.6);
+  border: 1px solid #1a3447;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.trunk-metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.trunk-metric-item strong {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.trunk-exchange-symbol {
+  font-size: 1.4rem;
+  color: #06b6d4;
+  font-weight: 900;
+}
+
+.portal-sub-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.metric-label { color: #94a3b8; }
+.metric-val { font-weight: 800; color: #e2e8f0; }
+.gold-text { color: #fde047; }
+.purple-text { color: #c084fc; }
+
+.portal-enter-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.shop-btn { background: linear-gradient(135deg, #7e22ce 0%, #9333ea 100%); box-shadow: 0 4px 14px rgba(147, 51, 234, 0.4); }
+.shop-btn:hover { background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%); }
+
+.merchant-btn { background: #261726; border-color: #ec4899; color: #fbcfe8; }
+.merchant-btn:hover { background: #3b1d3a; color: #fff; }
+
+.deck-btn { background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4); }
+.deck-btn:hover { background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%); }
+
+/* 하단 최종 보스 결전 배너 */
+.hub-boss-challenge-banner {
+  background: linear-gradient(135deg, #260c0e 0%, #170709 100%);
+  border: 1px solid #7f1d1d;
+  border-radius: 12px;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.boss-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.boss-skull-icon { font-size: 2rem; }
+
+.boss-banner-info h4 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fca5a5;
+}
+
+.boss-banner-info p {
+  font-size: 0.78rem;
+  color: #f87171;
+}
+
+.btn-danger-boss {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+  border: 1px solid #ef4444;
+  color: #fee2e2;
+  font-weight: 800;
+  font-size: 0.88rem;
+  padding: 10px 18px;
+  border-radius: 8px;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-danger-boss:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(239, 68, 68, 0.7);
+}
+
+/* ============================================================================
+   2. 다음 듀얼 인카운터 전용 브리핑 페이지 (#view-checkpoint-encounter)
+   ============================================================================ */
+.encounter-dossier-card {
+  background: #111624;
+  border: 1px solid #25334d;
+  border-radius: 14px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.dossier-avatar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: #0d121c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dossier-avatar-frame {
+  font-size: 5rem;
+  background: #162033;
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #33476f;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dossier-stars-tag {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  font-size: 0.85rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.dossier-info-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dossier-title-sub {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  display: block;
+}
+
+.dossier-name {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #f8fafc;
+}
+
+.dossier-desc {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 12px 14px;
+  border-radius: 8px;
+  border-left: 4px solid #38bdf8;
+}
+
+.dossier-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.metric-box {
+  background: #0b0f17;
+  border: 1px solid #1e293b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-box.danger-box {
+  border-color: #7f1d1d;
+  background: rgba(127, 29, 29, 0.15);
+}
+
+.m-label { font-size: 0.72rem; color: #94a3b8; }
+.m-val { font-size: 1rem; font-weight: 800; color: #f1f5f9; }
+.gold-val { color: #fde047; }
+.danger-val { color: #f87171; font-size: 0.82rem; }
+
+.dossier-actions-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+  border-top: 1px solid #1e293b;
+  padding-top: 16px;
+}
+
+.dossier-deck-hint {
+  font-size: 0.82rem;
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.dossier-deck-hint.is-invalid {
+  color: #f87171;
+}
+
+.dossier-btns {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-duel-launch {
+  flex: 2;
+  padding: 14px;
+  font-size: 1.1rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  border: 1px solid #3b82f6;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);
+}
+.btn-duel-launch:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  transform: translateY(-2px);
+}
+
+/* ============================================================================
+   3. 정발 카드팩 상점 전용 페이지 (#view-checkpoint-shop)
+   ============================================================================ */
+.pack-result-banner {
+  background: linear-gradient(135deg, #1f1430 0%, #120b1f 100%);
+  border: 2px solid #a855f7;
+  border-radius: 12px;
+  padding: 14px 18px;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-banner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.result-banner-header h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f5d0fe;
+}
+
+.result-cards-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.shop-section-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shop-section-title-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 6px;
+}
+
+.shop-section-title-line h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.sec-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+.sec-badge.badge-singles {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.subpage-shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.subpage-singles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.shop-single-card-item {
+  background: #101422;
+  border: 1px solid #232d44;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.shop-single-card-item:hover {
+  transform: translateY(-2px);
+  border-color: #f59e0b;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25);
+}
+
+.shop-single-card-item.is-purchased {
+  opacity: 0.45;
+  filter: grayscale(0.8);
+}
+
+.booster-pack-item {
+  background: #101422;
+  border: 1px solid #232d44;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.booster-pack-item:hover {
+  transform: translateY(-3px);
+  border-color: #a855f7;
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.3);
+}
+
+.booster-pack-item.pack-legendary {
+  border-color: #d97706;
+  background: linear-gradient(180deg, #20170a 0%, #0d0a04 100%);
+}
+
+.booster-pack-item.pack-legendary:hover {
+  border-color: #fde047;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+}
+
+.pack-visual-box {
+  height: 120px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.pack-visual-blue { background: radial-gradient(circle at 50% 30%, #1e40af 0%, #0f172a 100%); border: 1px solid #3b82f6; }
+.pack-visual-red { background: radial-gradient(circle at 50% 30%, #991b1b 0%, #0f172a 100%); border: 1px solid #ef4444; }
+.pack-visual-purple { background: radial-gradient(circle at 50% 30%, #6b21a8 0%, #0f172a 100%); border: 1px solid #a855f7; }
+.pack-visual-legend { background: radial-gradient(circle at 50% 30%, #854d0e 0%, #0f172a 100%); border: 1px solid #eab308; }
+
+.pack-symbol-art {
+  font-size: 3rem;
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.5));
+}
+
+.pack-foil-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, transparent 30%, rgba(255, 255, 255, 0.15) 50%, transparent 70%);
+  pointer-events: none;
+}
+
+.pack-info-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pack-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.pack-tagline {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.pack-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.pack-price-tag {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fde047;
+}
+
+.pack-stock-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+.pack-stock-badge.sold-out {
+  background: #451a1a;
+  color: #f87171;
+}
+
+.btn-buy-pack {
+  padding: 10px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  width: 100%;
+}
+
+/* ============================================================================
+   4. 수상한 상인의 뒷골목 전용 페이지 (#view-checkpoint-merchant)
+   ============================================================================ */
+/* ============================================================================
+   4. 수상한 상인의 암시장 물물교환 (Card Trade) 전용 페이지 (#view-checkpoint-merchant)
+   ============================================================================ */
+.merchant-dialogue-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(135deg, #1f1025 0%, #110915 100%);
+  border: 1px solid #582463;
+  border-radius: 12px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.merchant-npc-icon {
+  font-size: 2.2rem;
+  background: #2a1433;
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #7e22ce;
+}
+
+.merchant-dialogue-banner p {
+  font-size: 0.85rem;
+  color: #f5d0fe;
+  line-height: 1.45;
+  font-style: italic;
+}
+
+.merchant-trade-deals-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trade-deal-card {
+  background: #120b18;
+  border: 1.5px solid #3c1e48;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 280px 80px 1fr 180px;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.trade-deal-card:hover {
+  border-color: #a855f7;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.25);
+}
+
+.trade-deal-card.deal-completed {
+  opacity: 0.5;
+  filter: grayscale(0.8);
+  pointer-events: none;
+}
+
+.deal-offer-side {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.deal-preview-mini {
+  width: 90px;
+  height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.deal-info-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.deal-card-name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.deal-card-type {
+  font-size: 0.75rem;
+  color: #c084fc;
+}
+
+.deal-direction-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.deal-ratio-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 20px;
+  background: #2a1433;
+  color: #f472b6;
+  border: 1px solid #7e22ce;
+  white-space: nowrap;
+}
+
+.deal-ratio-badge.asym-badge {
+  background: linear-gradient(135deg, #701a75 0%, #4a044e 100%);
+  color: #fdf4ff;
+  border-color: #d946ef;
+  box-shadow: 0 0 10px rgba(217, 70, 239, 0.4);
+}
+
+.deal-exchange-icon {
+  font-size: 1.4rem;
+  color: #a855f7;
+  font-weight: 900;
+}
+
+.deal-req-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(10, 5, 15, 0.5);
+  border: 1px solid #2e1738;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.req-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.req-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.req-fee {
+  font-size: 0.75rem;
+  color: #fde047;
+  font-weight: 700;
+}
+
+.deal-action-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.btn-start-trade {
+  padding: 10px 16px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  width: 100%;
+  background: linear-gradient(135deg, #7e22ce 0%, #9333ea 100%);
+  border: 1px solid #a855f7;
+}
+
+.btn-start-trade:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9333ea 0%, #c084fc 100%);
+  transform: translateY(-2px);
+}
+
+/* ================== 모달: 물물교환 카드 선택 모달 (#modal-trade-select) ================== */
+.trade-select-dialog {
+  width: 900px;
+  max-width: 92vw;
+  max-height: 85vh;
+  background: #110916;
+  border: 2px solid #582463;
+  border-radius: 16px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 20000;
+}
+
+.trade-dialog-body {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  padding: 16px 20px;
+  overflow: hidden;
+  flex: 1;
+  min-height: 400px;
+}
+
+.trade-summary-card {
+  background: #180d21;
+  border: 1px solid #3c1e48;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.trade-offering-pane {
+  background: #09050d;
+  border: 1px solid #281230;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.offering-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #281230;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.offering-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #f5d0fe;
+}
+
+.offering-hint {
+  font-size: 0.75rem;
+  color: #fde047;
+}
+
+.trade-trunk-scroll-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+}
+
+.trade-selectable-card {
+  background: #160c1d;
+  border: 2px solid #2e163b;
+  border-radius: 8px;
+  padding: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.trade-selectable-card:hover {
+  border-color: #c084fc;
+  transform: translateY(-2px);
+}
+
+.trade-selectable-card.is-selected {
+  border-color: #e879f9;
+  background: rgba(232, 121, 249, 0.2);
+  box-shadow: 0 0 14px rgba(232, 121, 249, 0.4);
+}
+
+.trade-selectable-card.is-designated {
+  border-color: #facc15;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.35);
+}
+
+.trade-selectable-card.is-not-designated {
+  opacity: 0.4;
+}
+
+.trade-check-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #e879f9;
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 2;
+}
+
+.trade-source-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 2;
+}
+
+.trade-source-badge.source-trunk {
+  background: #7e22ce;
+  color: #fdf4ff;
+}
+
+.trade-source-badge.source-deck {
+  background: #0284c7;
+  color: #f0f9ff;
+}
+
+.trade-designated-target-badge {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  background: #eab308;
+  color: #000;
+  font-size: 0.62rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 2;
+}
+
+/* 트레이더 지정 요구 카드 UI */
+.deal-wanted-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.wanted-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(30, 15, 40, 0.6);
+  border: 1px solid #4a215c;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.76rem;
+}
+
+.wanted-chip-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f1f5f9;
+  font-weight: 700;
+}
+
+.wanted-status-pill {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.wanted-status-pill.in-trunk {
+  background: rgba(168, 85, 247, 0.25);
+  color: #d8b4fe;
+  border: 1px solid #a855f7;
+}
+
+.wanted-status-pill.in-deck {
+  background: rgba(56, 189, 248, 0.25);
+  color: #7dd3fc;
+  border: 1px solid #38bdf8;
+}
+
+.wanted-status-pill.missing {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid #ef4444;
+}
+
+/* 모달 내 트레이더 요구 체크리스트 */
+.modal-wanted-box {
+  width: 100%;
+  background: #110719;
+  border: 1px solid #3c1e48;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.modal-wanted-header {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #c084fc;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.modal-wanted-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.modal-wanted-item.is-satisfied {
+  color: #86efac;
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.modal-wanted-item.is-pending {
+  color: #fde047;
+  border: 1px solid rgba(253, 224, 71, 0.3);
+}
+
+.trade-dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #0d0611;
+  padding: 12px 20px;
+  border-top: 1px solid #2e163b;
+}
+
+.trade-confirm-hint {
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.trade-footer-btns {
+  display: flex;
+  gap: 10px;
+}
+
+/* ============================================================================
+   5. 유희왕 콘솔 스타일 가방 & 덱 편집기 (#view-checkpoint-deck-editor)
+   ============================================================================ */
+.deck-editor-page-container {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.editor-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #101522;
+  border: 1px solid #222d42;
+  border-radius: 12px;
+  padding: 10px 18px;
+}
+
+.editor-title-group h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.editor-sub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.editor-deck-meter-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.meter-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.meter-pill {
+  background: #151e30;
+  border: 2px solid #3b82f6;
+  color: #93c5fd;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.meter-pill.is-valid {
+  border-color: #22c55e;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.meter-pill.is-invalid {
+  border-color: #ef4444;
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.2);
+  animation: pulse-border-danger 1.5s infinite;
+}
+
+@keyframes pulse-border-danger {
+  0%, 100% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.8); }
+}
+
+.meter-trunk-count {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+/* 2분할 트렁크 작업창 */
+.trunk-two-pane-container {
+  display: grid;
+  grid-template-columns: 1fr 36px 1fr;
+  gap: 10px;
+  flex: 1;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+.trunk-pane {
+  background: #0d121c;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #1e293b;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.pane-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pane-icon { font-size: 1.2rem; }
+
+.pane-title-wrap h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+
+.pane-hint {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.trunk-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+}
+
+.trunk-card-tile {
+  background: #131926;
+  border: 1.5px solid #233148;
+  border-radius: 8px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.trunk-card-tile:hover {
+  transform: translateY(-2px);
+  border-color: #38bdf8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.trunk-card-tile.is-deckmaster {
+  border-color: #eab308;
+  background: linear-gradient(180deg, #221a0c 0%, #131926 100%);
+  cursor: not-allowed;
+}
+
+.deckmaster-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #eab308;
+  color: #000;
+  font-size: 0.6rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 3px;
+  z-index: 2;
+}
+
+.tile-name-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 95px;
+}
+
+.trunk-divider-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transfer-arrow-pill {
+  background: #172033;
+  color: #38bdf8;
+  border: 1px solid #2d4168;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.editor-footer-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #101522;
+  border: 1px solid #222d42;
+  border-radius: 12px;
+  padding: 10px 18px;
+}
+
+.editor-status-notice {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.editor-status-notice.is-error {
+  color: #f87171;
+}

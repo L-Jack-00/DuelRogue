@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="100%" height="100%">
+  <defs>
+    <filter id="shadow-drop" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+
+    <!-- [유희왕 광폭 3D 양각 필터 - 연두빛 텍스트박스 전용] -->
+    <filter id="yugioh-emboss-green-wide" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="3.5" stdDeviation="3.5" flood-color="#064e3b" flood-opacity="0.65" result="box-shadow" />
+      <feDropShadow dx="-1.5" dy="-1.5" stdDeviation="2" flood-color="#ffffff" flood-opacity="0.95" result="light-glow" />
+      <feMerge>
+        <feMergeNode in="box-shadow" />
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="light-glow" />
+      </feMerge>
+    </filter>
+
+    <!-- 선명한 연두빛 에메랄드-골드 금속 외곽선 그라디언트 -->
+    <linearGradient id="metal-vivid-green-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0fdf4" />
+      <stop offset="25%" stop-color="#4ade80" />
+      <stop offset="50%" stop-color="#16a34a" />
+      <stop offset="75%" stop-color="#15803d" />
+      <stop offset="100%" stop-color="#052e16" />
+    </linearGradient>
+
+    <!-- 확실하고 선명한 연두색 빛이 감도는 마법 양피지 종이 바탕 -->
+    <linearGradient id="paper-vivid-green-parchment" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#dcfce7" />
+      <stop offset="35%" stop-color="#bbf7d0" />
+      <stop offset="70%" stop-color="#86efac" />
+      <stop offset="100%" stop-color="#4ade80" />
+    </linearGradient>
+
+    <!-- 유희왕 스타일 볼록 솟아오른 연두빛 양각 플레이트 -->
+    <linearGradient id="paper-green-embossed-box" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="30%" stop-color="#f0fdf4" />
+      <stop offset="70%" stop-color="#dcfce7" />
+      <stop offset="100%" stop-color="#bbf7d0" />
+    </linearGradient>
+
+    <!-- 광폭 양각 베벨 상단/좌측 하이라이트 그라디언트 -->
+    <linearGradient id="bevel-green-light-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1.0" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- 광폭 양각 베벨 하단/우측 그림자 그라디언트 -->
+    <linearGradient id="bevel-green-shadow-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#065f46" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#064e3b" stop-opacity="0.9" />
+    </linearGradient>
+  </defs>
+
+  <!-- ======================================================== -->
+  <!-- LAYER 2: 최신 마법 블랭크 바디 (텍스트 배제 순수 틀)         -->
+  <!-- ======================================================== -->
+  <g id="layer2-spell-frame">
+    <!-- 외곽 선명한 연두빛 종이 바디 (두껍고 묵직한 에메랄드 금속 테두리: stroke-width 8.0, 중앙 윈도우 투명 컷아웃) -->
+    <path fill-rule="evenodd" fill="url(#paper-vivid-green-parchment)" stroke="url(#metal-vivid-green-gold)" stroke-width="8"
+          filter="url(#shadow-drop)"
+          d="M 22,8
+             L 378,8
+             A 14,14 0 0 1 392,22
+             L 392,538
+             A 14,14 0 0 1 378,552
+             L 22,552
+             A 14,14 0 0 1 8,538
+             L 8,22
+             A 14,14 0 0 1 22,8 Z
+             M 22,70
+             L 378,70
+             L 378,420
+             L 22,420 Z" />
+
+    <!-- 묵직한 이중 금속 인셋 림 (외곽 두께감 극대화) -->
+    <rect x="13" y="13" width="374" height="534" rx="11" ry="11"
+          fill="none" stroke="#052e16" stroke-width="3.0" opacity="0.85" />
+
+    <!-- [최상단 이름 바 - 순수 광폭 양각 뼈대] (x:22, y:14, w:356, h:50) -->
+    <g id="top-name-emboss-box" filter="url(#yugioh-emboss-green-wide)">
+      <rect x="22" y="14" width="356" height="50" rx="8" ry="8"
+            fill="url(#paper-green-embossed-box)" />
+
+      <!-- 상/좌 광폭 베벨 하이라이트 (외곽 림 + 슬로프) -->
+      <path d="M 30,15 L 370,15 A 7,7 0 0 1 377,22 L 377,25 L 23,25 L 23,22 A 7,7 0 0 1 30,15 Z" fill="#ffffff" opacity="0.95" />
+      <path d="M 23,22 L 23,56 L 26,56 L 26,22 Z" fill="#ffffff" opacity="0.85" />
+      <path d="M 24,25 L 376,25 L 370,30 L 30,30 L 30,56 L 24,56 Z" fill="url(#bevel-green-light-grad)" opacity="0.5" />
+
+      <!-- 하/우 광폭 베벨 그림자 (외곽 림 + 슬로프) -->
+      <path d="M 23,62 L 370,62 A 7,7 0 0 0 377,55 L 377,63 L 30,63 A 7,7 0 0 1 23,62 Z" fill="#064e3b" opacity="0.75" />
+      <path d="M 375,22 L 375,56 L 378,56 L 378,22 Z" fill="#064e3b" opacity="0.75" />
+      <path d="M 30,58 L 370,58 L 376,53 L 376,25 L 371,30 L 371,53 L 30,53 Z" fill="url(#bevel-green-shadow-grad)" opacity="0.45" />
+    </g>
+
+    <!-- [중단: 일러스트 윈도우 금속 테두리] -->
+    <rect x="21" y="69" width="358" height="352" rx="4" ry="4"
+          fill="none" stroke="url(#metal-vivid-green-gold)" stroke-width="3" />
+    <rect x="23" y="71" width="354" height="348" rx="2" ry="2"
+          fill="none" stroke="#052e16" stroke-width="1.5" opacity="0.8" />
+
+    <!-- [하단: 장식 없는 깔끔한 유희왕 광폭 양각 효과 텍스트박스 - 순수 뼈대] (x:22, y:428, w:356, h:116) -->
+    <g id="bottom-spell-effect-emboss-box" filter="url(#yugioh-emboss-green-wide)">
+      <rect x="22" y="428" width="356" height="116" rx="8" ry="8"
+            fill="url(#paper-green-embossed-box)" />
+
+      <!-- 상/좌 광폭 베벨 하이라이트 (외곽 림 + 슬로프) -->
+      <path d="M 30,429 L 370,429 A 7,7 0 0 1 377,436 L 377,439 L 23,439 L 23,436 A 7,7 0 0 1 30,429 Z" fill="#ffffff" opacity="0.95" />
+      <path d="M 23,436 L 23,536 L 26,536 L 26,436 Z" fill="#ffffff" opacity="0.85" />
+      <path d="M 24,439 L 376,439 L 370,444 L 30,444 L 30,536 L 24,536 Z" fill="url(#bevel-green-light-grad)" opacity="0.5" />
+
+      <!-- 하/우 광폭 베벨 그림자 (외곽 림 + 슬로프) -->
+      <path d="M 23,542 L 370,542 A 7,7 0 0 0 377,535 L 377,543 L 30,543 A 7,7 0 0 1 23,542 Z" fill="#064e3b" opacity="0.75" />
+      <path d="M 375,436 L 375,536 L 378,536 L 378,436 Z" fill="#064e3b" opacity="0.75" />
+      <path d="M 30,538 L 370,538 L 376,533 L 376,439 L 371,444 L 371,533 L 30,533 Z" fill="url(#bevel-green-shadow-grad)" opacity="0.45" />
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 44" width="100%" height="100%">
+  <defs>
+    <!-- 종이가 깊게 파인 내부 음각 그림자 필터 -->
+    <filter id="paper-carved-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="-1" dy="-1" stdDeviation="1" flood-color="#ffffff" flood-opacity="0.8" result="light-edge" />
+      <feDropShadow dx="1.5" dy="2" stdDeviation="1.5" flood-color="#1a0003" flood-opacity="0.9" result="deep-cavity" />
+      <feMerge>
+        <feMergeNode in="deep-cavity" />
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="light-edge" />
+      </feMerge>
+    </filter>
+
+    <!-- 깊게 파여나간 종이 홈 내부 그라디언트 (핏빛 + 어두운 홈) -->
+    <linearGradient id="carved-groove-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f0205" />
+      <stop offset="25%" stop-color="#590d15" />
+      <stop offset="60%" stop-color="#b51726" />
+      <stop offset="85%" stop-color="#e63946" />
+      <stop offset="100%" stop-color="#3a0409" />
+    </linearGradient>
+  </defs>
+
+  <!-- 약 18도 비스듬하게 기울어진, 발톱에 종이가 거칠게 파여나간 홈 (Carved Slanted Claw Mark) -->
+  <g transform="rotate(16, 12, 22)">
+    <!-- 1. 종이가 뜯겨나간 외곽 들뜸 하이라이트 (Torn paper edge highlight) -->
+    <path d="M 9,1 
+             C 11,8 15,18 16,30 
+             C 16.5,36 14,41 12,43 
+             C 9,41 7,37 6,32 
+             C 4,24 4,12 7,3 Z" 
+          fill="#ffeded" opacity="0.9" />
+
+    <!-- 2. 파여나간 깊은 구덩이/홈 (Deep Gouged Groove) -->
+    <path d="M 10,3 
+             C 12,9 15,19 15,29 
+             C 15.5,35 13.5,39 12,41 
+             C 9.5,39 8,35 7,30 
+             C 5.5,23 5.5,13 8,5 Z" 
+          fill="url(#carved-groove-grad)" />
+
+    <!-- 3. 파인 구덩이 안쪽 깊은 음영 틈새 (Deepest Crevice) -->
+    <path d="M 10,6 C 12.5,16 13,26 11,38" 
+          stroke="#100103" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.95" />
+    <!-- 4. 파열된 코어 림 -->
+    <path d="M 10.5,8 C 12.5,17 12.8,26 11.2,36" 
+          stroke="#ff8585" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.8" />
+  </g>
+</svg>

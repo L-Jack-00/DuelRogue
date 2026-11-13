@@ -1,0 +1,47 @@
+{
+  "pipeline_version": "1.0.0",
+  "project": "deckbuilder-web",
+  "target_platform": "HTML5 + Tauri v2",
+  "aspect_ratio": "4:3 (Art Window: 320x240, Standard SDXL Input: 832x624 or 1024x768)",
+  "recommended_engine_settings": {
+    "engine": "SDXL 1.0 / Flux.1-Dev / ComfyUI",
+    "base_resolution": "832x624 (Landscape) or 832x1216 (Full Portrait, Center Crop)",
+    "sampler": "DPM++ 2M Karras or Euler Ancestral",
+    "steps": 30,
+    "cfg_scale": 7.0,
+    "style_token_anchor": "dark fantasy oil painting, sharp focus, atmospheric volumetric lighting, glowing neon accents, intricate detail, mtg art style, trending on artstation"
+  },
+  "global_negative_prompt": "text, watermark, signature, artist name, border, frame, card frame, ui, cropped, bad anatomy, deformed limbs, blurry, low quality, oversaturated, out of frame, 3d render plastic sheen",
+  "cards": [
+    {
+      "id": "c01_abyssal_golem",
+      "name_kr": "심연의 수호기사",
+      "type": "unit",
+      "target_file": "assets/cards/abyssal_golem_art.webp",
+      "prompt": "masterpiece, dark fantasy oil painting, a massive ancient obsidian golem knight standing firmly inside a misty subterranean cavern, glowing neon cyan veins and runes across its stone armor, wielding a colossal runic greatshield, floating cyan particles, atmospheric fog, dramatic chiaroscuro, cinematic lighting, ultra detailed, art by greg rutkowski and magali villeneuve",
+      "negative_prompt": "text, watermark, signature, border, frame, card frame, ui, cropped, bad anatomy, blurry",
+      "window_aspect": "4:3",
+      "crop_center": [0.5, 0.45]
+    },
+    {
+      "id": "c02_neon_overload",
+      "name_kr": "네온 과부하",
+      "type": "spell",
+      "target_file": "assets/cards/neon_overload_art.webp",
+      "prompt": "masterpiece, dark fantasy magical surge, swirling vortex of unstable neon magenta and violet lightning erupting from an ancient arcane monolith, cracked runic stones floating in midair, electrical plasma sparks, dark fantasy laboratory ruins, glowing purple arcane glyphs, high contrast, dramatic perspective, epic scale, trending on artstation",
+      "negative_prompt": "text, watermark, signature, border, frame, card frame, ui, cropped, bad anatomy, blurry",
+      "window_aspect": "4:3",
+      "crop_center": [0.5, 0.5]
+    },
+    {
+      "id": "c03_blood_berserker",
+      "name_kr": "혈검의 광전사",
+      "type": "unit",
+      "target_file": "assets/cards/blood_berserker_art.webp",
+      "prompt": "masterpiece, dark fantasy warrior portrait, a fierce grim berserker holding a jagged crimson broadsword, dripping neon ruby energy, dark spiked obsidian armor, fierce glowing red eyes, heavy shadows, battle smoke, ember embers floating, dynamic stance, oil painting, intricate brushwork, frank frazetta and karl kopinski aesthetic",
+      "negative_prompt": "text, watermark, signature, border, frame, card frame, ui, cropped, bad anatomy, blurry",
+      "window_aspect": "4:3",
+      "crop_center": [0.5, 0.4]
+    }
+  ]
+}

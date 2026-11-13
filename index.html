@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Duel Rogue</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Serif+KR:wght@600;800;900&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=20261112_2155">
+</head>
+<body>
+
+  <div id="game-app">
+    <!-- Desktop Native Custom Titlebar (SPEC.md 4 & tauri.conf.json) -->
+    <header id="desktop-titlebar" data-tauri-drag-region>
+      <div class="titlebar-brand" data-tauri-drag-region>
+        <span class="app-icon">⚔️</span>
+        <span class="app-title">DUEL ROGUE // TAURI v2</span>
+      </div>
+      <div class="titlebar-controls">
+        <button id="btn-return-main-menu" class="titlebar-action-btn" title="메인 메뉴(타이틀 화면)로 돌아가기">🏠 메인 메뉴</button>
+        <button id="btn-toggle-playground" class="titlebar-action-btn" title="내리치기 연출 수치별 테스트 룸 (F3)">💥 [F3] 연출 테스트 룸</button>
+        <button id="btn-toggle-tuner" class="titlebar-action-btn" title="LJack 실시간 손맛 튜너 (F1)">⚙️ [F1] 손맛 튜너</button>
+        <button id="btn-toggle-binder-global" class="titlebar-action-btn" title="바인더 앨범 열기/닫기">📖 3×3 바인더 북</button>
+        <button id="btn-win-minimize" class="titlebar-btn" title="최소화">─</button>
+        <button id="btn-win-maximize" class="titlebar-btn" title="최대화">□</button>
+        <button id="btn-win-close" class="titlebar-btn close-btn" title="닫기">✕</button>
+      </div>
+    </header>
+
+    <!-- [LJack 60FPS High-End Game FX Canvas] 전용 캔버스 2D 주스 레이어 -->
+    <canvas id="game-fx-canvas" width="1280" height="800"></canvas>
+
+    <!-- 1. 타이틀 로비 (VIEW_TITLE_LOBBY) -->
+    <section id="view-title-lobby" class="screen active">
+      <div class="title-container">
+        <h1 class="game-logo">DUEL ROGUE</h1>
+        <p class="subtitle">선형적 1v1 PvP 대칭 듀얼 & 3×3 콜렉션 바인더</p>
+        
+        <div class="menu-buttons">
+          <button id="btn-start-run" class="btn primary-btn">새로운 듀얼 런 개시</button>
+          <button id="btn-open-binder-menu" class="btn secondary-btn">3×3 콜렉션 바인더 열람</button>
+        </div>
+        
+        <div class="game-info-badge">
+          <span>대칭형 1v1 PvP 엔진</span> • <span>점쟁이 3대 운명</span> • <span>4단계 바인더 수집</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 점쟁이 운명 선택 (VIEW_FORTUNE_TELLER / STAGE_0_FORTUNE) -->
+    <section id="view-fortune-teller" class="screen">
+      <div class="fortune-container">
+        <div class="fortune-dialogue">
+          <div class="npc-avatar">🔮</div>
+          <h2>운명의 점쟁이</h2>
+          <p>"당신의 앞길을 시험할 세 장의 운명 카드가 놓여 있소. 어느 길을 걷겠소?"</p>
+        </div>
+
+        <div class="tarot-card-row">
+          <!-- 파란색: 정의 -->
+          <div class="tarot-card card-blue" data-destiny="BLUE_JUSTICE">
+            <div class="tarot-back">
+              <span class="symbol">⚖️</span>
+              <h3>정의</h3>
+              <span class="sub">BLUE JUSTICE</span>
+            </div>
+            <div class="tarot-details">
+              <p class="role-desc">컨트롤 덱 특화</p>
+              <div class="boss-preview">
+                <strong>최종 보스 카운터</strong>
+                <span>어그로 군주 볼카<br>(단발 견제 면역 속공)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 빨간색: 열의 -->
+          <div class="tarot-card card-red" data-destiny="RED_ZEAL">
+            <div class="tarot-back">
+              <span class="symbol">🔥</span>
+              <h3>열의</h3>
+              <span class="sub">RED ZEAL</span>
+            </div>
+            <div class="tarot-details">
+              <p class="role-desc">어그로 덱 특화</p>
+              <div class="boss-preview">
+                <strong>최종 보스 카운터</strong>
+                <span>방벽의 집행관 실피드<br>(광역 제거/고점 방어)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 보라색: 혼돈 -->
+          <div class="tarot-card card-purple" data-destiny="PURPLE_CHAOS">
+            <div class="tarot-back">
+              <span class="symbol">🎲</span>
+              <h3>혼돈</h3>
+              <span class="sub">PURPLE CHAOS</span>
+            </div>
+            <div class="tarot-details">
+              <p class="role-desc">도박/변칙 카드 특화</p>
+              <div class="boss-preview">
+                <strong>최종 보스 카운터</strong>
+                <span>행운의 조커<br>(극단적 사기 행운 편향)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+<!-- 2.5 체크포인트 메인 허브 (VIEW_CHECKPOINT / STAGE_CHECKPOINT) -->
+    <section id="view-checkpoint" class="screen">
+      <div class="checkpoint-hub-layout">
+        <!-- 체크포인트 상단 헤더 -->
+        <header class="checkpoint-hub-topbar">
+          <div class="hub-round-title-group">
+            <span class="hub-camp-icon">⛺</span>
+            <div>
+              <div class="hub-title-row">
+                <h2 id="checkpoint-round-title">체크포인트 - 라운드 1</h2>
+                <span class="checkpoint-badge">전술 정비 허브</span>
+              </div>
+              <span class="hub-sub-desc">각 거점을 방문하여 덱과 가방을 정비하고 결전에 대비하십시오.</span>
+            </div>
+          </div>
+          <div class="hub-topbar-stats">
+            <div class="hub-stat-pill gold-pill">
+              <span class="pill-icon">🪙</span>
+              <strong id="checkpoint-gold-amount">1,000</strong>
+              <span class="pill-unit">원</span>
+            </div>
+            <div class="hub-stat-pill deck-pill" id="checkpoint-deck-status-pill">
+              <span class="pill-icon">🎴</span>
+              <span>덱: <strong id="checkpoint-deck-count">30</strong> / 30장</span>
+            </div>
+            <div class="hub-stat-pill trunk-pill">
+              <span class="pill-icon">🎒</span>
+              <span>가방: <strong id="checkpoint-trunk-count">0</strong>장</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- 메인 4대 거점 포털 카드 그리드 -->
+        <div class="hub-portals-grid">
+          <!-- 거점 1: 다음 듀얼 인카운터 -->
+          <div class="hub-portal-card portal-encounter" id="card-nav-encounter">
+            <div class="portal-badge-row">
+              <span class="portal-icon">⚔️</span>
+              <span class="portal-tag tag-battle" id="hub-encounter-stars">★☆☆☆☆ (Lv 1~2)</span>
+            </div>
+            <div class="portal-main-info">
+              <h3 class="portal-title">다음 듀얼 인카운터</h3>
+              <div class="portal-opp-preview">
+                <span class="portal-opp-avatar" id="hub-encounter-avatar">👤</span>
+                <div class="portal-opp-meta">
+                  <span class="opp-title" id="hub-encounter-opponent-title">신예 도전자</span>
+                  <strong class="opp-name" id="hub-encounter-opponent-name">초심 듀얼리스트 로키</strong>
+                </div>
+              </div>
+              <p class="portal-desc">상대 전술을 분석하고, 승리 보상 골드를 획득하기 위한 결전을 준비합니다.</p>
+              <div class="portal-sub-metric">
+                <span class="metric-label">승리 보상</span>
+                <strong class="metric-val gold-text" id="hub-encounter-reward">+500원</strong>
+              </div>
+            </div>
+            <button id="btn-checkpoint-nav-encounter" class="btn primary-btn portal-enter-btn">
+              ⚔️ 인카운터 결전장 입장
+            </button>
+          </div>
+
+          <!-- 거점 2: 정발 카드팩 상점 -->
+          <div class="hub-portal-card portal-shop" id="card-nav-shop">
+            <div class="portal-badge-row">
+              <span class="portal-icon">🏪</span>
+              <span class="portal-tag tag-shop">2000년대 부스터팩</span>
+            </div>
+            <div class="portal-main-info">
+              <h3 class="portal-title">정발 카드팩 상점</h3>
+              <div class="portal-pack-preview-art">
+                <span class="mini-pack-art blue">⚖️</span>
+                <span class="mini-pack-art red">🔥</span>
+                <span class="mini-pack-art purple">🎲</span>
+                <span class="mini-pack-art gold">👑</span>
+              </div>
+              <p class="portal-desc">추억의 500원/1,000원 부스터팩을 개봉합니다. 획득한 카드는 모두 🎒 가방(트렁크)에 보관됩니다.</p>
+              <div class="portal-sub-metric">
+                <span class="metric-label">현재 입고 팩</span>
+                <strong class="metric-val" id="hub-shop-stock-count">3종 (총 5팩)</strong>
+              </div>
+            </div>
+            <button id="btn-checkpoint-nav-shop" class="btn primary-btn portal-enter-btn shop-btn">
+              🏪 카드팩 상점 입장
+            </button>
+          </div>
+
+          <!-- 거점 3: 수상한 상인의 뒷골목 -->
+          <div class="hub-portal-card portal-merchant" id="card-nav-merchant">
+            <div class="portal-badge-row">
+              <span class="portal-icon">🕵️</span>
+              <span class="portal-tag tag-merchant" id="hub-merchant-status-badge">방문 중</span>
+            </div>
+            <div class="portal-main-info">
+              <h3 class="portal-title">수상한 상인의 암시장 트레이드</h3>
+              <div class="portal-merchant-visual">
+                <span class="shadowy-figure-icon">👤🕶️</span>
+                <span class="secret-card-glint">✨ [카드 물물교환 & 비대칭 교환]</span>
+              </div>
+              <p class="portal-desc">가방의 카드를 건네고 상인의 희귀 카드를 맞교환합니다. (희귀 카드일수록 2:1, 3:1 비대칭 교환 요구)</p>
+              <div class="portal-sub-metric">
+                <span class="metric-label">물물교환 제안</span>
+                <strong class="metric-val purple-text" id="hub-merchant-avail-desc">영업 중 (2건 교환 가능)</strong>
+              </div>
+            </div>
+            <button id="btn-checkpoint-nav-merchant" class="btn secondary-btn portal-enter-btn merchant-btn">
+              🕵️ 암시장 교환소 입장
+            </button>
+          </div>
+
+          <!-- 거점 4: 가방 & 덱 편집 (트렁크) -->
+          <div class="hub-portal-card portal-deck" id="card-nav-deck">
+            <div class="portal-badge-row">
+              <span class="portal-icon">🎒</span>
+              <span class="portal-tag tag-deck">콘솔 스타일 트렁크</span>
+            </div>
+            <div class="portal-main-info">
+              <h3 class="portal-title">가방 & 덱 편집 (트렁크)</h3>
+              <div class="portal-deck-summary-box">
+                <div class="trunk-metric-item">
+                  <span>출전 덱</span>
+                  <strong id="hub-deck-ready-status">30 / 30장</strong>
+                </div>
+                <div class="trunk-exchange-symbol">⇄</div>
+                <div class="trunk-metric-item">
+                  <span>가방 보관</span>
+                  <strong id="hub-trunk-total-status">0장</strong>
+                </div>
+              </div>
+              <p class="portal-desc">유희왕 콘솔게임처럼 덱과 가방 사이에서 카드를 자유롭게 꺼내고 넣어 30장 덱을 구축합니다.</p>
+              <div class="portal-sub-metric">
+                <span class="metric-label">출격 가능 여부</span>
+                <strong class="metric-val" id="hub-deck-validity-text" style="color: #4ade80;">출격 준비 완료</strong>
+              </div>
+            </div>
+            <button id="btn-checkpoint-nav-deck" class="btn primary-btn portal-enter-btn deck-btn">
+              🎒 가방 열기 & 덱 편집
+            </button>
+          </div>
+        </div>
+
+        <!-- 하단: 최종 보스 강제 결전 배너 -->
+        <div class="hub-boss-challenge-banner">
+          <div class="boss-banner-info">
+            <span class="boss-skull-icon">💀</span>
+            <div>
+              <h4>⚠️ 결전의 문: 최종 보스 강제 결전</h4>
+              <p>인카운터를 건너뛰고 지금 즉시 최종 보스에게 도전합니다. (패배 시 런 즉시 실패)</p>
+            </div>
+          </div>
+          <button id="btn-checkpoint-challenge-boss" class="btn btn-danger-boss">
+            ⚡ 최종 보스 강제 결전
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.5-A. 다음 듀얼 인카운터 전용 브리핑 페이지 (VIEW_CHECKPOINT_ENCOUNTER) -->
+    <section id="view-checkpoint-encounter" class="screen">
+      <div class="subpage-container">
+        <header class="subpage-header">
+          <button id="btn-encounter-back-hub" class="btn secondary-btn back-btn">🏠 체크포인트로 돌아가기</button>
+          <div class="subpage-title-group">
+            <h2>⚔️ 다음 듀얼 인카운터 브리핑</h2>
+            <span class="subpage-sub">상대 듀얼리스트의 특성을 파악하고 결전에 출격하십시오.</span>
+          </div>
+          <div class="subpage-stat-badge">
+            <span>덱 상태: <strong id="encounter-subpage-deck-status">30 / 30장</strong></span>
+          </div>
+        </header>
+
+        <div class="encounter-dossier-card">
+          <div class="dossier-avatar-col">
+            <div class="dossier-avatar-frame" id="encounter-dossier-avatar">⚔️</div>
+            <span class="dossier-stars-tag" id="encounter-dossier-stars">★☆☆☆☆ (Lv 1~2)</span>
+          </div>
+          <div class="dossier-info-col">
+            <div class="dossier-name-row">
+              <span class="dossier-title-sub" id="encounter-dossier-title">신예 도전자</span>
+              <h3 class="dossier-name" id="encounter-dossier-name">초심 듀얼리스트 로키</h3>
+            </div>
+            <p class="dossier-desc" id="encounter-dossier-desc">기본적인 전개 위주로 덱을 운용하는 입문 듀얼리스트입니다.</p>
+
+            <div class="dossier-metrics-grid">
+              <div class="metric-box">
+                <span class="m-label">승리 보상</span>
+                <strong class="m-val gold-val" id="encounter-dossier-reward">+500원</strong>
+              </div>
+              <div class="metric-box">
+                <span class="m-label">덱 아키타입</span>
+                <strong class="m-val" id="encounter-dossier-archetype">열의 (RED ZEAL)</strong>
+              </div>
+              <div class="metric-box danger-box">
+                <span class="m-label">패배 패널티</span>
+                <strong class="m-val danger-val">⚠️ 런 즉시 실패 (게임오버)</strong>
+              </div>
+            </div>
+
+            <div class="dossier-actions-row">
+              <div class="dossier-deck-hint" id="encounter-dossier-deck-hint">
+                ✅ 덱 매수가 30장 규격을 충족하여 즉시 결전에 나설 수 있습니다.
+              </div>
+              <div class="dossier-btns">
+                <button id="btn-encounter-to-editor" class="btn secondary-btn">🎒 덱 수정하러 가기</button>
+                <button id="btn-start-encounter-from-subpage" class="btn primary-btn btn-duel-launch">
+                  ⚔️ 듀얼 개시 (결전장 돌입)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.5-B. 정발 카드팩 상점 전용 페이지 (VIEW_CHECKPOINT_SHOP) -->
+    <section id="view-checkpoint-shop" class="screen">
+      <div class="subpage-container">
+        <header class="subpage-header">
+          <button id="btn-shop-back-hub" class="btn secondary-btn back-btn">🏠 체크포인트로 돌아가기</button>
+          <div class="subpage-title-group">
+            <h2>🏪 2000년대 정발 카드팩 상점</h2>
+            <span class="subpage-sub">팩에서 뽑은 모든 카드는 플레이어의 🎒 가방(트렁크)에 안전하게 보관됩니다.</span>
+          </div>
+          <div class="subpage-stat-badge">
+            <span class="gold-icon">🪙</span>
+            <strong id="shop-subpage-gold">1,000</strong>
+            <span class="gold-unit">원</span>
+            <button id="btn-shop-to-editor" class="btn secondary-btn subpage-quick-btn">🎒 가방 & 덱 편집</button>
+          </div>
+        </header>
+
+        <!-- 카드팩 개봉 결과 알림 배너 (최근 개봉한 카드) -->
+        <div id="shop-pack-result-banner" class="pack-result-banner is-hidden">
+          <div class="result-banner-header">
+            <h4>🎁 카드팩 개봉 완료! (3장의 새 카드가 가방에 추가되었습니다)</h4>
+            <button id="btn-close-pack-result" class="close-icon-btn">✕</button>
+          </div>
+          <div class="result-cards-row" id="shop-pack-result-cards"></div>
+        </div>
+
+        <!-- 부스터팩 라인업 섹션 -->
+        <div class="shop-section-wrap">
+          <div class="shop-section-title-line">
+            <span class="sec-icon">🎴</span>
+            <h3>정발 부스터 팩 라인업</h3>
+            <span class="sec-badge">3장 개봉 입고</span>
+          </div>
+          <div class="subpage-shelf-grid" id="checkpoint-shop-shelf-container">
+            <!-- 동적으로 부스터팩 목록 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 낱장 카드 진열대 섹션 (Single Cards Showcase) -->
+        <div class="shop-section-wrap">
+          <div class="shop-section-title-line">
+            <span class="sec-icon">🏷️</span>
+            <h3>단품 낱장 카드 진열대 (Single Cards)</h3>
+            <span class="sec-badge badge-singles">원하는 카드를 직접 골라 구매</span>
+          </div>
+          <div class="subpage-singles-grid" id="checkpoint-shop-singles-container">
+            <!-- 동적으로 상점 낱장 카드 목록 렌더링 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.5-C. 수상한 상인의 뒷골목 전용 페이지 (VIEW_CHECKPOINT_MERCHANT) -->
+    <section id="view-checkpoint-merchant" class="screen">
+      <div class="subpage-container">
+        <header class="subpage-header">
+          <button id="btn-merchant-back-hub" class="btn secondary-btn back-btn">🏠 체크포인트로 돌아가기</button>
+          <div class="subpage-title-group">
+            <h2>🕵️ 수상한 상인의 암시장 물물교환 (Card Trade)</h2>
+            <span class="subpage-sub">가방의 카드를 건네고 상인의 희귀 카드를 맞교환합니다. (희귀 카드일수록 2:1, 3:1 비대칭 교환)</span>
+          </div>
+          <div class="subpage-stat-badge">
+            <span class="gold-icon">🪙</span>
+            <strong id="merchant-subpage-gold">1,000</strong>
+            <span class="gold-unit">원</span>
+            <button id="btn-merchant-to-editor" class="btn secondary-btn subpage-quick-btn">🎒 가방 & 덱 편집</button>
+          </div>
+        </header>
+
+        <!-- 상인 대사 배너 -->
+        <div class="merchant-dialogue-banner" id="merchant-dialogue-banner">
+          <div class="merchant-npc-icon">🕵️</div>
+          <p id="merchant-dialogue-text">"쉿... 골드 따윈 굴러다니는 돌멩이에 불과하지. 진짜 듀얼리스트라면 가방 속 카드로 내 진귀한 보물들과 물물교환(Trade)을 하는 법이다. 희귀한 카드일수록 네 카드를 2장, 3장씩 내놓아야 할 테지만 말이야!"</p>
+        </div>
+
+        <!-- 물물교환 제안 목록 그리드 -->
+        <div class="merchant-trade-deals-grid" id="checkpoint-merchant-deals-container">
+          <!-- 동적으로 상인 물물교환 제안 카드 렌더링 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 2.5-D. 가방 & 덱 편집 (트렁크) 전용 페이지 (VIEW_CHECKPOINT_DECK_EDITOR) -->
+    <section id="view-checkpoint-deck-editor" class="screen">
+      <div class="deck-editor-page-container">
+        <!-- 상단 헤더 바 -->
+        <header class="editor-header-bar">
+          <button id="btn-editor-back-hub" class="btn secondary-btn back-btn">🏠 체크포인트로 돌아가기</button>
+          <div class="editor-title-group">
+            <h2>🎒 가방 & 덱 편집 (트렁크)</h2>
+            <span class="editor-sub">유희왕 콘솔 스타일: 덱의 카드를 클릭하면 가방으로, 가방의 카드를 클릭하면 덱으로 이동합니다.</span>
+          </div>
+          <div class="editor-deck-meter-box">
+            <span class="meter-label">출전 덱:</span>
+            <div class="meter-pill" id="editor-deck-meter-pill">
+              <strong id="editor-deck-current-count">30</strong> / 30장
+            </div>
+            <span class="meter-trunk-count">가방 보관: <strong id="editor-trunk-count">0</strong>장</span>
+          </div>
+        </header>
+
+        <!-- 메인 2분할 트렁크 작업창 (좌: 현재 덱 / 우: 가방) -->
+        <div class="trunk-two-pane-container">
+          <!-- 좌측: 현재 듀얼 덱 (30장) -->
+          <div class="trunk-pane deck-pane">
+            <div class="pane-header">
+              <div class="pane-title-wrap">
+                <span class="pane-icon">🎴</span>
+                <h3>현재 듀얼 덱 (<span id="editor-deck-title-count">30</span>장)</h3>
+              </div>
+              <span class="pane-hint">클릭 시 덱에서 빼 가방으로 이동</span>
+            </div>
+            <div class="trunk-cards-grid" id="editor-deck-cards-grid">
+              <!-- 덱 카드 동적 렌더링 -->
+            </div>
+          </div>
+
+          <!-- 중앙 이동 가이드 인디케이터 -->
+          <div class="trunk-divider-bar">
+            <div class="transfer-arrow-pill">⇄</div>
+          </div>
+
+          <!-- 우측: 가방 (트렁크 - 여분 보관함) -->
+          <div class="trunk-pane bag-pane">
+            <div class="pane-header">
+              <div class="pane-title-wrap">
+                <span class="pane-icon">🎒</span>
+                <h3>가방 보관함 (<span id="editor-bag-title-count">0</span>장)</h3>
+              </div>
+              <span class="pane-hint">클릭 시 가방에서 꺼내 덱으로 편성</span>
+            </div>
+            <div class="trunk-cards-grid" id="editor-bag-cards-grid">
+              <!-- 가방 카드 동적 렌더링 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 하단 안내 및 인스펙터 바 -->
+        <footer class="editor-footer-bar">
+          <div class="editor-status-notice" id="editor-deck-validation-notice">
+            ✅ 덱이 정확히 30장이므로 인카운터에 바로 출격할 수 있습니다.
+          </div>
+          <button id="btn-editor-finish" class="btn primary-btn">
+            💾 편성 완료 및 체크포인트 복귀
+          </button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- 3. 대칭형 1v1 PvP 듀얼 전장 (VIEW_DUEL_ARENA) -->
+    <section id="view-duel-arena" class="screen">
+      <!-- 전역 이펙트 및 파티클 레이어 -->
+      <div id="fx-layer" class="fx-layer"></div>
+
+      <!-- 좌측: 카드 상세 & 효과 확인창 (Card Inspector / Detail Window) -->
+      <aside id="card-inspector-panel" class="duel-side-panel left-panel">
+        <!-- 스케치 1: 평소 카드 일러스트 & 프레임 프리뷰 -->
+        <div class="inspector-card-preview-container" id="inspector-card-preview">
+          <!-- 평소 카드 프레임 동적 렌더링 영역 -->
+        </div>
+
+        <!-- 스케치 2: 하단 카드 효과 상세 영역 -->
+        <div class="inspector-effect-section">
+          <!-- 1. 계층형 태그 영역 (설명문 제거 및 카드 효과 상단 배치) -->
+          <div class="effect-tags-section">
+            <div class="tags-container" id="inspector-tags-container">
+              <span class="tag-pill tag-root">-</span>
+            </div>
+          </div>
+          <!-- 2. 카드 상세 효과 박스 -->
+          <div class="effect-desc-box" id="inspector-effect-content">
+            전장 또는 손패의 카드에 마우스를 올리거나 클릭하면 상세 효과와 전술 특성이 여기에 표시됩니다.
+          </div>
+        </div>
+      </aside>
+
+      <!-- 중앙: 대칭형 1v1 PvP 전장 메인 무대 -->
+      <main id="arena-main-stage" class="duel-main-stage">
+        <!-- 상단 상대 듀얼리스트 (Seat 1: CPU) -->
+        <div class="duel-duelist cpu-duelist" id="cpu-seat">
+          <!-- 좌측 상단: 상대 듀얼리스트 정보 (Top-Left: 이름 & 게이지 내장형 LP 게이지) -->
+          <div class="duelist-meta top-left-meta" id="cpu-meta">
+            <div class="duelist-info">
+              <div class="name-line">
+                <span class="duelist-name" id="cpu-name">상대 듀얼리스트</span>
+              </div>
+              <div class="stat-pills">
+                <div class="lp-container">
+                  <div class="lp-bar-track">
+                    <div class="lp-bar-fill" id="cpu-lp-bar" style="width: 100%;"></div>
+                    <div class="lp-bar-text">LP <strong id="cpu-lp">100</strong></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 중앙 상단: 상대 손패 (마우스 호버 시 매수 안내 팝업) -->
+          <div class="cpu-hand-container" id="cpu-hand-container">
+            <div class="hand-row cpu-hand" id="cpu-hand-row"></div>
+            <div class="cpu-hand-tooltip" id="cpu-hand-tooltip">상대 손패: <strong id="cpu-hand-count-text">0</strong>장</div>
+          </div>
+
+          <!-- 우측 상단: 상대 묘지 슬롯 & 상대 덱 -->
+          <div class="graveyard-zone clickable-graveyard" id="cpu-graveyard" title="클릭하여 상대 묘지 카드 목록 보기">
+            <span class="gy-label">💀 상대 묘지</span>
+            <div class="gy-stack" id="cpu-gy-stack"></div>
+          </div>
+          <div class="deck-zone" id="cpu-deck-zone" title="상대 덱">
+            <div class="deck-stack" id="cpu-deck-stack"></div>
+            <div class="deck-hover-tooltip" id="cpu-deck-tooltip">상대 덱: <strong id="cpu-deck-count-text">0</strong>장 남음</div>
+          </div>
+        </div>
+
+        <!-- 중앙 전장 (필드 유닛 존 & 연출 HUD) -->
+        <div class="duel-arena-field" id="arena-field">
+          <!-- 상대 필드 유닛 슬롯 (최대 5장) -->
+          <div class="board-zone cpu-board" id="cpu-board"></div>
+
+          <div class="arena-center-hud">
+            <div class="field-central-set-slot" id="field-set-left" data-slot="FIELD_LEFT" title="필드 중앙 좌측 마법 세트 존">
+              <span class="set-slot-icon">🔮</span>
+              <span class="set-slot-label">중앙 좌측 세트</span>
+            </div>
+
+            <!-- 중앙 턴 종료 버튼 및 12시 시작 반시계방향 턴 타이머 링 (양옆 텍스트 분할 배치) -->
+            <div class="center-hud-core">
+              <div class="central-turn-controller">
+                <!-- 좌측 텍스트: 턴 카운트 -->
+                <div id="duel-turn-left" class="turn-hud-side turn-hud-left">TURN 1</div>
+
+                <div class="central-turn-timer-wrap" id="turn-timer-container" title="턴 타이머 (클릭하여 일시정지 / 재개)">
+                  <svg class="turn-timer-svg" viewBox="0 0 100 100">
+                    <circle class="timer-track-circle" cx="50" cy="50" r="44" />
+                    <!-- 12시 방향(50,6)에서 시작하여 반시계방향(sweep=0)으로 도는 패스 (둘레 276.46) -->
+                    <path id="timer-progress-ring" class="timer-progress-ring"
+                          d="M 50, 6 A 44 44 0 1 0 50, 94 A 44 44 0 1 0 50, 6" />
+                  </svg>
+                  <button id="btn-end-turn" class="btn-central-end-turn" title="턴을 종료하고 상대에게 차례를 넘깁니다">
+                    <span class="turn-btn-title">턴 종료</span>
+                    <span class="turn-timer-countdown" id="turn-timer-countdown">45s</span>
+                  </button>
+                </div>
+
+                <!-- 우측 텍스트: 턴 소유자 -->
+                <div id="duel-turn-right" class="turn-hud-side turn-hud-right">플레이어 턴</div>
+              </div>
+              <div id="duel-narrative-log" class="narrative-log hidden-narrative" aria-live="polite"></div>
+            </div>
+
+            <div class="field-central-set-slot" id="field-set-right" data-slot="FIELD_RIGHT" title="필드 중앙 우측 마법 세트 존">
+              <span class="set-slot-icon">🔮</span>
+              <span class="set-slot-label">중앙 우측 세트</span>
+            </div>
+          </div>
+
+          <!-- 플레이어 필드 유닛 슬롯 (최대 5장) -->
+          <div class="board-zone player-board" id="player-board"></div>
+        </div>
+
+        <!-- 하단 플레이어 듀얼리스트 (Seat 0: Local Player) -->
+        <div class="duel-duelist player-duelist" id="player-seat">
+          <!-- 좌측 하단: 플레이어 덱 & 플레이어 묘지 (Bottom-Left) -->
+          <div class="deck-zone" id="player-deck-zone" title="플레이어 덱">
+            <div class="deck-stack" id="player-deck-stack"></div>
+            <div class="deck-hover-tooltip" id="player-deck-tooltip">내 덱: <strong id="player-deck-count-text">0</strong>장 남음</div>
+          </div>
+          <div class="graveyard-zone clickable-graveyard" id="player-graveyard" title="클릭하여 내 묘지 카드 목록 보기">
+            <span class="gy-label">💀 내 묘지</span>
+            <div class="gy-stack" id="player-gy-stack"></div>
+          </div>
+
+          <!-- 중앙 하단: 플레이어 손패 트레이 -->
+          <div class="player-interaction-tray">
+            <div class="hand-row player-hand" id="player-hand-row"></div>
+          </div>
+
+          <!-- 우측 하단: 플레이어 듀얼리스트 정보 & 상단 전투 로그 버튼 -->
+          <div class="bottom-right-meta-group">
+            <button id="btn-toggle-log-drawer" class="player-log-toggle-btn" title="전투 기록 (로그) 열기/닫기">
+              <span class="toggle-icon" id="log-drawer-icon">📜</span>
+              <span class="toggle-label" id="log-drawer-label">전투 로그</span>
+            </button>
+            <div class="duelist-meta bottom-right-meta" id="player-meta">
+              <div class="duelist-info">
+                <div class="name-line">
+                  <span class="duelist-name">플레이어</span>
+                </div>
+                <div class="stat-pills">
+                  <div class="lp-container">
+                    <div class="lp-bar-track">
+                      <div class="lp-bar-fill" id="player-lp-bar" style="width: 100%;"></div>
+                      <div class="lp-bar-text">LP <strong id="player-lp">100</strong></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- 화면 오른쪽 아래 모서리: 게임 설정 및 옵션 버튼 -->
+      <button id="btn-in-game-options" class="bottom-corner-option-btn" title="게임 설정 및 옵션">
+        <span class="toggle-icon">⚙️</span>
+        <span class="toggle-label">옵션</span>
+      </button>
+
+      <!-- 우측 상단 팝업 스타일 전투 로그창 (기본값: 접힌 상태) -->
+      <aside id="combat-log-drawer" class="combat-log-popup is-collapsed">
+        <div class="popup-log-header">
+          <div class="panel-title-wrap">
+            <span class="panel-icon">📜</span>
+            <span class="panel-title">전투 기록 (로그)</span>
+          </div>
+          <div class="header-actions">
+            <button id="btn-clear-combat-log" class="panel-tool-btn" title="로그 비우기">🧹</button>
+            <button id="btn-close-combat-log-popup" class="panel-tool-btn close-tool-btn" title="닫기">✕</button>
+          </div>
+        </div>
+
+        <!-- 로그 본문: 스크롤 가능한 실시간 상세 히스토리 -->
+        <div class="combat-log-stream" id="combat-log-history">
+          <div class="log-entry log-system">
+            <span class="log-badge badge-sys">시스템</span>
+            <span class="log-msg">듀얼 로그 기록기가 활성화되었습니다.</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- 4. 카드 팩 보상 개봉 (VIEW_PACK_OPENING / STAGE_2_REWARD_PACK) -->
+    <section id="view-pack-opening" class="screen">
+      <div class="modal-dialog-box">
+        <div class="modal-header">
+          <span class="modal-emoji">🎁</span>
+          <h2>승리 보상: 3장 카드 팩 개봉</h2>
+          <p>팩에서 스쳐 지나간 3장은 바인더에 <strong>[발견(흑백)]</strong>으로 기록되며, 선택한 1장은 덱에 추가되고 <strong>[소유(컬러)]</strong>가 됩니다.</p>
+        </div>
+
+        <div class="pack-cards-grid" id="pack-cards-container"></div>
+
+        <div class="modal-footer">
+          <button id="btn-claim-pack-card" class="btn primary-btn" disabled>카드 선택 및 다음 인카운터로</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 상인 / 이벤트 인카운터 (VIEW_MERCHANT_EVENT / STAGE_4_MERCHANT_EVENT) -->
+    <section id="view-merchant-event" class="screen">
+      <div class="modal-dialog-box">
+        <div class="modal-header">
+          <span class="modal-emoji">⛺</span>
+          <h2>방랑 상인과 숙련의 모닥불</h2>
+          <p>최종 보스전에 앞서 전술을 정비하세요. 카드를 새로 영입하거나, 주력 카드의 숙련도를 극한까지 단련합니다.</p>
+        </div>
+
+        <div class="merchant-choices-row">
+          <div class="merchant-card-option" id="merchant-option-card">
+            <h3>신규 카드 영입</h3>
+            <div class="option-preview" id="merchant-card-preview"></div>
+            <button id="btn-merchant-acquire" class="btn secondary-btn">이 카드 덱에 영입하기</button>
+          </div>
+
+          <div class="merchant-card-option" id="merchant-option-mastery">
+            <h3>주력 카드 숙련도 단련</h3>
+            <div class="option-preview-text">
+              <span class="sparkle-icon">✨</span>
+              <p>시작 카드 <strong id="merchant-mastery-card-name">방패병</strong>의 숙련도를 <strong>+100 포인트</strong> 단련하여 즉시 <strong>[숙련(홀로그램 오라)]</strong> 상태로 승격합니다.</p>
+            </div>
+            <button id="btn-merchant-train" class="btn accent-btn">숙련도 집중 연마 (+100 pt)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. 런 완주 / 결과 (VIEW_RUN_SUMMARY) -->
+    <section id="view-run-summary" class="screen">
+      <div class="summary-dialog-box">
+        <div class="trophy-badge" id="summary-badge">🏆</div>
+        <h1 id="summary-title">DUEL ROGUE CLIMAX</h1>
+        <p id="summary-desc">운명의 최종 보스를 꺾고 런을 완주했습니다.</p>
+
+        <div class="hall-of-fame-panel">
+          <h3>📜 명예의 전당 등록 덱 리스트</h3>
+          <ul id="summary-deck-list" class="deck-list-items"></ul>
+          <div class="hall-payload-box" id="hall-payload-box"></div>
+        </div>
+
+        <button id="btn-return-to-lobby" class="btn primary-btn">타이틀 로비로 돌아가기</button>
+      </div>
+    </section>
+
+    <!-- 게임 내 공통 모달 레이어 (화면 정중앙 배치 보장) -->
+    <!-- 1. 임시 게임 옵션 팝업 모달 -->
+    <div id="in-game-options-modal" class="in-game-options-modal is-hidden">
+      <div class="options-modal-backdrop" id="options-modal-backdrop"></div>
+      <div class="options-modal-card">
+        <div class="options-modal-header">
+          <div class="options-modal-title">⚙️ 게임 설정 & 옵션</div>
+          <button id="btn-close-options" class="options-modal-close" title="닫기">✕</button>
+        </div>
+        <div class="options-modal-body">
+          <!-- 1. 런 제어 섹션 (런 포기) -->
+          <div class="options-section">
+            <div class="options-section-title">🚩 듀얼 런(RUN) 제어</div>
+            <div class="options-row-action">
+              <button id="btn-abandon-run" class="btn btn-abandon-danger" title="현재 런을 포기하고 메인 메뉴로 돌아갑니다">
+                🏳️ 현재 런 포기 (타이틀 복귀)
+              </button>
+              <p class="options-hint">현재 진행 중인 듀얼 런을 즉시 포기하고 타이틀 로비 화면으로 퇴각합니다.</p>
+            </div>
+          </div>
+
+          <!-- 2. 오디오 볼륨 제어 -->
+          <div class="options-section">
+            <div class="options-section-title">🔊 오디오 볼륨</div>
+            <div class="options-slider-row">
+              <label for="opt-master-vol">마스터 볼륨</label>
+              <input type="range" id="opt-master-vol" min="0" max="100" value="80" class="options-slider">
+              <span id="opt-master-vol-val">80%</span>
+            </div>
+            <div class="options-slider-row">
+              <label for="opt-sfx-vol">효과음 (SFX)</label>
+              <input type="range" id="opt-sfx-vol" min="0" max="100" value="90" class="options-slider">
+              <span id="opt-sfx-vol-val">90%</span>
+            </div>
+          </div>
+
+          <!-- 3. 엔지니어링 도구 바로가기 -->
+          <div class="options-section">
+            <div class="options-section-title">🛠️ 엔지니어링 & 테스트 도구</div>
+            <div class="options-btn-group">
+              <button id="btn-opt-tuner" class="btn secondary-btn">⚙️ 손맛 튜너 (F1)</button>
+              <button id="btn-opt-playground" class="btn secondary-btn">💥 연출 테스트 룸 (F3)</button>
+              <button id="btn-instant-win-test" class="btn test-btn" title="빠른 흐름 확인용">[테스트] 즉시 승리</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 턴 타이머 일시정지 팝업창 알림 모달 (Pause Notification Modal) -->
+    <div id="timer-pause-popup" class="timer-pause-modal is-hidden">
+      <div class="timer-pause-backdrop" id="timer-pause-backdrop"></div>
+      <div class="timer-pause-card">
+        <div class="timer-pause-badge">⏸️ 턴 일시정지</div>
+        <h3 class="timer-pause-title">타이머 일시정지 중</h3>
+        <p class="timer-pause-desc">전술 검토 또는 테스트를 위해 턴 제한시간이 멈췄습니다.<br><span class="pause-hint">[재개] 버튼을 누르거나 화면/스페이스바를 눌러 계속하세요.</span></p>
+        <button id="btn-resume-timer-popup" class="btn btn-resume-timer">▶ 턴 타이머 재개</button>
+      </div>
+    </div>
+
+    <!-- 3. 묘지(Graveyard) 상세 뷰어 모달 (역순/최신순 나열) -->
+    <div id="graveyard-viewer-modal" class="graveyard-viewer-modal is-hidden">
+      <div class="graveyard-modal-backdrop" id="gy-modal-backdrop"></div>
+      <div class="graveyard-modal-card">
+        <div class="graveyard-modal-header">
+          <div class="graveyard-modal-title" id="gy-modal-title">💀 묘지 기록 (총 0장)</div>
+          <button id="btn-close-graveyard" class="graveyard-modal-close" title="닫기">✕</button>
+        </div>
+        <div class="graveyard-modal-body" id="gy-modal-cards-container">
+          <!-- 묘지 카드 리스트가 역순(최신순)으로 동적 렌더링 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. 아웃게임 3×3 바인더 북 모달 (OVERLAY_BINDER_BOOK) -->
+    <div id="overlay-binder-book" class="modal-overlay">
+      <div class="binder-book-container">
+        <!-- 상단 헤더: 타이틀 & 상태 범례 & 닫기 버튼 -->
+        <div class="binder-book-header">
+          <div class="binder-title-group">
+            <h2>📖 3×3 TCG 컬렉션 바인더 북</h2>
+            <span class="binder-page-indicator" id="binder-page-indicator">PAGE 1 / 1</span>
+          </div>
+          <div class="binder-status-legend">
+            <span class="legend-badge unk"><span class="badge-dot">●</span> 미발견 (뒷면)</span>
+            <span class="legend-badge disc"><span class="badge-dot">●</span> 발견 (흑백)</span>
+            <span class="legend-badge own"><span class="badge-dot">●</span> 소유 (풀컬러)</span>
+            <span class="legend-badge mast"><span class="badge-dot">★</span> 숙련 (홀로그램)</span>
+          </div>
+          <button id="btn-close-binder" class="close-icon-btn" title="바인더 닫기">✕</button>
+        </div>
+
+        <!-- 바인더 양면 본체 (좌측 9포켓 시트 + 우측 도감 아카이브) -->
+        <div class="binder-album-spread">
+          <!-- 좌측: 3공 메탈 링 바인더 스파인 -->
+          <div class="binder-spine-strip">
+            <div class="binder-ring-assembly ring-top">
+              <div class="binder-metal-ring"></div>
+              <div class="binder-ring-hole"></div>
+            </div>
+            <div class="binder-ring-assembly ring-mid">
+              <div class="binder-metal-ring"></div>
+              <div class="binder-ring-hole"></div>
+            </div>
+            <div class="binder-ring-assembly ring-bot">
+              <div class="binder-metal-ring"></div>
+              <div class="binder-ring-hole"></div>
+            </div>
+          </div>
+
+          <!-- 좌측 페이지: 3x3 투명 비닐 슬리브 시트 -->
+          <div class="binder-sheet-wrapper">
+            <div class="sheet-plastic-header">
+              <span class="sheet-brand">ULTRA·PRO ARCHIVAL 9-POCKET SHEET</span>
+              <span class="sheet-spec">ACID FREE · UV RESISTANT</span>
+            </div>
+            <!-- 3x3 바인더 그리드 (9슬롯 고정) -->
+            <div class="binder-grid-page" id="binder-grid-page"></div>
+          </div>
+
+          <!-- 중앙 스파인 접힘선 & 깊이감 음영 -->
+          <div class="binder-spine-crease"></div>
+
+          <!-- 우측 페이지: 컬렉터 카드 상세 아카이브 (Dossier) -->
+          <div class="binder-dossier-wrapper" id="binder-dossier-wrapper">
+            <div class="dossier-header-bar">
+              <span class="dossier-eyebrow">CARD DOSSIER & ARCHIVE</span>
+              <span id="binder-dossier-status-badge" class="dossier-badge badge-own">소유 완료</span>
+            </div>
+
+            <div class="dossier-main-content">
+              <div class="dossier-card-side">
+                <div class="dossier-card-preview-box" id="binder-dossier-card-preview">
+                  <!-- 대형 카드 프리뷰 동적 렌더링 -->
+                </div>
+                <div class="dossier-combat-stats-box" id="binder-dossier-combat-stats">
+                  <!-- 공/수 배너 동적 렌더링 -->
+                </div>
+              </div>
+
+              <div class="dossier-info-side">
+                <div class="dossier-title-line">
+                  <h3 id="binder-dossier-card-title" class="dossier-title">카드 이름</h3>
+                  <div id="binder-dossier-meta" class="dossier-meta-row"></div>
+                </div>
+
+                <!-- 숙련도 프로그레스 -->
+                <div class="dossier-mastery-section">
+                  <div class="mastery-label-line">
+                    <span>★ 숙련도 (Mastery)</span>
+                    <strong id="binder-dossier-mastery-val">0 / 100 pt</strong>
+                  </div>
+                  <div class="mastery-track">
+                    <div id="binder-dossier-mastery-bar" class="mastery-fill" style="width: 0%;"></div>
+                  </div>
+                  <div id="binder-dossier-mastery-sub" class="mastery-sub-hint"></div>
+                </div>
+
+                <!-- 수집 통계 타일 -->
+                <div class="dossier-stats-grid" id="binder-dossier-stats"></div>
+
+                <!-- 상세 룰 & 효과 박스 -->
+                <div class="dossier-desc-container" id="binder-dossier-desc"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="binder-book-footer">
+          <button id="btn-binder-prev" class="btn secondary-btn" disabled>◀ 이전 페이지</button>
+          <div class="binder-summary-stat-box" id="binder-summary-stat">
+            <!-- 수집 게이지 및 텍스트 동적 표기 -->
+          </div>
+          <button id="btn-binder-next" class="btn secondary-btn" disabled>다음 페이지 ▶</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. LJack Game Feel 인게임 실시간 손맛 튜너 (OVERLAY_LIVE_TUNER) -->
+    <div id="overlay-live-tuner" class="modal-overlay">
+      <div class="tuner-container">
+        <div class="tuner-header">
+          <h3>🎮 LJack 손맛 & 피직스 튜너 (F1 오버레이)</h3>
+          <button id="btn-close-tuner" class="close-icon-btn">✕</button>
+        </div>
+        <div class="tuner-body">
+          <div class="tuner-row">
+            <div class="tuner-label-line">
+              <span>화면 진동 배율 (Screen Shake)</span>
+              <strong id="val-shake">1.0x</strong>
+            </div>
+            <input type="range" id="slider-shake" min="0" max="3" step="0.1" value="1.0">
+          </div>
+          <div class="tuner-row">
+            <div class="tuner-label-line">
+              <span>내리치기 공격 속도 (Slam Speed)</span>
+              <strong id="val-slam-speed">1.0x</strong>
+            </div>
+            <input type="range" id="slider-slam-speed" min="0.4" max="2.0" step="0.1" value="1.0">
+          </div>
+          <div class="tuner-row">
+            <div class="tuner-label-line">
+              <span>코스트 무게감/관성 계수 (Cost Inertia)</span>
+              <strong id="val-inertia">1.0x</strong>
+            </div>
+            <input type="range" id="slider-inertia" min="0.2" max="2.0" step="0.1" value="1.0">
+          </div>
+          <div class="tuner-row">
+            <div class="tuner-label-line">
+              <span>파괴 파편 개수 (Shatter Shards)</span>
+              <strong id="val-shards">14개</strong>
+            </div>
+            <input type="range" id="slider-shards" min="6" max="24" step="2" value="14">
+          </div>
+          <div class="tuner-row">
+            <div class="tuner-label-line">
+              <span>관통 에너지 가속도 (Pierce Accel)</span>
+              <strong id="val-pierce-speed">1.0x</strong>
+            </div>
+            <input type="range" id="slider-pierce-speed" min="0.5" max="2.5" step="0.1" value="1.0">
+          </div>
+          <div class="tuner-row">
+            <div class="tuner-label-line">
+              <span>역경직 프리즈 (Hitstop Freeze)</span>
+              <strong id="val-hitstop">50ms</strong>
+            </div>
+            <input type="range" id="slider-hitstop" min="0" max="150" step="10" value="50">
+          </div>
+        </div>
+        <div class="tuner-footer">
+          <button id="btn-tuner-to-playground" class="btn accent-btn" title="내리치기 연출 수치별 테스트 룸 열기">💥 [F3] 연출 테스트 룸</button>
+          <button id="btn-tuner-reset" class="btn secondary-btn">기본값 복원</button>
+          <button id="btn-tuner-save" class="btn primary-btn">💾 [F2] 디스크 핫저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. LJack 내리치기 연출 수치별 테스트 룸 (OVERLAY_SLAM_PLAYGROUND) -->
+    <div id="overlay-slam-playground" class="modal-overlay">
+      <div class="playground-container">
+        <div class="playground-header">
+          <div class="playground-title-group">
+            <span class="playground-icon">💥</span>
+            <div>
+              <h3>내리치기 연출 수치별 테스트 룸 (Slam FX Playground)</h3>
+              <p class="playground-sub">공격력/코스트/각도/관통/체력 수치별 물리 타격감 및 캔버스 2D 연출 실시간 시뮬레이터</p>
+            </div>
+          </div>
+          <div class="playground-header-actions">
+            <button id="btn-close-playground" class="close-icon-btn" title="닫기 (Esc / F3)">✕</button>
+          </div>
+        </div>
+
+        <div class="playground-body">
+          <!-- 좌측: 인터랙티브 연출 스테이지 -->
+          <div class="playground-stage-pane">
+            <div class="stage-arena" id="playground-stage-arena">
+              <!-- 피격 타겟 슬롯 행 -->
+              <div class="stage-defenders-row">
+                <div class="stage-target-slot" id="pg-target-slot-left" data-target-id="left">
+                  <div class="unit-field-card test-target-card" id="pg-target-card-left" data-target-name="좌측 유닛">
+                    <div class="card-3d-art-window">
+                      <div style="font-size:0.75rem; font-weight:700; color:#e2e8f0; text-align:center;">좌측 가디언</div>
+                      <div class="card-tags-row"><span class="card-tag">#수호</span></div>
+                    </div>
+                    <div class="unit-stats">
+                      <span class="unit-atk">⚔️2</span>
+                      <span class="unit-hp" id="pg-target-hp-left">❤️12</span>
+                    </div>
+                  </div>
+                  <span class="slot-label">좌측 (-30°)</span>
+                </div>
+
+                <div class="stage-target-slot selected" id="pg-target-slot-center" data-target-id="center">
+                  <div class="unit-field-card test-target-card" id="pg-target-card-center" data-target-name="정면 유닛">
+                    <div class="card-3d-art-window">
+                      <div style="font-size:0.75rem; font-weight:700; color:#e2e8f0; text-align:center;">정면 골렘</div>
+                      <div class="card-tags-row"><span class="card-tag">#대지진</span></div>
+                    </div>
+                    <div class="unit-stats">
+                      <span class="unit-atk">⚔️6</span>
+                      <span class="unit-hp" id="pg-target-hp-center">❤️12</span>
+                    </div>
+                  </div>
+                  <span class="slot-label">정면 (0°)</span>
+                </div>
+
+                <div class="stage-target-slot" id="pg-target-slot-right" data-target-id="right">
+                  <div class="unit-field-card test-target-card" id="pg-target-card-right" data-target-name="우측 유닛">
+                    <div class="card-3d-art-window">
+                      <div style="font-size:0.75rem; font-weight:700; color:#e2e8f0; text-align:center;">우측 첨병</div>
+                      <div class="card-tags-row"><span class="card-tag">#신속</span></div>
+                    </div>
+                    <div class="unit-stats">
+                      <span class="unit-atk">⚔️4</span>
+                      <span class="unit-hp" id="pg-target-hp-right">❤️12</span>
+                    </div>
+                  </div>
+                  <span class="slot-label">우측 (+30°)</span>
+                </div>
+
+                <div class="stage-target-slot" id="pg-target-slot-avatar" data-target-id="avatar">
+                  <div class="avatar-box test-target-avatar" id="pg-target-avatar-box">
+                    <div class="avatar-icon">👑</div>
+                    <div class="avatar-hp-badge">❤️ <span id="pg-target-hp-avatar">100</span></div>
+                  </div>
+                  <span class="slot-label">상대 본체</span>
+                </div>
+              </div>
+
+              <!-- 묘지 슬롯 -->
+              <div class="stage-graveyard-slot" id="pg-graveyard-slot">
+                <span>💀 묘지<br><small>(Wisp 도달)</small></span>
+              </div>
+
+              <!-- 하단: 테스트 공격자 카드 슬롯 -->
+              <div class="stage-attacker-row">
+                <div class="stage-attacker-slot">
+                  <div class="unit-field-card can-attack test-attacker-card" id="pg-attacker-card">
+                    <div class="card-3d-art-window">
+                      <div id="pg-attacker-title" style="font-size:0.75rem; font-weight:700; color:#e2e8f0; text-align:center;">진홍빛 기사</div>
+                      <div class="card-tags-row" id="pg-attacker-tags"><span class="card-tag tag-pierce">#관통</span></div>
+                    </div>
+                    <div class="unit-stats">
+                      <span class="unit-atk" id="pg-attacker-atk-text">⚔️14</span>
+                      <span class="unit-hp" id="pg-attacker-hp-text">❤️20</span>
+                    </div>
+                  </div>
+                  <span class="slot-label">⚔️ 테스트 공격자 (마우스 드래그로 타겟 투척 가능)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 실시간 시퀀스 텔레메트리 바 -->
+            <div class="playground-telemetry-bar" id="pg-telemetry-log">
+              ⚡ 준비 완료: 수치를 설정하고 [💥 내리치기 실행]을 누르거나 공격자 카드를 직접 타겟으로 드래그하세요!
+            </div>
+          </div>
+
+          <!-- 우측: 수치 조절 및 프리셋 패널 -->
+          <div class="playground-controls-pane">
+            <!-- 1. 공격자 수치 -->
+            <div class="pg-control-section">
+              <h4>⚔️ 공격자 수치 (Attacker Stats)</h4>
+              <div class="tuner-row">
+                <div class="tuner-label-line">
+                  <span>공격력 (Attack Power)</span>
+                  <strong id="val-pg-atk">14</strong>
+                </div>
+                <input type="range" id="slider-pg-atk" min="1" max="30" step="1" value="14">
+              </div>
+              <div class="tuner-row">
+                <div class="tuner-label-line">
+                  <span>코스트 무게감 (Cost Weight)</span>
+                  <span id="badge-pg-cost" class="pg-badge">2코스트 (보통)</span>
+                </div>
+                <div class="pg-radio-group">
+                  <button class="pg-btn-pill" data-cost="1">1코 (가벼움)</button>
+                  <button class="pg-btn-pill active" data-cost="2">2코 (보통)</button>
+                  <button class="pg-btn-pill" data-cost="3">3코 (묵직함)</button>
+                  <button class="pg-btn-pill" data-cost="4">4코 (거신/단단함)</button>
+                </div>
+              </div>
+              <div class="tuner-row inline-check">
+                <label class="pg-checkbox-label">
+                  <input type="checkbox" id="check-pg-pierce" checked>
+                  <span>관통/대지진 특성 보유 (#관통 초과 피해 본체 전달)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 2. 피격 대상 수치 -->
+            <div class="pg-control-section">
+              <h4>🛡️ 피격 대상 수치 (Defender Target)</h4>
+              <div class="tuner-row">
+                <div class="tuner-label-line">
+                  <span>대상 체력 (Target HP)</span>
+                  <strong id="val-pg-target-hp">12</strong>
+                </div>
+                <input type="range" id="slider-pg-target-hp" min="1" max="40" step="1" value="12">
+              </div>
+              <div class="tuner-row">
+                <div class="tuner-label-line">
+                  <span>타겟 방향 선택</span>
+                  <span id="label-pg-selected-target" style="color:#38bdf8; font-weight:700;">정면 (0°)</span>
+                </div>
+                <div class="pg-radio-group">
+                  <button class="pg-btn-target-select" data-target="left">좌측 (-30°)</button>
+                  <button class="pg-btn-target-select active" data-target="center">정면 (0°)</button>
+                  <button class="pg-btn-target-select" data-target="right">우측 (+30°)</button>
+                  <button class="pg-btn-target-select" data-target="avatar">상대 본체</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 물리 속도 & 역경직 -->
+            <div class="pg-control-section">
+              <h4>🎛️ 연출 물리 속도 & 역경직</h4>
+              <div class="pg-dual-sliders">
+                <div class="tuner-row compact">
+                  <div class="tuner-label-line"><span>내리치기 속도</span><strong id="val-pg-slam-speed">1.0x</strong></div>
+                  <input type="range" id="slider-pg-slam-speed" min="0.4" max="2.2" step="0.1" value="1.0">
+                </div>
+                <div class="tuner-row compact">
+                  <div class="tuner-label-line"><span>역경직 프리즈</span><strong id="val-pg-hitstop">50ms</strong></div>
+                  <input type="range" id="slider-pg-hitstop" min="0" max="150" step="10" value="50">
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 원클릭 테스트 프리셋 -->
+            <div class="pg-control-section">
+              <h4>⚡ 원클릭 테스트 프리셋 (Quick Presets)</h4>
+              <div class="pg-preset-grid">
+                <button id="btn-preset-tap" class="pg-preset-btn">
+                  <span class="preset-emoji">🪶</span>
+                  <div class="preset-text">
+                    <strong>가벼운 톡 치기</strong>
+                    <small>1코 / 3공 / 미세 진동</small>
+                  </div>
+                </button>
+                <button id="btn-preset-heavy" class="pg-preset-btn">
+                  <span class="preset-emoji">💥</span>
+                  <div class="preset-text">
+                    <strong>묵직한 강타</strong>
+                    <small>3코 / 10공 / 강한 타격</small>
+                  </div>
+                </button>
+                <button id="btn-preset-shatter" class="pg-preset-btn">
+                  <span class="preset-emoji">☠️</span>
+                  <div class="preset-text">
+                    <strong>파괴 파편 & 영혼</strong>
+                    <small>14공 vs 6체 / 유리 산산조각</small>
+                  </div>
+                </button>
+                <button id="btn-preset-pierce" class="pg-preset-btn">
+                  <span class="preset-emoji">⚡</span>
+                  <div class="preset-text">
+                    <strong>초과 관통 볼트</strong>
+                    <small>26공 vs 8체 / 18 관통 플라즈마</small>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <!-- 5. 푸터 액션 -->
+            <div class="pg-footer-actions">
+              <button id="btn-pg-reset-targets" class="btn secondary-btn">🔄 체력 복원</button>
+              <button id="btn-pg-execute-slam" class="btn primary-btn slam-execute-btn">💥 내리치기 실행 (SPACE)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12. 수상한 상인 물물교환 카드 선택 모달 -->
+    <div id="modal-trade-select" class="modal-overlay">
+      <div class="trade-select-dialog">
+        <div class="modal-dialog-header">
+          <div class="dialog-title-group">
+            <span class="dialog-icon">🔄</span>
+            <div>
+              <h3 id="trade-select-dialog-title">암시장 물물교환 제안</h3>
+              <p id="trade-select-dialog-sub">상인에게 건넬 가방의 카드를 요구 매수만큼 선택하세요.</p>
+            </div>
+          </div>
+          <button id="btn-close-trade-modal" class="close-icon-btn" title="닫기">✕</button>
+        </div>
+
+        <div class="trade-dialog-body">
+          <div class="trade-summary-card" id="trade-target-preview">
+            <!-- 상인이 주는 카드 프리뷰 -->
+          </div>
+
+          <div class="trade-offering-pane">
+            <div class="offering-header">
+              <span class="offering-title">내 가방 보관 카드 중 선택 (<span id="trade-select-count-text">0 / 1장</span>)</span>
+              <span class="offering-hint" id="trade-fee-hint">수수료: 0원</span>
+            </div>
+            <div class="trade-trunk-scroll-grid" id="trade-trunk-cards-container">
+              <!-- 플레이어 가방 카드 그리드 -->
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-dialog-footer trade-dialog-footer">
+          <div class="trade-confirm-hint" id="trade-dialog-hint">
+            가방에서 카드를 선택하세요.
+          </div>
+          <div class="trade-footer-btns">
+            <button id="btn-cancel-trade" class="btn secondary-btn">교환 취소</button>
+            <button id="btn-confirm-trade" class="btn primary-btn" disabled>🔄 물물교환 확정</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="main.js?v=20261112_2330"></script>
+</body>
+</html>
