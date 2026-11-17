@@ -15,7 +15,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -30,7 +33,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": [
    {
@@ -55,7 +61,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -70,7 +79,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -85,7 +97,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -100,7 +115,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": [
    {
@@ -125,7 +143,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -140,7 +161,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -155,7 +179,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -170,7 +197,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -187,7 +217,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": []
  },
@@ -202,7 +235,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#보병"
   ],
   "abilities": [
    {
@@ -227,7 +263,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#정예"
   ],
   "abilities": [
    {
@@ -253,7 +292,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#정예"
   ],
   "abilities": [
    {
@@ -278,7 +320,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#정예"
   ],
   "abilities": [
    {
@@ -305,7 +350,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#정예"
   ],
   "abilities": [
    {
@@ -331,7 +379,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#성역"
   ],
   "abilities": [
    {
@@ -358,7 +409,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#성역"
   ],
   "abilities": [
    {
@@ -387,7 +441,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#기사단"
+   "#인간",
+   "#기사",
+   "#기사단",
+   "#성역"
   ],
   "abilities": [
    {
@@ -412,7 +469,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -427,7 +487,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -453,7 +516,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -468,7 +534,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -483,7 +552,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -498,7 +570,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -513,7 +588,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -528,7 +606,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -543,7 +624,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -558,7 +642,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -584,7 +671,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": []
  },
@@ -599,7 +689,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -625,7 +718,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -651,7 +747,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -679,7 +778,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -705,7 +807,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#수호령",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -731,7 +836,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#천사"
+   "#천사",
+   "#대천사",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -759,7 +867,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#천사"
+   "#천사",
+   "#대천사",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -787,7 +898,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#천사"
+   "#천사",
+   "#대천사",
+   "#천계",
+   "#성광"
   ],
   "abilities": [
    {
@@ -813,7 +927,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -839,7 +956,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -865,7 +985,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -891,7 +1014,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": []
  },
@@ -906,7 +1032,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": []
  },
@@ -921,7 +1050,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": []
  },
@@ -936,7 +1068,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -961,7 +1096,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -987,7 +1125,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -1013,7 +1154,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -1039,7 +1183,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": []
  },
@@ -1054,7 +1201,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": []
  },
@@ -1069,7 +1219,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -1095,7 +1248,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": []
  },
@@ -1110,7 +1266,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -1138,7 +1297,10 @@ export const GENERATED_CARDS = [
    "DIVINE"
   ],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#빛"
   ],
   "abilities": [
    {
@@ -1166,7 +1328,10 @@ export const GENERATED_CARDS = [
    "DIVINE"
   ],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#대마도"
   ],
   "abilities": [
    {
@@ -1192,7 +1357,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#대마도"
   ],
   "abilities": [
    {
@@ -1221,7 +1389,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#마법사"
+   "#인간",
+   "#마법사",
+   "#결계학파",
+   "#대마도"
   ],
   "abilities": [
    {
@@ -1247,7 +1418,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1262,7 +1436,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1277,7 +1454,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1292,7 +1472,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": [
    {
@@ -1318,7 +1501,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1333,7 +1519,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1348,7 +1537,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1363,7 +1555,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": [
    {
@@ -1389,7 +1584,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1404,7 +1602,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": [
    {
@@ -1430,7 +1631,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1445,7 +1649,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": [
    {
@@ -1471,7 +1678,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": [
    {
@@ -1499,7 +1709,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": [
    {
@@ -1531,7 +1744,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": []
  },
@@ -1546,7 +1762,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#치유"
   ],
   "abilities": [
    {
@@ -1574,7 +1793,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#성자"
   ],
   "abilities": [
    {
@@ -1602,7 +1824,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#성자"
   ],
   "abilities": [
    {
@@ -1632,7 +1857,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#수도회"
+   "#인간",
+   "#사제",
+   "#수도회",
+   "#성자"
   ],
   "abilities": [
    {
@@ -1658,7 +1886,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1673,7 +1904,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1688,7 +1922,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1703,7 +1940,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1718,7 +1958,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1733,7 +1976,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1748,7 +1994,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1763,7 +2012,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": [
    {
@@ -1789,7 +2041,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1806,7 +2061,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1821,7 +2079,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1836,7 +2097,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": []
  },
@@ -1853,7 +2117,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": [
    {
@@ -1881,7 +2148,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": [
    {
@@ -1906,7 +2176,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": [
    {
@@ -1934,7 +2207,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#방벽"
   ],
   "abilities": [
    {
@@ -1959,7 +2235,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#요새"
   ],
   "abilities": [
    {
@@ -1987,7 +2266,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#요새"
   ],
   "abilities": [
    {
@@ -2015,7 +2297,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#골렘"
+   "#거신",
+   "#골렘",
+   "#석상",
+   "#요새"
   ],
   "abilities": [
    {
@@ -2037,14 +2322,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -2062,14 +2347,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SHIELD_HERO",
@@ -2086,14 +2371,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DRAW",
@@ -2114,14 +2399,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -2139,14 +2424,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SHIELD_HERO",
@@ -2163,14 +2448,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SILENCE",
@@ -2187,14 +2472,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -2212,14 +2497,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -2237,14 +2522,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -2262,14 +2547,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -2287,14 +2572,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "RETURN_TO_HAND",
@@ -2311,14 +2596,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -2336,14 +2621,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "RETURN_TO_HAND",
@@ -2360,14 +2645,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SILENCE",
@@ -2389,14 +2674,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "HEAL_HERO",
@@ -2418,14 +2703,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "HEAL_HERO",
@@ -2443,14 +2728,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DRAW",
@@ -2471,14 +2756,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_ATTACKED",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ATTACKED",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "FREEZE",
@@ -2500,14 +2785,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SILENCE",
@@ -2529,14 +2814,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "RETURN_TO_HAND",
@@ -2553,14 +2838,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "RETURN_TO_HAND",
@@ -2577,14 +2862,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DRAW",
@@ -2605,14 +2890,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -2630,14 +2915,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "HEAL_HERO",
@@ -2655,14 +2940,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "RETURN_TO_HAND",
@@ -2679,14 +2964,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -2704,14 +2989,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SILENCE",
@@ -2733,14 +3018,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 1,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -2758,14 +3043,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "HEAL_HERO",
@@ -2783,14 +3068,14 @@ export const GENERATED_CARDS = [
   "faction": "BLUE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -2812,7 +3097,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -2838,7 +3126,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -2866,7 +3157,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -2894,7 +3188,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -2920,7 +3217,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -2948,7 +3248,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -2976,7 +3279,10 @@ export const GENERATED_CARDS = [
    "DOUBLE"
   ],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -3004,7 +3310,10 @@ export const GENERATED_CARDS = [
    "DOUBLE"
   ],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": []
  },
@@ -3019,7 +3328,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -3045,7 +3357,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -3071,7 +3386,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -3097,7 +3415,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": []
  },
@@ -3114,7 +3435,10 @@ export const GENERATED_CARDS = [
    "DOUBLE"
   ],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -3140,7 +3464,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -3166,7 +3493,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -3192,7 +3522,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#선봉"
   ],
   "abilities": [
    {
@@ -3218,7 +3551,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#군단장"
   ],
   "abilities": [
    {
@@ -3246,7 +3582,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#군단장"
   ],
   "abilities": [
    {
@@ -3272,7 +3611,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#돌격대"
+   "#인간",
+   "#전사",
+   "#돌격대",
+   "#군단장"
   ],
   "abilities": [
    {
@@ -3298,7 +3640,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3326,7 +3671,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3352,7 +3700,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3380,7 +3731,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3408,7 +3762,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3436,7 +3793,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3462,7 +3822,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3488,7 +3851,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3516,7 +3882,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3542,7 +3911,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": []
  },
@@ -3559,7 +3931,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3587,7 +3962,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#유룡"
   ],
   "abilities": [
    {
@@ -3615,7 +3993,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#고룡"
   ],
   "abilities": [
    {
@@ -3641,7 +4022,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#고룡"
   ],
   "abilities": [
    {
@@ -3669,7 +4053,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#고룡"
   ],
   "abilities": [
    {
@@ -3695,7 +4082,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#고룡"
   ],
   "abilities": [
    {
@@ -3723,7 +4113,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#고룡"
   ],
   "abilities": [
    {
@@ -3749,7 +4142,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#고룡"
   ],
   "abilities": [
    {
@@ -3777,7 +4173,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#용족"
+   "#용족",
+   "#화룡",
+   "#적린",
+   "#고룡"
   ],
   "abilities": []
  },
@@ -3792,7 +4191,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -3818,7 +4220,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -3844,7 +4249,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -3870,7 +4278,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": []
  },
@@ -3887,7 +4298,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -3915,7 +4329,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -3943,7 +4360,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -3971,7 +4391,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -3997,7 +4420,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": []
  },
@@ -4014,7 +4440,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": []
  },
@@ -4029,7 +4458,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -4057,7 +4489,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -4083,7 +4518,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -4109,7 +4547,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": []
  },
@@ -4124,7 +4565,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -4152,7 +4596,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#분노"
   ],
   "abilities": [
    {
@@ -4178,7 +4625,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#화신"
   ],
   "abilities": [
    {
@@ -4210,7 +4660,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#화신"
   ],
   "abilities": [
    {
@@ -4238,7 +4691,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#광전사"
+   "#인간",
+   "#전사",
+   "#광전사",
+   "#화신"
   ],
   "abilities": [
    {
@@ -4270,7 +4726,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4296,7 +4755,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4324,7 +4786,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4352,7 +4817,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4378,7 +4846,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4406,7 +4877,10 @@ export const GENERATED_CARDS = [
    "DIRECT"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4434,7 +4908,10 @@ export const GENERATED_CARDS = [
    "DIRECT"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": []
  },
@@ -4449,7 +4926,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4477,7 +4957,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4505,7 +4988,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4533,7 +5019,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4561,7 +5050,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4589,7 +5081,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4615,7 +5110,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4643,7 +5141,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4669,7 +5170,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#그림자"
   ],
   "abilities": [
    {
@@ -4697,7 +5201,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#밤의왕"
   ],
   "abilities": [
    {
@@ -4725,7 +5232,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#밤의왕"
   ],
   "abilities": [
    {
@@ -4753,7 +5263,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#암살단"
+   "#인간",
+   "#도적",
+   "#암살단",
+   "#밤의왕"
   ],
   "abilities": []
  },
@@ -4768,7 +5281,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -4796,7 +5312,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -4822,7 +5341,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": []
  },
@@ -4839,7 +5361,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -4865,7 +5390,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -4891,7 +5419,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -4917,7 +5448,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -4943,7 +5477,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -4969,7 +5506,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -4995,7 +5535,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -5021,7 +5564,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -5047,7 +5593,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -5075,7 +5624,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -5101,7 +5653,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -5129,7 +5684,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": []
  },
@@ -5144,7 +5702,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#화염"
   ],
   "abilities": [
    {
@@ -5170,7 +5731,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#대마도"
   ],
   "abilities": [
    {
@@ -5196,7 +5760,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#대마도"
   ],
   "abilities": [
    {
@@ -5222,7 +5789,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#화염술사"
+   "#인간",
+   "#마법사",
+   "#화염술사",
+   "#대마도"
   ],
   "abilities": [
    {
@@ -5244,14 +5814,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -5269,14 +5839,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5294,14 +5864,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5319,14 +5889,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "GRANT_KEYWORD",
@@ -5349,14 +5919,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "GRANT_KEYWORD",
@@ -5379,14 +5949,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5404,14 +5974,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -5429,14 +5999,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -5454,14 +6024,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "GRANT_KEYWORD",
@@ -5484,14 +6054,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5509,14 +6079,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -5534,14 +6104,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5559,14 +6129,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "ON_ATTACKED",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ATTACKED",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5584,14 +6154,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -5609,14 +6179,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5635,14 +6205,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5661,14 +6231,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5686,14 +6256,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5711,14 +6281,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 1,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5736,14 +6306,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5762,14 +6332,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5787,14 +6357,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5812,14 +6382,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -5837,14 +6407,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -5862,14 +6432,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5887,14 +6457,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5912,14 +6482,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -5942,14 +6512,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -5972,14 +6542,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -5997,14 +6567,14 @@ export const GENERATED_CARDS = [
   "faction": "RED",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "GRANT_KEYWORD",
@@ -6033,7 +6603,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#임프"
   ],
   "abilities": [
    {
@@ -6069,7 +6642,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#임프"
   ],
   "abilities": [
    {
@@ -6103,7 +6679,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#임프"
   ],
   "abilities": [
    {
@@ -6137,7 +6716,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#임프"
   ],
   "abilities": []
  },
@@ -6154,7 +6736,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#임프"
   ],
   "abilities": [
    {
@@ -6188,7 +6773,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#임프"
   ],
   "abilities": [
    {
@@ -6224,7 +6812,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6252,7 +6843,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6280,7 +6874,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": []
  },
@@ -6297,7 +6894,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6323,7 +6923,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6349,7 +6952,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6383,7 +6989,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6409,7 +7018,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6437,7 +7049,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6463,7 +7078,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#마귀"
   ],
   "abilities": [
    {
@@ -6491,7 +7109,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#군주"
   ],
   "abilities": [
    {
@@ -6520,7 +7141,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#군주"
   ],
   "abilities": [
    {
@@ -6546,7 +7170,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#악마"
+   "#악마",
+   "#마족",
+   "#지옥",
+   "#군주"
   ],
   "abilities": [
    {
@@ -6572,7 +7199,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6598,7 +7228,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6626,7 +7259,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6652,7 +7288,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": []
  },
@@ -6667,7 +7306,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6693,7 +7335,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6721,7 +7366,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6748,7 +7396,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6774,7 +7425,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6802,7 +7456,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6829,7 +7486,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6857,7 +7517,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6883,7 +7546,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6909,7 +7575,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6937,7 +7606,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": []
  },
@@ -6952,7 +7624,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#행운"
   ],
   "abilities": [
    {
@@ -6978,7 +7653,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#제왕"
   ],
   "abilities": [
    {
@@ -7006,7 +7684,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#제왕"
   ],
   "abilities": []
  },
@@ -7021,7 +7702,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#도박꾼"
+   "#인간",
+   "#도적",
+   "#도박꾼",
+   "#제왕"
   ],
   "abilities": []
  },
@@ -7036,7 +7720,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": []
  },
@@ -7051,7 +7738,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": []
  },
@@ -7066,7 +7756,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": []
  },
@@ -7083,7 +7776,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": []
  },
@@ -7100,7 +7796,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": []
  },
@@ -7117,7 +7816,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": []
  },
@@ -7132,7 +7834,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7159,7 +7864,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7184,7 +7892,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7211,7 +7922,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7238,7 +7952,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7265,7 +7982,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7290,7 +8010,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7316,7 +8039,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7343,7 +8069,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7370,7 +8099,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#심해"
   ],
   "abilities": [
    {
@@ -7398,7 +8130,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#사도"
   ],
   "abilities": []
  },
@@ -7415,7 +8150,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#사도"
   ],
   "abilities": [
    {
@@ -7442,7 +8180,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#심연"
+   "#심연",
+   "#공허",
+   "#이형",
+   "#사도"
   ],
   "abilities": [
    {
@@ -7470,7 +8211,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7495,7 +8239,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7522,7 +8269,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7547,7 +8297,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": []
  },
@@ -7562,7 +8315,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7589,7 +8345,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7616,7 +8375,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7643,7 +8405,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7668,7 +8433,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7693,7 +8461,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7720,7 +8491,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7748,7 +8522,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7776,7 +8553,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7804,7 +8584,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7832,7 +8615,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": [
    {
@@ -7859,7 +8645,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#거울"
   ],
   "abilities": []
  },
@@ -7874,7 +8663,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#지배자"
   ],
   "abilities": []
  },
@@ -7889,7 +8681,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#지배자"
   ],
   "abilities": [
    {
@@ -7917,7 +8712,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#환영"
+   "#환영",
+   "#환술",
+   "#몽환",
+   "#지배자"
   ],
   "abilities": [
    {
@@ -7942,7 +8740,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -7967,7 +8768,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -7992,7 +8796,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8017,7 +8824,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8042,7 +8852,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": []
  },
@@ -8057,7 +8870,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8082,7 +8898,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8110,7 +8929,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8135,7 +8957,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8160,7 +8985,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8185,7 +9013,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8210,7 +9041,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8238,7 +9072,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8263,7 +9100,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8288,7 +9128,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8314,7 +9157,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#예언"
   ],
   "abilities": [
    {
@@ -8340,7 +9186,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#시간"
   ],
   "abilities": [
    {
@@ -8368,7 +9217,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#시간"
   ],
   "abilities": []
  },
@@ -8383,7 +9235,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#운명술사"
+   "#인간",
+   "#마법사",
+   "#운명술사",
+   "#시간"
   ],
   "abilities": [
    {
@@ -8405,14 +9260,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "EXTRA_SUMMON",
@@ -8429,14 +9284,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DEBUFF",
@@ -8454,14 +9309,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -8487,14 +9342,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DEBUFF",
@@ -8512,14 +9367,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "ON_ATTACKED",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ATTACKED",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "FREEZE",
@@ -8541,14 +9396,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_ATTACKED",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ATTACKED",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "FREEZE",
@@ -8570,14 +9425,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -8603,14 +9458,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_ATTACKED",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ATTACKED",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -8636,14 +9491,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SWAP_STATS",
@@ -8660,14 +9515,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DEBUFF",
@@ -8685,14 +9540,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "RETURN_TO_HAND",
@@ -8709,14 +9564,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -8734,14 +9589,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SWAP_STATS",
@@ -8758,14 +9613,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SWAP_STATS",
@@ -8782,14 +9637,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DEBUFF",
@@ -8807,14 +9662,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 1,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DEBUFF",
@@ -8832,14 +9687,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SILENCE",
@@ -8861,14 +9716,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -8886,14 +9741,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -8911,14 +9766,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SWAP_STATS",
@@ -8935,14 +9790,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -8965,14 +9820,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -8990,14 +9845,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "EXTRA_SUMMON",
@@ -9014,14 +9869,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_ATTACKED",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ATTACKED",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_HERO",
@@ -9047,14 +9902,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DISCARD_RANDOM",
@@ -9071,14 +9926,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DEBUFF",
@@ -9096,14 +9951,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DISCARD_RANDOM",
@@ -9120,14 +9975,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 1,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DISCARD_RANDOM",
@@ -9144,14 +9999,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DESTROY_UNIT",
@@ -9169,14 +10024,14 @@ export const GENERATED_CARDS = [
   "faction": "PURPLE",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -9200,7 +10055,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9232,7 +10090,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9260,7 +10121,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": []
  },
@@ -9275,7 +10139,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9303,7 +10170,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9337,7 +10207,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9365,7 +10238,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": []
  },
@@ -9380,7 +10256,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9414,7 +10293,10 @@ export const GENERATED_CARDS = [
    "DOUBLE"
   ],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": []
  },
@@ -9429,7 +10311,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9461,7 +10346,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9493,7 +10381,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9525,7 +10416,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9557,7 +10451,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9583,7 +10480,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": [
    {
@@ -9609,7 +10509,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#포식자"
   ],
   "abilities": []
  },
@@ -9626,7 +10529,10 @@ export const GENERATED_CARDS = [
    "DOUBLE"
   ],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#야수왕"
   ],
   "abilities": [
    {
@@ -9658,7 +10564,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#야수왕"
   ],
   "abilities": [
    {
@@ -9684,7 +10593,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#야수"
+   "#야수",
+   "#맹수",
+   "#야생",
+   "#야수왕"
   ],
   "abilities": [
    {
@@ -9716,7 +10628,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": []
  },
@@ -9733,7 +10648,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": [
    {
@@ -9760,7 +10678,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": [
    {
@@ -9787,7 +10708,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": []
  },
@@ -9804,7 +10728,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": []
  },
@@ -9821,7 +10748,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": []
  },
@@ -9838,7 +10768,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": [
    {
@@ -9865,7 +10798,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": []
  },
@@ -9880,7 +10816,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": [
    {
@@ -9908,7 +10847,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": [
    {
@@ -9935,7 +10877,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": [
    {
@@ -9962,7 +10907,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#부품"
   ],
   "abilities": []
  },
@@ -9977,7 +10925,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#중기갑"
   ],
   "abilities": [
    {
@@ -10004,7 +10955,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#중기갑"
   ],
   "abilities": [
    {
@@ -10030,7 +10984,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#중기갑"
   ],
   "abilities": []
  },
@@ -10047,7 +11004,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#중기갑"
   ],
   "abilities": []
  },
@@ -10064,7 +11024,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#중기갑"
   ],
   "abilities": [
    {
@@ -10092,7 +11055,10 @@ export const GENERATED_CARDS = [
    "BULWARK"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#중기갑"
   ],
   "abilities": [
    {
@@ -10120,7 +11086,10 @@ export const GENERATED_CARDS = [
    "RETALIATE"
   ],
   "tags": [
-   "#기계"
+   "#기계",
+   "#자동장치",
+   "#태엽",
+   "#중기갑"
   ],
   "abilities": []
  },
@@ -10137,7 +11106,10 @@ export const GENERATED_CARDS = [
    "DIVINE"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10162,7 +11134,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10187,7 +11162,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10213,7 +11191,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10241,7 +11222,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10266,7 +11250,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": []
  },
@@ -10283,7 +11270,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10311,7 +11301,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10339,7 +11332,10 @@ export const GENERATED_CARDS = [
    "DIVINE"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": []
  },
@@ -10354,7 +11350,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10382,7 +11381,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10407,7 +11409,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10434,7 +11439,10 @@ export const GENERATED_CARDS = [
    "DIVINE"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10461,7 +11469,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10486,7 +11497,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10512,7 +11526,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#요정"
   ],
   "abilities": [
    {
@@ -10538,7 +11555,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#정령왕"
   ],
   "abilities": [
    {
@@ -10565,7 +11585,10 @@ export const GENERATED_CARDS = [
    "STEALTH"
   ],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#정령왕"
   ],
   "abilities": []
  },
@@ -10580,7 +11603,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#정령"
+   "#정령",
+   "#원소",
+   "#자연",
+   "#정령왕"
   ],
   "abilities": [
    {
@@ -10608,7 +11634,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10623,7 +11652,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10640,7 +11672,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10657,7 +11692,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10674,7 +11712,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10689,7 +11730,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10706,7 +11750,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": [
    {
@@ -10732,7 +11779,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": [
    {
@@ -10758,7 +11808,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": [
    {
@@ -10786,7 +11839,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10803,7 +11859,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10820,7 +11879,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#해골"
   ],
   "abilities": []
  },
@@ -10835,7 +11897,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#군주"
   ],
   "abilities": [
    {
@@ -10861,7 +11926,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#군주"
   ],
   "abilities": []
  },
@@ -10878,7 +11946,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#군주"
   ],
   "abilities": [
    {
@@ -10906,7 +11977,10 @@ export const GENERATED_CARDS = [
    "LIFESTEAL"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#군주"
   ],
   "abilities": [
    {
@@ -10931,7 +12005,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#군주"
   ],
   "abilities": [
    {
@@ -10958,7 +12035,10 @@ export const GENERATED_CARDS = [
    "UNDYING"
   ],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#군주"
   ],
   "abilities": [
    {
@@ -10984,7 +12064,10 @@ export const GENERATED_CARDS = [
   "rarity": "EPIC",
   "kw": [],
   "tags": [
-   "#언데드"
+   "#언데드",
+   "#망자",
+   "#사령",
+   "#군주"
   ],
   "abilities": [
    {
@@ -11010,7 +12093,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11025,7 +12111,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11040,7 +12129,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11055,7 +12147,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11072,7 +12167,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11087,7 +12185,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11102,7 +12203,10 @@ export const GENERATED_CARDS = [
   "rarity": "RARE",
   "kw": [],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": [
    {
@@ -11134,7 +12238,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11151,7 +12258,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11168,7 +12278,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11185,7 +12298,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": [
    {
@@ -11215,7 +12331,10 @@ export const GENERATED_CARDS = [
   "rarity": "COMMON",
   "kw": [],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": []
  },
@@ -11232,7 +12351,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": [
    {
@@ -11264,7 +12386,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": [
    {
@@ -11294,7 +12419,10 @@ export const GENERATED_CARDS = [
   "rarity": "UNCOMMON",
   "kw": [],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": [
    {
@@ -11326,7 +12454,10 @@ export const GENERATED_CARDS = [
    "PIERCE"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#계약"
   ],
   "abilities": [
    {
@@ -11358,7 +12489,10 @@ export const GENERATED_CARDS = [
    "DIRECT"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#검성"
   ],
   "abilities": []
  },
@@ -11375,7 +12509,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#검성"
   ],
   "abilities": []
  },
@@ -11392,7 +12529,10 @@ export const GENERATED_CARDS = [
    "TAUNT"
   ],
   "tags": [
-   "#용병"
+   "#인간",
+   "#전사",
+   "#용병",
+   "#검성"
   ],
   "abilities": []
  },
@@ -11403,14 +12543,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -11429,14 +12569,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DRAW",
@@ -11457,14 +12597,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SHIELD_HERO",
@@ -11481,14 +12621,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_ATTACKED",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ATTACKED",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -11506,14 +12646,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -11531,14 +12671,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SHIELD_HERO",
@@ -11555,14 +12695,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -11580,14 +12720,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -11605,14 +12745,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SHIELD_HERO",
@@ -11629,14 +12769,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 3,
   "rarity": "EPIC",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -11655,14 +12795,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -11681,14 +12821,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -11706,14 +12846,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -11731,14 +12871,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "ON_ENEMY_SUMMON",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ENEMY_SUMMON",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -11756,14 +12896,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SHIELD_HERO",
@@ -11780,14 +12920,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "BUFF",
@@ -11806,14 +12946,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 3,
   "rarity": "RARE",
-  "spellTriggerType": "ON_TURN_START",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_TURN_START",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "HEAL_HERO",
@@ -11831,14 +12971,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SHIELD_HERO",
@@ -11855,14 +12995,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DRAW",
@@ -11883,14 +13023,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "ON_ATTACKED",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "ON_ATTACKED",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -11908,14 +13048,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 2,
   "rarity": "RARE",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -11933,14 +13073,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SUMMON_TOKEN",
@@ -11958,14 +13098,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",
@@ -11983,14 +13123,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 2,
   "rarity": "UNCOMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "SHIELD_HERO",
@@ -12007,14 +13147,14 @@ export const GENERATED_CARDS = [
   "faction": "NEUTRAL",
   "level": 1,
   "rarity": "COMMON",
-  "spellTriggerType": "INSTANT",
+  "spellTriggerType": "UNIVERSAL",
   "kw": [],
   "tags": [
    "#마법"
   ],
   "abilities": [
    {
-    "trigger": "INSTANT",
+    "trigger": "UNIVERSAL",
     "effects": [
      {
       "op": "DAMAGE_UNIT",

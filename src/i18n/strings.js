@@ -18,11 +18,11 @@
 
 const ko = {
   // ---- 타이틀 · 공용 화면 ----
-  'ui.title.subtitle': '덱을 키우고 운명의 보스에게 도전하는 1v1 카드 듀얼',
-  'ui.title.continue': '이어서 하기',
-  'ui.title.newRun': '새로운 듀얼 런 개시',
-  'ui.title.binder': '3×3 콜렉션 바인더 열람',
-  'ui.title.badges': '카드 516종 • 3대 운명과 보스',
+  'ui.title.subtitle': '운명을 선택하고 나만의 덱으로 정점에 도전하세요',
+  'ui.title.continue': '이어하기',
+  'ui.title.newRun': '새 게임 시작',
+  'ui.title.binder': '카드 바인더',
+  'ui.title.badges': '',
   'ui.binder.all': '전체',
   'ui.binder.ownedOnly': '보유만',
 
@@ -56,10 +56,10 @@ const ko = {
   'trigger.ON_TURN_START': '내 턴 시작 시',
   'trigger.ON_TURN_END': '내 턴 종료 시',
   'trigger.INSTANT': '발동 시',
-  'trigger.ON_ATTACKED': '세트 후 상대가 공격할 때',
-  'trigger.SET_TURN_START': '세트 후 내 턴 시작 시',
-  'trigger.SET_TURN_END': '세트 후 내 턴 종료 시',
-  'trigger.ON_ENEMY_SUMMON': '세트 후 상대가 몬스터를 소환할 때',
+  'trigger.UNIVERSAL': '즉시 / 세트(장소별 발동)',
+  'trigger.ON_ATTACKED': '세트 후 공격받을 때',
+  'trigger.ON_OPPONENT_TURN_START': '세트 후 상대 턴 시작 시',
+  'trigger.ON_OPPONENT_TURN_END': '세트 후 상대 턴 종료 시',
 
   // ---- 추가 조건 ----
   'cond.selfLpBelow': '내 LP가 {value} 이하라면',
@@ -83,8 +83,12 @@ const ko = {
   'target.ENEMY_STRONGEST': '공격력이 가장 높은 적 몬스터',
   'target.ENEMY_WEAKEST': '수비력이 가장 낮은 적 몬스터',
   'target.ENEMY_HIGHEST_LEVEL': '레벨이 가장 높은 적 몬스터',
-  'target.ATTACKER': '공격한 몬스터',
-  'target.SUMMONED': '방금 소환된 적 몬스터',
+  'target.ATTACKER': '공격한 적(없으면 최강 적)',
+  'target.SUMMONED': '공격한 적(없으면 최강 적)',
+  'target.CHOSEN_ENEMY': '선택한 적 몬스터 1마리',
+  'target.CHOSEN_ALLY': '선택한 아군 몬스터 1마리',
+  'target.CHOSEN_UNIT': '선택한 몬스터 1마리',
+  'target.CHOSEN_ANY': '선택한 대상 (몬스터 또는 본체)',
   'target.ENEMY_HERO': '상대 본체',
   'target.ALLY_HERO': '아군 본체',
   'target.BOTH_HEROES': '양쪽 본체',
@@ -124,11 +128,11 @@ const ko = {
   'label.noEffect': '특수 효과 없음',
 
   // ---- 희귀도 / 진영 ----
-  'rarity.COMMON': '일반',
-  'rarity.UNCOMMON': '고급',
-  'rarity.RARE': '희귀',
-  'rarity.EPIC': '영웅',
-  'rarity.LEGENDARY': '전설',
+  'rarity.COMMON': '노말',
+  'rarity.UNCOMMON': '레어',
+  'rarity.RARE': '에픽',
+  'rarity.EPIC': '유니크',
+  'rarity.LEGENDARY': '레전드',
   'faction.BLUE': '정의',
   'faction.RED': '열의',
   'faction.PURPLE': '혼돈',

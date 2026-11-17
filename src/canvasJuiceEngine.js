@@ -34,8 +34,9 @@ export class CanvasJuiceEngine {
     this.dustRings = [];
 
     // 대상 카드 오라
-    this.activeAuras = []; // { rect, color: 'GREEN' | 'YELLOW' | 'RED' }
+    this.activeAuras = []; // { rect, colorType: 'GREEN' | 'PURPLE' | 'YELLOW' | 'RED' }
     this.auraPhase = 0;
+    this.aimingArrow = null; // { x1, y1, x2, y2, color }
 
     // 카메라 쉐이크 물리 상태 (LJack Pillar 5: Decay Screen Shake)
     this.shakePower = 0;
@@ -410,6 +411,49 @@ export class CanvasJuiceEngine {
     // 5. 부유 데미지 텍스트 그리기
     this.renderFloatingTexts(ctx);
 
+    // 6. 하스스톤식 대상 지정 조준선
+    this.renderAimingArrow(ctx);
+
+    ctx.restore();
+  }
+
+  renderAimingArrow(ctx) {
+    if (!this.aimingArrow) return;
+    const { x1, y1, x2, y2, color } = this.aimingArrow;
+    const pulse = (Math.sin(this.auraPhase * 1.4) + 1) * 0.5;
+    const stroke =
+      color === 'GREEN' ? '#22c55e' : color === 'PURPLE' ? '#a855f7' : color === 'YELLOW' ? '#facc15' : '#ef4444';
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const ctrlX = (x1 + x2) * 0.5;
+    const ctrlY = Math.min(y1, y2) - Math.min(90, Math.hypot(x2 - x1, y2 - y1) * 0.28);
+
+    ctx.save();
+    ctx.strokeStyle = stroke;
+    ctx.shadowColor = stroke;
+    ctx.shadowBlur = 12 + pulse * 10;
+    ctx.lineWidth = 4;
+    ctx.setLineDash([12, 8]);
+    ctx.lineDashOffset = -(this.auraPhase * 18);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.quadraticCurveTo(ctrlX, ctrlY, x2, y2);
+    ctx.stroke();
+
+    // 조준 화살촉 & 타겟 링
+    ctx.setLineDash([]);
+    ctx.fillStyle = stroke;
+    const endAngle = Math.atan2(y2 - ctrlY, x2 - ctrlX) || angle;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 16 * Math.cos(endAngle - 0.42), y2 - 16 * Math.sin(endAngle - 0.42));
+    ctx.lineTo(x2 - 16 * Math.cos(endAngle + 0.42), y2 - 16 * Math.sin(endAngle + 0.42));
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(x2, y2, 13 + pulse * 4, 0, Math.PI * 2);
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -420,7 +464,10 @@ export class CanvasJuiceEngine {
     this.activeAuras.forEach(({ rect, colorType }) => {
       let strokeColor = '#22c55e';
       let glowColor = 'rgba(34, 197, 94, 0.4)';
-      if (colorType === 'YELLOW') {
+      if (colorType === 'PURPLE') {
+        strokeColor = '#a855f7';
+        glowColor = 'rgba(168, 85, 247, 0.42)';
+      } else if (colorType === 'YELLOW') {
         strokeColor = '#eab308';
         glowColor = 'rgba(234, 179, 8, 0.4)';
       } else if (colorType === 'RED') {
@@ -978,15 +1025,15 @@ export class CanvasJuiceEngine {
   }
 
   /**
-   * 11. 3색 대상 카드 오라 설정
+   * 11. 다색 대상 카드 오라 설정 (GREEN / PURPLE / YELLOW / RED)
    */
-  setTargetAura(elements, colorType = 'RED') {
+  setTargetAura(elements, colorType = 'RED', append = false) {
     if (!elements || !elements.length) {
-      this.activeAuras = [];
+      if (!append) this.activeAuras = [];
       return;
     }
     const canvasRect = this.canvas.getBoundingClientRect();
-    this.activeAuras = Array.from(elements)
+    const entries = Array.from(elements)
       .map((el) => {
         const r = el.getBoundingClientRect();
         return {
@@ -1000,6 +1047,7 @@ export class CanvasJuiceEngine {
         };
       })
       .filter((a) => a.rect.width > 0 && a.rect.height > 0);
+    this.activeAuras = append ? [...this.activeAuras, ...entries] : entries;
   }
 
   /**
@@ -1052,6 +1100,14 @@ export class CanvasJuiceEngine {
     setTimeout(() => burstAt(centerX - w * 0.16, centerY - h * 0.08, 32, 160, '#38bdf8'), 190);
     setTimeout(() => burstAt(centerX + w * 0.16, centerY - h * 0.08, 32, 160, '#f472b6'), 380);
     setTimeout(() => burstAt(centerX, centerY - h * 0.05, 40, 230, '#fde047'), 600);
+  }
+
+  setAimingArrow(x1, y1, x2, y2, color = 'RED') {
+    this.aimingArrow = { x1, y1, x2, y2, color };
+  }
+
+  clearAimingArrow() {
+    this.aimingArrow = null;
   }
 
   clearTargetAura() {

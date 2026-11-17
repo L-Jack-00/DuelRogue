@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 370" width="100%" height="100%">
   <defs>
     <radialGradient id="tc-sky" cx="50%" cy="35%" r="72%">
       <stop offset="0%" stop-color="#6b21a8" />
@@ -35,7 +35,7 @@
     </filter>
   </defs>
 
-  <rect x="0" y="0" width="320" height="512" rx="16" fill="url(#tc-sky)" />
+  <rect x="0" y="0" width="320" height="370" rx="16" fill="url(#tc-sky)" />
   <circle cx="160" cy="198" r="150" fill="url(#tc-halo)" />
 
   <!-- 공허 균열 & 소용돌이 아크 -->
@@ -103,14 +103,14 @@
     <circle cx="224" cy="54" r="2" />
   </g>
 
-  <rect x="0" y="310" width="320" height="202" fill="url(#tc-bottom-fade)" />
+  <rect x="0" y="235" width="320" height="135" fill="url(#tc-bottom-fade)" />
 
-  <rect x="8" y="8" width="304" height="496" rx="14" fill="none" stroke="url(#tc-gold)" stroke-width="4.5" />
-  <rect x="16" y="16" width="288" height="480" rx="10" fill="none" stroke="#e9d5ff" stroke-width="0.9" opacity="0.45" />
+  <rect x="8" y="8" width="304" height="354" rx="14" fill="none" stroke="url(#tc-gold)" stroke-width="4.5" />
+  <rect x="16" y="16" width="288" height="338" rx="10" fill="none" stroke="#e9d5ff" stroke-width="0.9" opacity="0.45" />
   <g fill="url(#tc-gold)">
     <polygon points="16,28 24,16 32,28 24,40" />
     <polygon points="304,28 296,16 288,28 296,40" />
-    <polygon points="16,484 24,472 32,484 24,496" />
-    <polygon points="304,484 296,472 288,484 296,496" />
+    <polygon points="16,342 24,330 32,342 24,354" />
+    <polygon points="304,342 296,330 288,342 296,354" />
   </g>
 </svg>

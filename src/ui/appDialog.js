@@ -20,6 +20,7 @@ export function openAppDialog({
   title = '알림',
   message = '',
   confirmText = '확인',
+  neutralText = null,
   cancelText = null,
   icon = 'bulb',
   danger = false,
@@ -30,6 +31,7 @@ export function openAppDialog({
   const msgEl = document.getElementById('app-dialog-message');
   const iconEl = document.getElementById('app-dialog-icon');
   const okBtn = document.getElementById('btn-app-dialog-ok');
+  const neutralBtn = document.getElementById('btn-app-dialog-neutral');
   const cancelBtn = document.getElementById('btn-app-dialog-cancel');
   const closeBtn = document.getElementById('btn-app-dialog-close');
 
@@ -47,6 +49,15 @@ export function openAppDialog({
   okBtn.textContent = confirmText;
   okBtn.className = danger ? 'btn btn-abandon-danger' : 'btn primary-btn';
 
+  if (neutralBtn) {
+    if (neutralText) {
+      neutralBtn.textContent = neutralText;
+      neutralBtn.style.display = '';
+    } else {
+      neutralBtn.style.display = 'none';
+    }
+  }
+
   if (cancelBtn) {
     if (cancelText) {
       cancelBtn.textContent = cancelText;
@@ -63,6 +74,7 @@ export function openAppDialog({
     const finish = (val) => {
       modal.classList.remove('active');
       okBtn.onclick = null;
+      if (neutralBtn) neutralBtn.onclick = null;
       if (cancelBtn) cancelBtn.onclick = null;
       if (closeBtn) closeBtn.onclick = null;
       modal.onclick = null;
@@ -86,6 +98,12 @@ export function openAppDialog({
       dialogCallbacks.playOkSound();
       finish(true);
     };
+    if (neutralBtn) {
+      neutralBtn.onclick = () => {
+        dialogCallbacks.playCancelSound();
+        finish('neutral');
+      };
+    }
     if (cancelBtn) {
       cancelBtn.onclick = () => {
         dialogCallbacks.playCancelSound();

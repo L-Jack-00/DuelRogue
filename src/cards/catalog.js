@@ -22,71 +22,71 @@ export { TOKENS, tokenStatSumOf };
 export const CORE_CARDS = [
   // ---- 정의 (BLUE) ----
   { id: 'C_BLUE_01', name: '성소의 방패병', type: 'MONSTER', faction: 'BLUE', level: 1, attack: 4, defense: 14, rarity: 'COMMON',
-    kw: ['TAUNT'], tags: ['#성역', '#보병'], abilities: [] },
-  { id: 'C_BLUE_02', name: '심판의 섬광', type: 'SPELL', faction: 'BLUE', level: 2, rarity: 'RARE', spellTriggerType: 'INSTANT',
+    kw: ['TAUNT'], tags: ['#인간', '#기사', '#성역', '#방패'], abilities: [] },
+  { id: 'C_BLUE_02', name: '심판의 섬광', type: 'SPELL', faction: 'BLUE', level: 2, rarity: 'RARE', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#마법', '#빛'],
-    abilities: [{ trigger: 'INSTANT', effects: [{ op: 'DAMAGE_UNIT', target: 'ENEMY_ALL', value: 12 }, { op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 12 }] }] },
+    abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'DAMAGE_UNIT', target: 'ENEMY_ALL', value: 12 }, { op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 12 }] }] },
   { id: 'C_BLUE_03', name: '아이기스 수호신', type: 'MONSTER', faction: 'BLUE', level: 3, attack: 10, defense: 22, rarity: 'RARE',
-    kw: ['TAUNT'], tags: ['#거신', '#성역'],
+    kw: ['TAUNT'], tags: ['#거신', '#골렘', '#성역', '#수호상'],
     abilities: [{ trigger: 'ON_SUMMON', effects: [{ op: 'SHIELD_HERO', value: 12 }] }] },
   { id: 'C_BLUE_04', name: '빛의 대마법사', type: 'MONSTER', faction: 'BLUE', level: 2, attack: 7, defense: 16, rarity: 'UNCOMMON',
-    kw: [], tags: ['#마법사', '#빛'],
+    kw: [], tags: ['#인간', '#마법사', '#결계학파', '#빛'],
     abilities: [{ trigger: 'ON_SUMMON', effects: [{ op: 'DAMAGE_UNIT', target: 'ENEMY_WEAKEST', value: 5 }] }] },
   { id: 'C_BLUE_05', name: '천상의 대천사 미카엘', type: 'MONSTER', faction: 'BLUE', level: 6, attack: 26, defense: 34, rarity: 'LEGENDARY', isGod: true,
-    kw: ['DIVINE', 'TAUNT'], tags: ['#신', '#천사', '#성역'],
+    kw: ['DIVINE', 'TAUNT'], tags: ['#신', '#천사', '#성역', '#빛'],
     abilities: [{ trigger: 'ON_SUMMON', effects: [{ op: 'HEAL_HERO', target: 'ALLY_HERO', value: 20 }] }] },
-  { id: 'S_BLUE_01', name: '신성한 반격 결계', type: 'SPELL', faction: 'BLUE', level: 2, rarity: 'UNCOMMON', spellTriggerType: 'ON_ATTACKED',
+  { id: 'S_BLUE_01', name: '신성한 반격 결계', type: 'SPELL', faction: 'BLUE', level: 2, rarity: 'UNCOMMON', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#결계', '#신성'],
-    abilities: [{ trigger: 'ON_ATTACKED', effects: [{ op: 'DEBUFF', target: 'ATTACKER', atk: 10 }, { op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 10 }] }] },
-  { id: 'S_BLUE_02', name: '여명의 축복', type: 'SPELL', faction: 'BLUE', level: 1, rarity: 'COMMON', spellTriggerType: 'ON_TURN_START',
+    abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'DEBUFF', target: 'ATTACKER', atk: 10 }, { op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 10 }] }] },
+  { id: 'S_BLUE_02', name: '여명의 축복', type: 'SPELL', faction: 'BLUE', level: 1, rarity: 'COMMON', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#마법', '#빛'],
-    abilities: [{ trigger: 'ON_TURN_START', effects: [{ op: 'HEAL_HERO', target: 'ALLY_HERO', value: 15 }, { op: 'DRAW', value: 1 }] }] },
+    abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'HEAL_HERO', target: 'ALLY_HERO', value: 15 }, { op: 'DRAW', value: 1 }] }] },
 
   // ---- 열의 (RED) ----
   { id: 'C_RED_01', name: '선봉 돌격병', type: 'MONSTER', faction: 'RED', level: 1, attack: 8, defense: 6, rarity: 'COMMON',
-    kw: [], tags: ['#전사', '#돌격대'],
+    kw: [], tags: ['#인간', '#전사', '#돌격대', '#선봉'],
     abilities: [{ trigger: 'ON_KILL', effects: [{ op: 'BUFF', target: 'SELF', atk: 2 }] }] },
-  { id: 'C_RED_02', name: '홍련의 화염탄', type: 'SPELL', faction: 'RED', level: 1, rarity: 'COMMON', spellTriggerType: 'INSTANT',
+  { id: 'C_RED_02', name: '홍련의 화염탄', type: 'SPELL', faction: 'RED', level: 1, rarity: 'COMMON', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#마법', '#화염'],
-    abilities: [{ trigger: 'INSTANT', effects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 16 }] }] },
+    abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 16 }] }] },
   { id: 'C_RED_03', name: '광전사 집행관', type: 'MONSTER', faction: 'RED', level: 3, attack: 16, defense: 10, rarity: 'RARE',
-    kw: ['PIERCE'], tags: ['#광전사', '#화염'],
+    kw: ['PIERCE'], tags: ['#인간', '#전사', '#광전사', '#집행'],
     abilities: [{ trigger: 'ON_KILL', effects: [{ op: 'BUFF', target: 'SELF', atk: 3 }] }] },
   { id: 'C_RED_04', name: '홍련의 암살단', type: 'MONSTER', faction: 'RED', level: 2, attack: 13, defense: 8, rarity: 'UNCOMMON',
-    kw: ['STEALTH'], tags: ['#도적', '#암살단'], abilities: [] },
+    kw: ['STEALTH'], tags: ['#인간', '#도적', '#암살단', '#홍련'], abilities: [] },
   { id: 'C_RED_05', name: '진홍의 화룡 이그니스', type: 'MONSTER', faction: 'RED', level: 5, attack: 26, defense: 20, rarity: 'EPIC',
-    kw: ['PIERCE'], tags: ['#용족', '#화염'],
+    kw: ['PIERCE'], tags: ['#용족', '#화룡', '#홍염', '#고룡'],
     abilities: [{ trigger: 'ON_SUMMON', effects: [{ op: 'DAMAGE_UNIT', target: 'ENEMY_ALL', value: 6 }] }] },
-  { id: 'S_RED_01', name: '홍련의 화염 지뢰', type: 'SPELL', faction: 'RED', level: 1, rarity: 'COMMON', spellTriggerType: 'ON_ATTACKED',
+  { id: 'S_RED_01', name: '홍련의 화염 지뢰', type: 'SPELL', faction: 'RED', level: 1, rarity: 'COMMON', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#함정', '#화염'],
-    abilities: [{ trigger: 'ON_ATTACKED', effects: [{ op: 'DAMAGE_UNIT', target: 'ATTACKER', value: 16 }] }] },
-  { id: 'S_RED_02', name: '전쟁의 진격 나팔', type: 'SPELL', faction: 'RED', level: 2, rarity: 'UNCOMMON', spellTriggerType: 'ON_TURN_START',
+    abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'DAMAGE_UNIT', target: 'ATTACKER', value: 16 }] }] },
+  { id: 'S_RED_02', name: '전쟁의 진격 나팔', type: 'SPELL', faction: 'RED', level: 2, rarity: 'UNCOMMON', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#전술', '#화염'],
-    abilities: [{ trigger: 'ON_TURN_START', effects: [{ op: 'BUFF', target: 'ALLY_ALL', atk: 6 }] }] },
+    abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'BUFF', target: 'ALLY_ALL', atk: 6 }] }] },
 
   // ---- 혼돈 (PURPLE) ----
   { id: 'C_PURP_01', name: '운명의 주사위 악마', type: 'MONSTER', faction: 'PURPLE', level: 1, attack: 7, defense: 9, rarity: 'COMMON',
-    kw: [], tags: ['#악마', '#혼돈'],
+    kw: [], tags: ['#악마', '#마족', '#혼돈', '#도박'],
     abilities: [{ trigger: 'ON_SUMMON', chance: 0.5, effects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 10 }] }] },
-  { id: 'C_PURP_02', name: '차원 균열의 룰렛', type: 'SPELL', faction: 'PURPLE', level: 2, rarity: 'UNCOMMON', spellTriggerType: 'INSTANT',
+  { id: 'C_PURP_02', name: '차원 균열의 룰렛', type: 'SPELL', faction: 'PURPLE', level: 2, rarity: 'UNCOMMON', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#마법', '#혼돈'],
-    abilities: [{ trigger: 'INSTANT', chance: 0.6, effects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 22 }], elseEffects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 11 }] }] },
+    abilities: [{ trigger: 'UNIVERSAL', chance: 0.6, effects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 22 }], elseEffects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 11 }] }] },
   { id: 'C_PURP_03', name: '심연의 창조신 아자젤', type: 'MONSTER', faction: 'PURPLE', level: 6, attack: 30, defense: 30, rarity: 'LEGENDARY', isGod: true,
-    kw: ['LIFESTEAL'], tags: ['#신', '#악마', '#심연'],
+    kw: ['LIFESTEAL'], tags: ['#신', '#악마', '#심연', '#창조'],
     abilities: [{ trigger: 'ON_SUMMON', chance: 0.5, effects: [{ op: 'DESTROY_UNIT', target: 'ENEMY_STRONGEST' }], elseEffects: [{ op: 'DAMAGE_UNIT', target: 'ENEMY_ALL', value: 8 }] }] },
   { id: 'C_PURP_04', name: '황천의 도박사', type: 'MONSTER', faction: 'PURPLE', level: 2, attack: 11, defense: 11, rarity: 'UNCOMMON',
-    kw: [], tags: ['#인간', '#도박꾼'],
+    kw: [], tags: ['#인간', '#도적', '#도박꾼', '#황천'],
     abilities: [{ trigger: 'ON_DESTROYED', chance: 0.5, effects: [{ op: 'DRAW', value: 1 }] }] },
-  { id: 'S_PURP_01', name: '운명의 뒤틀림 룰렛', type: 'SPELL', faction: 'PURPLE', level: 1, rarity: 'COMMON', spellTriggerType: 'ON_ATTACKED',
+  { id: 'S_PURP_01', name: '운명의 뒤틀림 룰렛', type: 'SPELL', faction: 'PURPLE', level: 1, rarity: 'COMMON', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#비술', '#혼돈'],
-    abilities: [{ trigger: 'ON_ATTACKED', chance: 0.6, effects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 15 }], elseEffects: [{ op: 'DAMAGE_HERO', target: 'ALLY_HERO', value: 5 }] }] },
-  { id: 'S_PURP_02', name: '혼돈의 소환진', type: 'SPELL', faction: 'PURPLE', level: 1, rarity: 'UNCOMMON', spellTriggerType: 'ON_TURN_START',
+    abilities: [{ trigger: 'UNIVERSAL', chance: 0.6, effects: [{ op: 'DAMAGE_HERO', target: 'ENEMY_HERO', value: 15 }], elseEffects: [{ op: 'DAMAGE_HERO', target: 'ALLY_HERO', value: 5 }] }] },
+  { id: 'S_PURP_02', name: '혼돈의 소환진', type: 'SPELL', faction: 'PURPLE', level: 1, rarity: 'UNCOMMON', spellTriggerType: 'UNIVERSAL',
     kw: [], tags: ['#비술', '#혼돈'],
-    abilities: [{ trigger: 'ON_TURN_START', effects: [{ op: 'EXTRA_SUMMON', value: 1 }] }] },
+    abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'EXTRA_SUMMON', value: 1 }] }] },
 
   // ---- 파괴의 신 ----
   { id: 'C_TITAN_01', name: '천벌의 파괴신 테라', type: 'MONSTER', faction: 'RED', level: 6, attack: 32, defense: 30, rarity: 'LEGENDARY', isGod: true,
-    kw: ['PIERCE'], tags: ['#신', '#태초의불', '#거신'],
+    kw: ['PIERCE'], tags: ['#신', '#거신', '#태초의불', '#파괴'],
     abilities: [{ trigger: 'ON_SUMMON', effects: [{ op: 'DAMAGE_UNIT', target: 'ENEMY_ALL', value: 10 }] }] },
 ];
 
@@ -115,7 +115,7 @@ export function finalizeCard(raw) {
   if (card.type === 'SPELL') {
     card.attack = 0;
     card.defense = 0;
-    card.spellTriggerType = card.spellTriggerType || card.abilities?.[0]?.trigger || 'INSTANT';
+    card.spellTriggerType = 'UNIVERSAL';
   }
   if (card.collectible === undefined) card.collectible = !card.isToken;
 
@@ -133,7 +133,7 @@ export function finalizeCard(raw) {
   }
   if (lines.length === 0) lines.push(t('label.noEffect'));
   card.description = lines.join('\n');
-  card.targetPolarity = card.abilities.some((ab) => (ab.effects || []).some((e) => String(e.target || '').startsWith('ENEMY') || e.target === 'ATTACKER'))
+  card.targetPolarity = card.abilities.some((ab) => (ab.effects || []).some((e) => String(e.target || '').startsWith('ENEMY') || e.target === 'ATTACKER' || e.target === 'CHOSEN_ENEMY'))
     ? 'HARMFUL'
     : 'BENEFICIAL';
   card.powerCost = card.abilities.reduce((a, ab) => a + abilityCost(ab, card.type, tokenStatSumOf), 0) + keywordsCost(card.kw);

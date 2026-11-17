@@ -6,11 +6,11 @@
 export const RARITY_TIERS = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY'];
 
 export const RARITY_LABELS_KO = {
-  COMMON: '일반 (COMMON)',
-  UNCOMMON: '고급 (UNCOMMON)',
-  RARE: '희귀 (RARE)',
-  EPIC: '영웅 (EPIC)',
-  LEGENDARY: '전설 (LEGENDARY)',
+  COMMON: '노말',
+  UNCOMMON: '레어',
+  RARE: '에픽',
+  EPIC: '유니크',
+  LEGENDARY: '레전드',
 };
 
 export const RARITY_PRESET_INFO = {
@@ -19,7 +19,7 @@ export const RARITY_PRESET_INFO = {
   METALLIC: { label: '은은한 금속 테두리 광택', artFx: 0.5, glow: 0.5, nameGlow: 0.4 },
   ARCANE_SHIMMER: { label: '비전 룬 광채 & 일러스트 쉬머', artFx: 0.9, glow: 0.9, nameGlow: 0.8 },
   CRYSTAL_AURORA: { label: '프리즘 스캔 & 일러스트 글로우', artFx: 1.2, glow: 1.2, nameGlow: 1.1 },
-  MYTHIC_PRISM: { label: '전설 프리즘 홀로그램 + 금빛 입자', artFx: 1.4, glow: 1.5, nameGlow: 1.5 },
+  MYTHIC_PRISM: { label: '레전드 프리즘 홀로그램 + 금빛 입자', artFx: 1.4, glow: 1.5, nameGlow: 1.5 },
 };
 
 export const DEFAULT_RARITY_CONFIG = {

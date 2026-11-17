@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="400" height="560">
+  <defs>
+    <linearGradient id="tokenMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3f3f46"/>
+      <stop offset="50%" stop-color="#27272a"/>
+      <stop offset="100%" stop-color="#18181b"/>
+    </linearGradient>
+    <linearGradient id="tokenStone" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e4e4e7"/>
+      <stop offset="50%" stop-color="#d4d4d8"/>
+      <stop offset="100%" stop-color="#a1a1aa"/>
+    </linearGradient>
+    <linearGradient id="tokenTrim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f4f4f5"/>
+      <stop offset="50%" stop-color="#a1a1aa"/>
+      <stop offset="100%" stop-color="#52525b"/>
+    </linearGradient>
+    <clipPath id="tokenOuterWithHole">
+      <path fill-rule="evenodd" clip-rule="evenodd"
+        d="M 0,0 L 400,0 L 400,560 L 0,560 Z M 22,70 L 378,70 L 378,420 L 22,420 Z"/>
+    </clipPath>
+    <filter id="tokenBevel">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.65"/>
+    </filter>
+  </defs>
+
+  <!-- Monochrome Card Body with Art Cutout Hole -->
+  <g clip-path="url(#tokenOuterWithHole)">
+    <rect x="0" y="0" width="400" height="560" rx="18" fill="url(#tokenMetal)"/>
+    <rect x="6" y="6" width="388" height="548" rx="14" fill="none" stroke="url(#tokenTrim)" stroke-width="5"/>
+    <rect x="14" y="14" width="372" height="532" rx="10" fill="none" stroke="#52525b" stroke-width="1.8" stroke-dasharray="6 4" opacity="0.65"/>
+
+    <!-- Diagonal hatched stone texture -->
+    <g stroke="#ffffff" stroke-width="1" opacity="0.04">
+      <line x1="0" y1="80" x2="80" y2="0"/>
+      <line x1="0" y1="160" x2="160" y2="0"/>
+      <line x1="0" y1="240" x2="240" y2="0"/>
+      <line x1="240" y1="560" x2="400" y2="400"/>
+      <line x1="160" y1="560" x2="400" y2="320"/>
+    </g>
+
+    <!-- Top Name Plate -->
+    <g filter="url(#tokenBevel)">
+      <rect id="top-name-emboss-box" x="22" y="14" width="356" height="50" rx="7" fill="url(#tokenStone)" stroke="url(#tokenTrim)" stroke-width="3"/>
+      <rect x="25" y="17" width="350" height="44" rx="5" fill="none" stroke="#f4f4f5" stroke-width="1" opacity="0.8"/>
+    </g>
+
+    <!-- Bottom Left Tag Box & Right ATK/DEF Box (exact 172px split alignment matching unit frame) -->
+    <g filter="url(#tokenBevel)">
+      <rect x="22" y="428" width="172" height="116" rx="8" fill="url(#tokenStone)" stroke="url(#tokenTrim)" stroke-width="2.5"/>
+      <rect x="27" y="433" width="162" height="106" rx="5" fill="none" stroke="#71717a" stroke-width="1.0" opacity="0.65"/>
+
+      <rect x="206" y="428" width="172" height="116" rx="8" fill="url(#tokenStone)" stroke="url(#tokenTrim)" stroke-width="2.5"/>
+      <rect x="211" y="433" width="162" height="106" rx="5" fill="none" stroke="#71717a" stroke-width="1.0" opacity="0.65"/>
+      <line x1="216" y1="486" x2="368" y2="486" stroke="#71717a" stroke-width="1.2" stroke-dasharray="3,3" opacity="0.8"/>
+      <polygon points="292,482 296,486 292,490 288,486" fill="#71717a" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- Art Cutout Bezel Border -->
+  <rect x="21" y="69" width="358" height="352" rx="4" fill="none" stroke="url(#tokenTrim)" stroke-width="3.5"/>
+  <rect x="23" y="71" width="354" height="348" rx="3" fill="none" stroke="#09090b" stroke-width="1.5" opacity="0.7"/>
+</svg>

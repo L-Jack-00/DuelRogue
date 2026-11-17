@@ -19,10 +19,11 @@
  */
 import { t } from '../i18n/strings.js';
 import { keywordName } from './keywords.js';
-import { isUnitTarget, UNIT_TARGETS_ENEMY } from './effects.js';
+import { isUnitTarget, isManualTarget, UNIT_TARGETS_ENEMY } from './effects.js';
 
 export const MAX_BOARD = 5;
 export const MAX_LP = 100;
+export const INITIAL_DRAW = 4;
 export const DEFAULT_MAX_TURNS = 80;
 export const SUDDEN_DEATH_TURN = 40;
 const MAX_TRIGGER_DEPTH = 8;
@@ -140,16 +141,18 @@ export function createDuel(cfg) {
     if (mIdx !== -1) pool.splice(mIdx, 1);
     const master = instantiateCard(duel, masterId, seatIndex);
     master.isDeckMaster = true;
+    const startLp = s.startingLp ?? MAX_LP;
     duel.seats.push({
       seatIndex,
       duelistId: s.duelistId,
       duelistName: s.duelistName,
       isCpu: !!s.isCpu,
       rngLuckBias: s.luckBias || 0,
-      lp: MAX_LP,
-      maxLp: MAX_LP,
+      lp: startLp,
+      maxLp: startLp,
       barrier: 0,
       normalSummonsRemaining: 1,
+      bonusNormalSummons: 0,
       deck: shuffle(duel, pool.map((cid) => instantiateCard(duel, cid, seatIndex))),
       hand: [],
       board: [master],
@@ -163,11 +166,12 @@ export function createDuel(cfg) {
   const coin = rand(duel) < 0.5 ? 0 : 1;
   duel.activeSeat = coin;
   duel.firstPlayerSeat = coin;
-  duel.turnDecisionReason = `양쪽 덱 마스터가 Lv 1 스타터이므로 코인토스로 ${coin === 0 ? '플레이어' : '상대'}가 선공이 되었습니다.`;
+  duel.turnDecisionReason = `선공 결정 — ${coin === 0 ? '플레이어' : '상대'}가 먼저 시작합니다.`;
   duel.seats[0].board[0].summonedTurnNumber = coin === 0 ? 1 : 2;
   duel.seats[1].board[0].summonedTurnNumber = coin === 1 ? 1 : 2;
 
-  for (let i = 0; i < 5; i++) {
+  const initialDraw = cfg.initialDraw ?? INITIAL_DRAW;
+  for (let i = 0; i < initialDraw; i++) {
     drawCard(duel, duel.seats[0], false);
     drawCard(duel, duel.seats[1], false);
   }
@@ -418,19 +422,49 @@ function resolveUnitTargets(duel, target, ownerSeat, ctx) {
       const sorted = [...enemies].sort((a, b) => b.level - a.level || b.currentAttack - a.currentAttack);
       return sorted.length ? [sorted[0]] : [];
     }
-    case 'ATTACKER': {
-      const a = ctx.attacker;
-      if (!a) return [];
-      const f = findUnit(duel, a.instanceId);
-      if (!f || f.seat.seatIndex === ownerSeat) return [];
-      return hasKw(a, 'DIVINE') ? [] : [f.unit];
-    }
+    case 'ATTACKER':
     case 'SUMMONED': {
-      const s = ctx.summoned;
-      if (!s) return [];
-      const f = findUnit(duel, s.instanceId);
-      if (!f || f.seat.seatIndex === ownerSeat) return [];
-      return hasKw(s, 'DIVINE') ? [] : [f.unit];
+      // 반응 발동(MONSTER_FRONT / FIELD_RIGHT)이면 해당 유발 유닛을 지목하고,
+      // 즉시 발동 또는 턴 시작(FIELD_LEFT)처럼 유발 유닛이 없을 때는 가장 강한 적을 지목한다.
+      const primary = target === 'ATTACKER' ? ctx.attacker : ctx.summoned;
+      const secondary = target === 'ATTACKER' ? ctx.summoned : ctx.attacker;
+      const triggerUnit = primary || secondary;
+      if (triggerUnit) {
+        const f = findUnit(duel, triggerUnit.instanceId);
+        if (!f || f.seat.seatIndex === ownerSeat) return [];
+        return hasKw(triggerUnit, 'DIVINE') ? [] : [f.unit];
+      }
+      const sorted = [...enemies].sort((a, b) => b.currentAttack - a.currentAttack || b.level - a.level);
+      return sorted.length ? [sorted[0]] : [];
+    }
+    case 'CHOSEN_ENEMY':
+    case 'CHOSEN_ALLY':
+    case 'CHOSEN_UNIT':
+    case 'CHOSEN_ANY': {
+      const ct = ctx.chosenTarget;
+      const targetId = typeof ct === 'string' ? ct : ct?.type === 'UNIT' ? ct.instanceId : null;
+      if (targetId) {
+        const f = findUnit(duel, targetId);
+        if (!f) return [];
+        const isAlly = f.seat.seatIndex === ownerSeat;
+        if (target === 'CHOSEN_ALLY' && !isAlly) return [];
+        if (target === 'CHOSEN_ENEMY' && isAlly) return [];
+        if (!isAlly && hasKw(f.unit, 'DIVINE')) return [];
+        return [f.unit];
+      }
+      if (ct?.type === 'HERO') return [];
+      // 세트 마법 자동 발동 등 수동 지정 없이 발동된 경우 규칙상 기본 폴백
+      if (target === 'CHOSEN_ALLY') {
+        const sorted = [...me.board].sort((a, b) => a.currentDefense - b.currentDefense);
+        return sorted.length ? [sorted[0]] : [];
+      }
+      const trig = ctx.attacker || ctx.summoned;
+      if (trig) {
+        const f = findUnit(duel, trig.instanceId);
+        if (f && f.seat.seatIndex !== ownerSeat && !hasKw(f.unit, 'DIVINE')) return [f.unit];
+      }
+      const sorted = [...enemies].sort((a, b) => b.currentAttack - a.currentAttack || b.level - a.level);
+      return sorted.length ? [sorted[0]] : [];
     }
     default:
       return [];
@@ -445,9 +479,15 @@ function effectHasTarget(duel, effect, ownerSeat, ctx) {
   }
   if (effect.op === 'SUMMON_TOKEN') return duel.seats[ownerSeat].board.length < MAX_BOARD;
   if (effect.op === 'DISCARD_RANDOM') return duel.seats[other(ownerSeat)].hand.length > 0;
+  if (effect.target === 'CHOSEN_ANY' && ctx.chosenTarget?.type === 'HERO') {
+    return effect.op === 'DAMAGE_UNIT' || effect.op === 'DAMAGE_HERO' || effect.op === 'HEAL_HERO';
+  }
   if (!effect.target || !isUnitTarget(effect.target)) return true;
   let units = resolveUnitTargetsPreview(duel, effect.target, ownerSeat, ctx);
   if (effect.maxLevel) units = units.filter((u) => u.level <= effect.maxLevel);
+  if (effect.op === 'RETURN_TO_HAND' && isManualTarget(effect.target)) {
+    units = units.filter((u) => !u.isDeckMaster);
+  }
   return units.length > 0;
 }
 
@@ -456,6 +496,68 @@ function resolveUnitTargetsPreview(duel, target, ownerSeat, ctx) {
   if (target === 'ALLY_RANDOM') return [...duel.seats[ownerSeat].board];
   if (target === 'ENEMY_RANDOM') return duel.seats[other(ownerSeat)].board.filter((u) => !hasKw(u, 'DIVINE'));
   return resolveUnitTargets(duel, target, ownerSeat, ctx);
+}
+
+/**
+ * 카드가 필드에 낸 뒤 수동으로 대상을 고르는 카드인지 판단하고,
+ * 선택 가능한 합법 대상(유닛 ID 목록 / 본체 시트 목록)을 돌려준다.
+ */
+export function getManualTargetSpec(duel, defOrUnit, ownerSeat, excludeInstanceIds = []) {
+  if (!duel || !defOrUnit) return null;
+  const def = defOrUnit.cardId ? getDef(defOrUnit.cardId) : defOrUnit;
+  const isMonster = def.type === 'MONSTER';
+  const relevantAbilities = (def.abilities || []).filter((ab) => !isMonster || ab.trigger === 'ON_SUMMON');
+
+  let primaryEffect = null;
+  for (const ab of relevantAbilities) {
+    for (const ef of [...(ab.effects || []), ...(ab.elseEffects || [])]) {
+      if (isManualTarget(ef.target)) {
+        primaryEffect = ef;
+        break;
+      }
+    }
+    if (primaryEffect) break;
+  }
+  if (!primaryEffect) return null;
+
+  const me = duel.seats[ownerSeat];
+  const oppSeat = other(ownerSeat);
+  const opp = duel.seats[oppSeat];
+  const excluded = new Set(excludeInstanceIds || []);
+  const filterUnit = (u, isEnemy) => {
+    if (excluded.has(u.instanceId)) return false;
+    if (isEnemy && hasKw(u, 'DIVINE')) return false;
+    if (primaryEffect.maxLevel && u.level > primaryEffect.maxLevel) return false;
+    if (primaryEffect.op === 'RETURN_TO_HAND' && u.isDeckMaster) return false;
+    return true;
+  };
+
+  const selector = primaryEffect.target;
+  const unitIds = [];
+  if (selector === 'CHOSEN_ALLY' || selector === 'CHOSEN_UNIT' || selector === 'CHOSEN_ANY') {
+    for (const u of me.board) if (filterUnit(u, false)) unitIds.push(u.instanceId);
+  }
+  if (selector === 'CHOSEN_ENEMY' || selector === 'CHOSEN_UNIT' || selector === 'CHOSEN_ANY') {
+    for (const u of opp.board) if (filterUnit(u, true)) unitIds.push(u.instanceId);
+  }
+
+  const heroSeats = [];
+  if (selector === 'CHOSEN_ANY' && (primaryEffect.op === 'DAMAGE_UNIT' || primaryEffect.op === 'DAMAGE_HERO' || primaryEffect.op === 'HEAL_HERO')) {
+    heroSeats.push(oppSeat, ownerSeat);
+  }
+
+  const polarity =
+    selector === 'CHOSEN_ALLY' ? 'GREEN' : selector === 'CHOSEN_ENEMY' ? 'RED' : 'PURPLE';
+
+  return {
+    selector,
+    op: primaryEffect.op,
+    maxLevel: primaryEffect.maxLevel || null,
+    allowHero: heroSeats.length > 0,
+    unitIds,
+    heroSeats,
+    polarity,
+  };
 }
 
 // --------------------------------------------------------------------------
@@ -472,6 +574,8 @@ function applyEffect(duel, effect, ownerSeat, ctx) {
       else if (effect.target === 'BOTH_HEROES') {
         damageHero(duel, ownerSeat, v, null);
         damageHero(duel, opp, v, null);
+      } else if (effect.target === 'CHOSEN_ANY' && ctx.chosenTarget?.type === 'HERO') {
+        damageHero(duel, ctx.chosenTarget.seat, v, ctx.source && ctx.source.type === 'MONSTER' ? ctx.source : null);
       } else damageHero(duel, opp, v, ctx.source && ctx.source.type === 'MONSTER' ? ctx.source : null);
       break;
     case 'DAMAGE_BOTH_HEROES':
@@ -479,20 +583,28 @@ function applyEffect(duel, effect, ownerSeat, ctx) {
       damageHero(duel, opp, v, null);
       break;
     case 'HEAL_HERO':
-      healHero(duel, ownerSeat, v);
+      healHero(duel, effect.target === 'CHOSEN_ANY' && ctx.chosenTarget?.type === 'HERO' ? ctx.chosenTarget.seat : ownerSeat, v);
       break;
     case 'SHIELD_HERO':
       duel.seats[ownerSeat].barrier += v;
       break;
     case 'DAMAGE_UNIT':
-      for (const u of resolveUnitTargets(duel, effect.target, ownerSeat, ctx)) damageUnitByEffect(duel, u, v, ownerSeat, depth);
+      if (effect.target === 'CHOSEN_ANY' && ctx.chosenTarget?.type === 'HERO') {
+        damageHero(duel, ctx.chosenTarget.seat, v, ctx.source && ctx.source.type === 'MONSTER' ? ctx.source : null);
+      } else {
+        for (const u of resolveUnitTargets(duel, effect.target, ownerSeat, ctx)) damageUnitByEffect(duel, u, v, ownerSeat, depth);
+      }
       break;
     case 'DESTROY_UNIT': {
       let units = resolveUnitTargets(duel, effect.target, ownerSeat, ctx);
       if (effect.maxLevel) {
-        units = duel.seats[opp].board.filter((u) => !hasKw(u, 'DIVINE') && u.level <= effect.maxLevel);
-        units.sort((a, b) => b.level - a.level || b.currentAttack - a.currentAttack);
-        units = units.slice(0, 1);
+        if (isManualTarget(effect.target)) {
+          units = units.filter((u) => u.level <= effect.maxLevel);
+        } else {
+          units = duel.seats[opp].board.filter((u) => !hasKw(u, 'DIVINE') && u.level <= effect.maxLevel);
+          units.sort((a, b) => b.level - a.level || b.currentAttack - a.currentAttack);
+          units = units.slice(0, 1);
+        }
       }
       for (const u of units) destroyUnit(duel, u, depth);
       break;
@@ -513,9 +625,16 @@ function applyEffect(duel, effect, ownerSeat, ctx) {
     case 'DRAW':
       for (let i = 0; i < v; i++) drawCard(duel, duel.seats[ownerSeat]);
       break;
-    case 'EXTRA_SUMMON':
-      duel.seats[ownerSeat].normalSummonsRemaining += v || 1;
+    case 'EXTRA_SUMMON': {
+      const amount = v || 1;
+      if (duel.activeSeat === ownerSeat) {
+        duel.seats[ownerSeat].normalSummonsRemaining += amount;
+      } else {
+        // 상대 턴 중 발동(피격·중앙 세트)한 추가 소환권은 소유자의 다음 턴 시작 시 반영
+        duel.seats[ownerSeat].bonusNormalSummons = (duel.seats[ownerSeat].bonusNormalSummons || 0) + amount;
+      }
       break;
+    }
     case 'SUMMON_TOKEN': {
       const me = duel.seats[ownerSeat];
       for (let i = 0; i < (v || 1) && me.board.length < MAX_BOARD; i++) {
@@ -548,9 +667,15 @@ function applyEffect(duel, effect, ownerSeat, ctx) {
     case 'RETURN_TO_HAND': {
       let units = resolveUnitTargets(duel, effect.target, ownerSeat, ctx);
       if (effect.maxLevel) {
-        units = duel.seats[opp].board.filter((u) => !hasKw(u, 'DIVINE') && u.level <= effect.maxLevel && !u.isDeckMaster);
-        units.sort((a, b) => b.level - a.level);
-        units = units.slice(0, 1);
+        if (isManualTarget(effect.target)) {
+          units = units.filter((u) => u.level <= effect.maxLevel && !u.isDeckMaster);
+        } else {
+          units = duel.seats[opp].board.filter((u) => !hasKw(u, 'DIVINE') && u.level <= effect.maxLevel && !u.isDeckMaster);
+          units.sort((a, b) => b.level - a.level);
+          units = units.slice(0, 1);
+        }
+      } else if (isManualTarget(effect.target)) {
+        units = units.filter((u) => !u.isDeckMaster);
       }
       for (const u of units) {
         const f = findUnit(duel, u.instanceId);
@@ -644,17 +769,21 @@ function runAbilities(duel, unit, ownerSeat, trigger, ctx = {}) {
 }
 
 // --------------------------------------------------------------------------
-// 세트 마법
+// 세트 마법 (장소 기반 발동 타이밍)
 // --------------------------------------------------------------------------
 
-function spellTiming(def) {
-  return def.spellTriggerType || def.abilities?.[0]?.trigger || 'INSTANT';
-}
+/** 세트 슬롯별 고정 발동 타이밍 */
+export const SET_SLOT_TIMINGS = {
+  MONSTER_FRONT: 'ON_ATTACKED',
+  FIELD_LEFT: 'ON_OPPONENT_TURN_START',
+  FIELD_RIGHT: 'ON_OPPONENT_TURN_END',
+};
 
 /**
- * 조건이 맞는 세트 마법 1장을 발동한다.
- * - ON_ATTACKED: 공격 대상 몬스터 앞의 마법을 먼저, 없으면 공격받는 쪽 필드 중앙 마법
- * - 그 외 타이밍: 해당 좌석의 몬스터 앞 + 필드 중앙 마법 중 첫 번째
+ * 세트 장소의 타이밍에 맞는 세트 마법 1장을 발동한다.
+ * - MONSTER_FRONT: 해당 몬스터가 공격받을 때(ON_ATTACKED)
+ * - FIELD_LEFT: 상대의 턴 시작 시(ON_OPPONENT_TURN_START)
+ * - FIELD_RIGHT: 상대의 턴 종료 시(ON_OPPONENT_TURN_END)
  */
 export function triggerSetSpell(duel, timing, ownerSeat, ctx = {}) {
   const owner = duel.seats[ownerSeat];
@@ -663,30 +792,27 @@ export function triggerSetSpell(duel, timing, ownerSeat, ctx = {}) {
 
   if (timing === 'ON_ATTACKED' && ctx.targetUnit) {
     const idx = owner.setSpells.findIndex(
-      (s) => s.slotType === 'MONSTER_FRONT' && s.targetMonsterInstanceId === ctx.targetUnit.instanceId && s.triggerTiming === timing && !s.hidden
+      (s) => s.slotType === 'MONSTER_FRONT' && s.targetMonsterInstanceId === ctx.targetUnit.instanceId && !s.hidden
     );
     if (idx !== -1) {
       spell = owner.setSpells[idx];
       removeFn = () => owner.setSpells.splice(owner.setSpells.indexOf(spell), 1);
     }
-  }
-  if (!spell) {
-    for (const k of ['left', 'right']) {
-      const s = duel.fieldSetSlots[k];
-      if (s && s.ownerSeat === ownerSeat && s.triggerTiming === timing && !s.hidden) {
-        spell = s;
-        removeFn = () => {
-          duel.fieldSetSlots[k] = null;
-        };
-        break;
-      }
+  } else if (timing === 'ON_OPPONENT_TURN_START') {
+    const s = duel.fieldSetSlots.left;
+    if (s && s.ownerSeat === ownerSeat && !s.hidden) {
+      spell = s;
+      removeFn = () => {
+        duel.fieldSetSlots.left = null;
+      };
     }
-  }
-  if (!spell && timing !== 'ON_ATTACKED') {
-    const idx = owner.setSpells.findIndex((s) => s.triggerTiming === timing && !s.hidden);
-    if (idx !== -1) {
-      spell = owner.setSpells[idx];
-      removeFn = () => owner.setSpells.splice(owner.setSpells.indexOf(spell), 1);
+  } else if (timing === 'ON_OPPONENT_TURN_END') {
+    const s = duel.fieldSetSlots.right;
+    if (s && s.ownerSeat === ownerSeat && !s.hidden) {
+      spell = s;
+      removeFn = () => {
+        duel.fieldSetSlots.right = null;
+      };
     }
   }
   if (!spell) return null;
@@ -741,6 +867,90 @@ export function canAttackHero(duel, attacker) {
   return opp.board.length === 0 || hasKw(attacker, 'DIRECT');
 }
 
+/**
+ * 공격 전 예상 전투 결과를 규칙 그대로 계산한다. (화면 공격 프리뷰 · AI 공용)
+ * @param {object} duel
+ * @param {object} attacker
+ * @param {object|null} defender null이면 상대 본체 직접 공격
+ */
+export function previewAttack(duel, attacker, defender = null) {
+  if (!duel || duel.status !== 'ONGOING') return { canAttack: false, reason: '진행 중인 듀얼이 없습니다.' };
+  if (duel.turnNumber <= 2) return { canAttack: false, reason: '1~2턴은 준비 단계입니다. 3턴부터 공격할 수 있습니다.' };
+  if (!attacker || !attacker.canAttack || attacker.attacksLeft <= 0) {
+    return { canAttack: false, reason: '이 몬스터는 지금 공격할 수 없습니다.' };
+  }
+
+  const oppSeat = other(attacker.ownerSeat);
+  const opp = duel.seats[oppSeat];
+  if (!defender) {
+    if (!canAttackHero(duel, attacker)) {
+      return { canAttack: false, reason: '상대 필드에 몬스터가 있어 본체를 직접 공격할 수 없습니다.' };
+    }
+    const heroDamage = attacker.currentAttack;
+    const effectiveHp = opp.lp + (opp.barrier || 0);
+    return {
+      canAttack: true,
+      targetType: 'HERO',
+      canKill: heroDamage >= effectiveHp,
+      isLethal: heroDamage >= effectiveHp,
+      heroDamage,
+      recoilDamage: 0,
+      pierceDamage: 0,
+      retaliateDamage: 0,
+      survivesUndying: false,
+      attackerDies: false,
+    };
+  }
+
+  const legal = attackableTargets(duel, attacker.ownerSeat);
+  if (!legal.some((u) => u.instanceId === defender.instanceId)) {
+    const reason = legal.some((u) => hasKw(u, 'TAUNT'))
+      ? '상대의 도발 몬스터부터 공격해야 합니다.'
+      : '은신한 몬스터는 공격 대상으로 지정할 수 없습니다.';
+    return { canAttack: false, targetType: 'UNIT', reason };
+  }
+
+  const atk = attacker.currentAttack;
+  const def = defender.currentDefense;
+  if (atk > def) {
+    const undying = hasKw(defender, 'UNDYING') && !defender.undyingUsed;
+    const overkill = atk - def;
+    const pierceDamage = !undying && hasKw(attacker, 'PIERCE') && overkill > 0 ? overkill : 0;
+    const effectiveHp = opp.lp + (opp.barrier || 0);
+    return {
+      canAttack: true,
+      targetType: 'UNIT',
+      canKill: !undying,
+      survivesUndying: undying,
+      overkill,
+      pierceDamage,
+      heroDamage: pierceDamage,
+      isLethal: pierceDamage >= effectiveHp,
+      recoilDamage: 0,
+      retaliateDamage: 0,
+      attackerDies: false,
+    };
+  }
+
+  let recoil = def - atk;
+  if (recoil > 0 && hasKw(defender, 'BULWARK')) recoil *= 2;
+  const retaliateDamage = hasKw(defender, 'RETALIATE') && defender.currentAttack > 0 ? defender.currentAttack : 0;
+  const attackerDies = retaliateDamage > 0 && attacker.currentDefense - retaliateDamage <= 0 && !(hasKw(attacker, 'UNDYING') && !attacker.undyingUsed);
+  return {
+    canAttack: true,
+    targetType: 'UNIT',
+    canKill: false,
+    survivesUndying: false,
+    overkill: 0,
+    pierceDamage: 0,
+    heroDamage: 0,
+    isLethal: false,
+    recoilDamage: recoil,
+    retaliateDamage,
+    attackerDies,
+  };
+}
+
 // --------------------------------------------------------------------------
 // 명령 처리
 // --------------------------------------------------------------------------
@@ -750,7 +960,7 @@ function assertActive(duel, seat) {
   if (seat !== duel.activeSeat) throw new Error(`턴 순서 불일치: 현재 ${duel.activeSeat}번 시트의 턴입니다.`);
 }
 
-export function summonMonster(duel, seatIndex, cardInstanceId, tributeInstanceIds = []) {
+export function summonMonster(duel, seatIndex, cardInstanceId, tributeInstanceIds = [], chosenTarget = null) {
   assertActive(duel, seatIndex);
   const actor = duel.seats[seatIndex];
   const handIdx = actor.hand.findIndex((c) => c.instanceId === cardInstanceId);
@@ -812,15 +1022,12 @@ export function summonMonster(duel, seatIndex, cardInstanceId, tributeInstanceId
   duel.stats.summons += 1;
   emit(duel, 'event.summon', { who: whoName(duel, seatIndex), card: card.name }, 'summon', seatIndex);
 
-  runAbilities(duel, card, seatIndex, 'ON_SUMMON', {});
-  if (duel.status === 'ONGOING' && isOnBoard(actor, card)) {
-    triggerSetSpell(duel, 'ON_ENEMY_SUMMON', other(seatIndex), { summoned: card });
-  }
+  runAbilities(duel, card, seatIndex, 'ON_SUMMON', { chosenTarget });
   checkWinner(duel);
   return card;
 }
 
-export function playSpell(duel, seatIndex, cardInstanceId) {
+export function playSpell(duel, seatIndex, cardInstanceId, chosenTarget = null) {
   assertActive(duel, seatIndex);
   const actor = duel.seats[seatIndex];
   const handIdx = actor.hand.findIndex((c) => c.instanceId === cardInstanceId);
@@ -828,14 +1035,13 @@ export function playSpell(duel, seatIndex, cardInstanceId) {
   const card = actor.hand[handIdx];
   const def = getDef(card.cardId);
   if (def.type !== 'SPELL') throw new Error('마법 카드만 발동할 수 있습니다.');
-  if (spellTiming(def) !== 'INSTANT') throw new Error(`「${def.name}」은(는) 세트해 두었다가 조건이 맞을 때 발동하는 마법입니다.`);
 
   actor.hand.splice(handIdx, 1);
   actor.graveyard.push(card);
   emit(duel, 'event.spell', { who: whoName(duel, seatIndex), card: def.name }, 'spell', seatIndex);
   let resolved = false;
   for (const ab of def.abilities || []) {
-    if (resolveAbility(duel, ab, seatIndex, { depth: 0 }, def.name) === 'resolved') resolved = true;
+    if (resolveAbility(duel, ab, seatIndex, { depth: 0, chosenTarget }, def.name) === 'resolved') resolved = true;
     checkWinner(duel);
   }
   if (!resolved) emit(duel, 'event.fizzle', { card: def.name }, 'fizzle', seatIndex);
@@ -860,7 +1066,8 @@ export function setSpell(duel, seatIndex, cardInstanceId, slotType, targetMonste
       throw new Error('해당 몬스터 앞에는 이미 세트된 마법이 존재합니다.');
     }
   }
-  if (!['MONSTER_FRONT', 'FIELD_LEFT', 'FIELD_RIGHT'].includes(slotType)) throw new Error('알 수 없는 세트 위치입니다.');
+  const triggerTiming = SET_SLOT_TIMINGS[slotType];
+  if (!triggerTiming) throw new Error('알 수 없는 세트 위치입니다.');
 
   actor.hand.splice(handIdx, 1);
   const item = {
@@ -873,7 +1080,7 @@ export function setSpell(duel, seatIndex, cardInstanceId, slotType, targetMonste
     ownerSeat: seatIndex,
     slotType,
     targetMonsterInstanceId: slotType === 'MONSTER_FRONT' ? targetMonsterInstanceId : null,
-    triggerTiming: spellTiming(def) === 'INSTANT' ? 'ON_TURN_START' : spellTiming(def),
+    triggerTiming,
     effectType: def.effectType,
     effectValue: def.effectValue,
     keywords: def.keywords || [],
@@ -893,7 +1100,7 @@ export function setSpell(duel, seatIndex, cardInstanceId, slotType, targetMonste
 export function attack(duel, seatIndex, attackerInstanceId, targetInstanceId = null) {
   assertActive(duel, seatIndex);
   if (duel.turnNumber <= 2) {
-    throw new Error('첫 1바퀴(1~2턴)는 전개 및 세트 단계로 공격할 수 없습니다. 본격적인 전투는 3턴부터 가능합니다.');
+    throw new Error('1~2턴은 준비 단계입니다. 3턴부터 공격할 수 있습니다.');
   }
   const actor = duel.seats[seatIndex];
   const oppSeat = other(seatIndex);
@@ -1000,7 +1207,8 @@ export function attack(duel, seatIndex, attackerInstanceId, targetInstanceId = n
 /** 턴 시작 처리 (activeSeat 기준) */
 function beginTurn(duel) {
   const seat = duel.seats[duel.activeSeat];
-  seat.normalSummonsRemaining = 1;
+  seat.normalSummonsRemaining = 1 + (seat.bonusNormalSummons || 0);
+  seat.bonusNormalSummons = 0;
   for (const u of seat.board) {
     const frozen = u.frozenUntilTurn && u.frozenUntilTurn >= duel.turnNumber;
     u.canAttack = duel.turnNumber >= 3 && !frozen;
@@ -1019,7 +1227,10 @@ function beginTurn(duel) {
     if (duel.status !== 'ONGOING') return;
     if (isOnBoard(seat, u)) runAbilities(duel, u, duel.activeSeat, 'ON_TURN_START', {});
   }
-  if (duel.status === 'ONGOING') triggerSetSpell(duel, 'ON_TURN_START', duel.activeSeat, {});
+  if (duel.status === 'ONGOING') {
+    triggerSetSpell(duel, 'ON_OPPONENT_TURN_START', other(duel.activeSeat), {});
+    checkWinner(duel);
+  }
 }
 
 export function endTurn(duel, seatIndex) {
@@ -1029,7 +1240,7 @@ export function endTurn(duel, seatIndex) {
     if (duel.status !== 'ONGOING') return;
     if (isOnBoard(seat, u)) runAbilities(duel, u, seatIndex, 'ON_TURN_END', {});
   }
-  if (duel.status === 'ONGOING') triggerSetSpell(duel, 'ON_TURN_END', seatIndex, {});
+  if (duel.status === 'ONGOING') triggerSetSpell(duel, 'ON_OPPONENT_TURN_END', other(seatIndex), {});
   if (checkWinner(duel) !== 'ONGOING') return;
 
   duel.activeSeat = other(seatIndex);
@@ -1053,8 +1264,10 @@ export function applyCommand(duel, cmd) {
         assertActive(duel, cmd.seat);
         throw new Error(`손패에서 카드 ${cmd.cardInstanceId}를 찾을 수 없습니다.`);
       }
-      if (card.type === 'MONSTER') return summonMonster(duel, cmd.seat, cmd.cardInstanceId, cmd.tributeInstanceIds || []);
-      return playSpell(duel, cmd.seat, cmd.cardInstanceId);
+      if (card.type === 'MONSTER') {
+        return summonMonster(duel, cmd.seat, cmd.cardInstanceId, cmd.tributeInstanceIds || [], cmd.chosenTarget || null);
+      }
+      return playSpell(duel, cmd.seat, cmd.cardInstanceId, cmd.chosenTarget || null);
     }
     case 'SET_SPELL':
       return setSpell(duel, cmd.seat, cmd.cardInstanceId, cmd.slotType, cmd.targetMonsterInstanceId);
@@ -1096,32 +1309,45 @@ export function legalActions(duel, seatIndex) {
   const me = duel.seats[seatIndex];
   const actions = [];
 
+  const pushTargetedPlay = (baseAction, def, excludeIds = []) => {
+    const spec = getManualTargetSpec(duel, def, seatIndex, excludeIds);
+    if (!spec) {
+      actions.push(baseAction);
+      return;
+    }
+    const targetChoices = [
+      ...spec.unitIds.map((instanceId) => ({ type: 'UNIT', instanceId })),
+      ...spec.heroSeats.map((seat) => ({ type: 'HERO', seat })),
+    ];
+    if (targetChoices.length === 0) {
+      if (def.type === 'MONSTER') actions.push({ ...baseAction, chosenTarget: null });
+      return;
+    }
+    for (const chosenTarget of targetChoices) {
+      actions.push({ ...baseAction, chosenTarget });
+    }
+  };
+
   for (const card of me.hand) {
+    const def = getDef(card.cardId);
     if (card.type === 'MONSTER') {
       if (me.normalSummonsRemaining <= 0) continue;
       if (card.level === 1) {
-        if (me.board.length < MAX_BOARD) actions.push({ type: 'PLAY_CARD', seat: seatIndex, cardInstanceId: card.instanceId, tributeInstanceIds: [] });
+        if (me.board.length < MAX_BOARD) {
+          pushTargetedPlay({ type: 'PLAY_CARD', seat: seatIndex, cardInstanceId: card.instanceId, tributeInstanceIds: [] }, def);
+        }
       } else {
         for (const opt of tributeOptions(me.board, card.level)) {
-          actions.push({ type: 'PLAY_CARD', seat: seatIndex, cardInstanceId: card.instanceId, tributeInstanceIds: opt });
+          pushTargetedPlay({ type: 'PLAY_CARD', seat: seatIndex, cardInstanceId: card.instanceId, tributeInstanceIds: opt }, def, opt);
         }
       }
     } else {
-      const def = getDef(card.cardId);
-      if (spellTiming(def) === 'INSTANT') {
-        actions.push({ type: 'PLAY_CARD', seat: seatIndex, cardInstanceId: card.instanceId });
-      } else {
-        if (!duel.fieldSetSlots.left) actions.push({ type: 'SET_SPELL', seat: seatIndex, cardInstanceId: card.instanceId, slotType: 'FIELD_LEFT' });
-        else if (!duel.fieldSetSlots.right) actions.push({ type: 'SET_SPELL', seat: seatIndex, cardInstanceId: card.instanceId, slotType: 'FIELD_RIGHT' });
-        if (spellTiming(def) === 'ON_ATTACKED') {
-          for (const u of me.board) {
-            if (!me.setSpells.some((s) => s.slotType === 'MONSTER_FRONT' && s.targetMonsterInstanceId === u.instanceId)) {
-              actions.push({ type: 'SET_SPELL', seat: seatIndex, cardInstanceId: card.instanceId, slotType: 'MONSTER_FRONT', targetMonsterInstanceId: u.instanceId });
-            }
-          }
-        } else if (duel.fieldSetSlots.left && duel.fieldSetSlots.right && me.board.length > 0) {
-          const u = me.board.find((x) => !me.setSpells.some((s) => s.slotType === 'MONSTER_FRONT' && s.targetMonsterInstanceId === x.instanceId));
-          if (u) actions.push({ type: 'SET_SPELL', seat: seatIndex, cardInstanceId: card.instanceId, slotType: 'MONSTER_FRONT', targetMonsterInstanceId: u.instanceId });
+      pushTargetedPlay({ type: 'PLAY_CARD', seat: seatIndex, cardInstanceId: card.instanceId }, def);
+      if (!duel.fieldSetSlots.left) actions.push({ type: 'SET_SPELL', seat: seatIndex, cardInstanceId: card.instanceId, slotType: 'FIELD_LEFT' });
+      if (!duel.fieldSetSlots.right) actions.push({ type: 'SET_SPELL', seat: seatIndex, cardInstanceId: card.instanceId, slotType: 'FIELD_RIGHT' });
+      for (const u of me.board) {
+        if (!me.setSpells.some((s) => s.slotType === 'MONSTER_FRONT' && s.targetMonsterInstanceId === u.instanceId)) {
+          actions.push({ type: 'SET_SPELL', seat: seatIndex, cardInstanceId: card.instanceId, slotType: 'MONSTER_FRONT', targetMonsterInstanceId: u.instanceId });
         }
       }
     }

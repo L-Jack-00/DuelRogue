@@ -180,10 +180,12 @@ export class SafeCardPointerController {
 
   handlePointerDown = (e) => {
     if (e.button !== 0) return; // 좌클릭만 허용
+    if (e.target.closest('.spell-action-popover')) return;
     e.preventDefault();
     this.activePointerId = e.pointerId;
     this.dragStartX = e.clientX;
     this.dragStartY = e.clientY;
+    this.didDrag = false;
     this.lastPointerY = e.clientY;
     this.lastPointerTime = performance.now();
     this.element.setPointerCapture(e.pointerId);
@@ -204,6 +206,9 @@ export class SafeCardPointerController {
   handlePointerMove = (e) => {
     const isDragging = this.activePointerId === e.pointerId;
     if (isDragging) {
+      if (!this.didDrag && Math.hypot(e.clientX - this.dragStartX, e.clientY - this.dragStartY) >= 8) {
+        this.didDrag = true;
+      }
       const now = performance.now();
       const dt = Math.max(1, now - (this.lastPointerTime || now));
       const dy = e.clientY - (this.lastPointerY ?? e.clientY);
@@ -226,18 +231,27 @@ export class SafeCardPointerController {
     if (this.element.hasPointerCapture(e.pointerId)) {
       this.element.releasePointerCapture(e.pointerId);
     }
+    const didDrag = this.didDrag;
     this.activePointerId = null;
+    this.didDrag = false;
     clearTimeout(this.holdTimer);
     this.stopWobbleLoop();
     this.element.classList.remove('is-dragging');
+    if (didDrag) {
+      this.element.dataset.suppressNextClick = '1';
+      setTimeout(() => {
+        delete this.element.dataset.suppressNextClick;
+      }, 80);
+    }
     this.callbacks.onCardHoldEnd?.(this.cardId);
-    this.callbacks.onCardDrop?.(this.cardId, e.clientX, e.clientY);
+    this.callbacks.onCardDrop?.(this.cardId, e.clientX, e.clientY, didDrag);
     this.resetCardVisual();
   };
 
   handlePointerCancel = () => {
     if (this.activePointerId === null) return;
     this.activePointerId = null;
+    this.didDrag = false;
     clearTimeout(this.holdTimer);
     this.stopWobbleLoop();
     this.element.classList.remove('is-dragging');
@@ -271,7 +285,7 @@ export class SafeCardPointerController {
     this.element.style.setProperty('--card-ry', `${tilt.rotateYDeg}deg`);
     this.element.style.setProperty('--glare-x', `${tilt.glareXPercent}%`);
     this.element.style.setProperty('--glare-y', `${tilt.glareYPercent}%`);
-    this.callbacks.onTiltUpdate?.(this.cardId, tilt);
+    this.callbacks.onTiltUpdate?.(this.cardId, tilt, isDragging);
   }
 
   resetCardVisual() {

@@ -4,7 +4,7 @@
  * 능력 데이터 형식:
  *   {
  *     trigger: 'ON_SUMMON' | 'ON_DESTROYED' | 'ON_ATTACK' | 'ON_KILL' | 'ON_TURN_START' | 'ON_TURN_END'   (몬스터)
- *            | 'INSTANT' | 'ON_ATTACKED' | 'ON_TURN_START' | 'ON_TURN_END' | 'ON_ENEMY_SUMMON'          (마법)
+ *            | 'UNIVERSAL' | 'INSTANT' | 'ON_ATTACKED' | 'ON_OPPONENT_TURN_START' | 'ON_OPPONENT_TURN_END' (마법)
  *     condition?: { type: 'selfLpBelow' | 'enemyLpBelow' | 'enemyBoardAtLeast' | 'allyBoardAtLeast'
  *                         | 'handAtMost' | 'allyTagAtLeast' | 'behindOnBoard', value?, tag? },
  *     chance?: 0~1,          // 확률 판정. 실패하면 elseEffects 실행
@@ -19,13 +19,29 @@ import { t } from '../i18n/strings.js';
 import { KEYWORDS, keywordName } from './keywords.js';
 
 /** 대상이 몬스터인 효과의 대상 선택자 */
-export const UNIT_TARGETS_ENEMY = ['ENEMY_ALL', 'ENEMY_RANDOM', 'ENEMY_STRONGEST', 'ENEMY_WEAKEST', 'ENEMY_HIGHEST_LEVEL', 'ATTACKER', 'SUMMONED'];
-export const UNIT_TARGETS_ALLY = ['SELF', 'ALLY_ALL', 'ALLY_OTHERS', 'ALLY_RANDOM', 'ALLY_WEAKEST'];
+export const UNIT_TARGETS_ENEMY = [
+  'ENEMY_ALL',
+  'ENEMY_RANDOM',
+  'ENEMY_STRONGEST',
+  'ENEMY_WEAKEST',
+  'ENEMY_HIGHEST_LEVEL',
+  'ATTACKER',
+  'SUMMONED',
+  'CHOSEN_ENEMY',
+  'CHOSEN_UNIT',
+  'CHOSEN_ANY',
+];
+export const UNIT_TARGETS_ALLY = ['SELF', 'ALLY_ALL', 'ALLY_OTHERS', 'ALLY_RANDOM', 'ALLY_WEAKEST', 'CHOSEN_ALLY'];
+export const MANUAL_TARGETS = ['CHOSEN_ENEMY', 'CHOSEN_ALLY', 'CHOSEN_UNIT', 'CHOSEN_ANY'];
 
 const MULTI_TARGETS = new Set(['ENEMY_ALL', 'ALLY_ALL', 'ALLY_OTHERS']);
 
 export function isUnitTarget(target) {
   return UNIT_TARGETS_ENEMY.includes(target) || UNIT_TARGETS_ALLY.includes(target);
+}
+
+export function isManualTarget(target) {
+  return MANUAL_TARGETS.includes(target);
 }
 
 // --------------------------------------------------------------------------
@@ -70,8 +86,7 @@ export function describeCondition(condition) {
 
 export function triggerLabel(trigger, cardType) {
   if (cardType === 'SPELL') {
-    if (trigger === 'ON_TURN_START') return t('trigger.SET_TURN_START');
-    if (trigger === 'ON_TURN_END') return t('trigger.SET_TURN_END');
+    return t('trigger.UNIVERSAL');
   }
   return t(`trigger.${trigger}`);
 }
@@ -171,13 +186,15 @@ export function effectCost(effect, tokenStatSumOf = () => 14) {
 const TRIGGER_MULTIPLIER = {
   ON_SUMMON: 1.0,
   INSTANT: 1.0,
+  UNIVERSAL: 1.0,
   ON_DESTROYED: 0.9,
   ON_ATTACK: 1.4,
   ON_KILL: 0.6,
   ON_TURN_START: 1.8,
   ON_TURN_END: 1.8,
   ON_ATTACKED: 1.0,
-  ON_ENEMY_SUMMON: 1.0,
+  ON_OPPONENT_TURN_START: 1.0,
+  ON_OPPONENT_TURN_END: 1.0,
 };
 
 export function abilityCost(ability, cardType = 'MONSTER', tokenStatSumOf) {

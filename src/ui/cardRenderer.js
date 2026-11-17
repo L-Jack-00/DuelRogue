@@ -3,6 +3,8 @@ import { t } from '../i18n/strings.js';
 import { keywordDesc } from '../duel/keywords.js';
 import { svgIcon, keywordIcon } from './vectorIcons.js';
 import { normalizeRarityKey } from './raritySystem.js';
+import { getMasteryAttrAndStyle, resolveCardMasteryVisual } from './masterySystem.js';
+import { resolveBakedAsset } from './vectorBaker.js';
 
 const CUSTOM_ART_MAP = {
   C_BLUE_01: 'assets/cards/abyssal_golem_art.webp',
@@ -10,13 +12,17 @@ const CUSTOM_ART_MAP = {
 };
 
 let getRarityPreset = () => 'NONE';
+let getMasteryVisual = (cardId) => resolveCardMasteryVisual(cardId);
 
 /**
- * 카드 렌더러가 현재 레어도 프리셋을 조회할 수 있도록 설정합니다.
+ * 카드 렌더러가 현재 레어도/숙련도 프리셋을 조회할 수 있도록 설정합니다.
  */
-export function configureCardRenderer({ rarityPresetResolver } = {}) {
+export function configureCardRenderer({ rarityPresetResolver, masteryVisualResolver } = {}) {
   if (typeof rarityPresetResolver === 'function') {
     getRarityPreset = rarityPresetResolver;
+  }
+  if (typeof masteryVisualResolver === 'function') {
+    getMasteryVisual = masteryVisualResolver;
   }
 }
 
@@ -33,13 +39,15 @@ export function generateClawLevelHtml(level) {
     const strokesInThisBundle = Math.min(remaining, 5);
     const verticalStrokes = Math.min(strokesInThisBundle, 4);
 
+    const clawSingleSrc = 'assets/badges/level_claw_single.svg';
+    const clawCrossSrc = 'assets/badges/level_claw_cross.svg';
     let strokesHtml = '';
     for (let s = 0; s < verticalStrokes; s++) {
-      strokesHtml += '<img src="assets/badges/level_claw_single.svg" class="claw-stroke" alt="claw" />';
+      strokesHtml += `<img src="${clawSingleSrc}" class="claw-stroke" alt="claw" />`;
     }
 
     const crossHtml = strokesInThisBundle === 5
-      ? '<img src="assets/badges/level_claw_cross.svg" class="claw-cross" alt="claw cross" />'
+      ? `<img src="${clawCrossSrc}" class="claw-cross" alt="claw cross" />`
       : '';
 
     html += `<div class="claw-tally-bundle">${strokesHtml}${crossHtml}</div>`;
@@ -51,11 +59,13 @@ export function generateClawLevelHtml(level) {
 /**
  * 공용 카드 뒷면 HTML을 생성합니다.
  */
-export function generateCardBackHtml() {
+export function generateCardBackHtml(scale = 1.0) {
+  const compact = Number(scale) <= 0.72;
+  const backSrc = resolveBakedAsset('assets/ui/card_back.svg', { compact });
   return `
     <div class="card-composite-wrapper card-back-wrapper">
       <div class="card-back-inner">
-        <img src="assets/ui/card_back.svg" class="card-back-svg-img" alt="" draggable="false" />
+        <img src="${backSrc}" data-compact="${compact ? '1' : '0'}" class="card-back-svg-img" alt="" draggable="false" />
       </div>
     </div>
   `;
@@ -64,14 +74,15 @@ export function generateCardBackHtml() {
 /**
  * 카드 원화 Layer 1 HTML을 생성합니다.
  */
-export function getCardArtHtml(def) {
+export function getCardArtHtml(def, { compact = false } = {}) {
   const artSrc = CUSTOM_ART_MAP[def?.id];
+  const fallbackSrc = resolveBakedAsset('assets/placeholders/procedural_fallback.svg', { compact });
   if (artSrc) {
-    return `<img src="${artSrc}" alt="${def.name}" onerror="this.onerror=null; this.src='assets/placeholders/procedural_fallback.svg';" />`;
+    return `<img src="${artSrc}" alt="${def.name}" onerror="this.onerror=null; this.src='${fallbackSrc}';" />`;
   }
   const factionLabel = def?.faction ? t(`faction.${def.faction}`) : def?.archetype || '';
   return `
-    <img src="assets/placeholders/procedural_fallback.svg" alt="${def?.name || ''}" style="width:100%; height:100%; object-fit:cover;" />
+    <img src="${fallbackSrc}" data-compact="${compact ? '1' : '0'}" alt="${def?.name || ''}" style="width:100%; height:100%; object-fit:cover;" />
     <div class="procedural-art-overlay">
       <span class="procedural-archetype-pill">${factionLabel}</span>
     </div>
@@ -79,30 +90,34 @@ export function getCardArtHtml(def) {
 }
 
 /**
- * 긴 카드 이름을 상단 양각 박스 너비에 맞게 동적 가로 압축(scaleX)하여 렌더링합니다.
+ * 긴 카드 이름을 상단 양각 박스 가용 너비(레벨 발톱자국 제외 영역)에 맞게 동적 가로 압축(scaleX)하여 렌더링합니다.
  */
 export function formatCardNameHtml(name, isMonster, level = 1) {
   if (!name) return '';
   const charUnits = Array.from(name).reduce((acc, ch) => {
-    if (ch === ' ') return acc + 0.3;
-    return acc + (ch.charCodeAt(0) > 255 ? 1.0 : 0.55);
+    if (ch === ' ') return acc + 0.28;
+    return acc + (ch.charCodeAt(0) > 255 ? 0.96 : 0.55);
   }, 0);
 
-  const baseUnits = isMonster ? (level >= 5 ? 4.8 : 5.7) : 8.2;
+  const lv = Math.max(1, Number(level) || 1);
+  const unitsByLevel = { 1: 9.8, 2: 9.1, 3: 8.4, 4: 7.8, 5: 7.7, 6: 6.7 };
+  const monsterUnits = unitsByLevel[lv] ?? Math.max(4.5, 6.7 - (lv - 6) * 0.7);
+  const baseUnits = isMonster ? monsterUnits : 10.8;
   let scaleX = 1.0;
-  let letterSpacing = 0.2;
+  let letterSpacing = -0.02; // em 단위 소폭 자간
   if (charUnits > baseUnits) {
-    scaleX = Math.max(0.45, baseUnits / charUnits);
-    letterSpacing = Math.max(-1.1, 0.2 - (charUnits - baseUnits) * 0.18);
+    scaleX = Math.max(0.55, baseUnits / charUnits);
+    letterSpacing = Math.max(-0.06, -0.02 - (charUnits - baseUnits) * 0.012);
   }
 
-  const squeezerStyle = scaleX < 1.0 || letterSpacing < 0.2
-    ? `display:inline-block; transform:scaleX(${scaleX.toFixed(3)}); transform-origin:left center; letter-spacing:${letterSpacing.toFixed(1)}px; white-space:nowrap;`
-    : 'display:inline-block; letter-spacing:0.2px; white-space:nowrap;';
+  const squeezerStyle = scaleX < 0.999
+    ? `transform:scaleX(${scaleX.toFixed(3)}); letter-spacing:${letterSpacing.toFixed(3)}em;`
+    : `letter-spacing:${letterSpacing.toFixed(3)}em;`;
 
-  const levelClass = isMonster ? (level >= 5 ? 'has-level-wide' : 'has-level') : 'spell';
+  const levelClass = isMonster ? `has-level has-lv-${Math.min(6, lv)}` : 'spell';
+  const safeTitle = String(name).replace(/"/g, '&quot;');
   return `
-    <div class="overlay-name ${levelClass}" title="${name}">
+    <div class="overlay-name ${levelClass}" title="${safeTitle}">
       <span class="card-name-text" style="${squeezerStyle}">${name}</span>
     </div>
   `;
@@ -117,13 +132,22 @@ export function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicD
   }
   const def = cardOrDef.cardId ? lookupCardDef(cardOrDef.cardId) || cardOrDef : cardOrDef;
   const isMonster = def.type === 'MONSTER' || (def.attack > 0 && def.type !== 'SPELL');
+  const isToken = Boolean(def.isToken || cardOrDef.isToken);
   const atk = dynamicAtk ?? cardOrDef.currentAttack ?? def.attack ?? 0;
   const defense = dynamicDef ?? cardOrDef.currentDefense ?? def.defense ?? (def.health ?? 0);
   const level = cardOrDef.level ?? def.level ?? def.cost ?? 1;
   const rarityKey = normalizeRarityKey(def.rarity);
   const rarityPreset = getRarityPreset(rarityKey) || 'NONE';
+  const masteryResolved = typeof getMasteryVisual === 'function' ? getMasteryVisual(def.id) : null;
+  const { attrs: masteryAttrs, style: masteryStyle } = getMasteryAttrAndStyle(masteryResolved);
 
-  const frameSvg = isMonster ? 'assets/frames/card_frame_unit_blank.svg' : 'assets/frames/card_frame_spell_blank.svg';
+  const compact = Boolean(isBattlefield || Number(_scaleFont) <= 0.72);
+  const frameSvg = resolveBakedAsset(
+    isToken
+      ? 'assets/frames/card_frame_token_blank.svg'
+      : (isMonster ? 'assets/frames/card_frame_unit_blank.svg' : 'assets/frames/card_frame_spell_blank.svg'),
+    { compact }
+  );
 
   let bottomContentHtml = '';
   if (isBattlefield) {
@@ -141,11 +165,14 @@ export function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicD
     const kwIds = def.kw || [];
     const allLabels = [
       ...(def.keywords || []).map((k, i) => `<span class="frame-tag-pill keyword-pill">${keywordIcon(kwIds[i] || k)}${k}</span>`),
-      ...(def.tags || []).map((tag) => `<span class="frame-tag-pill tag-pill">${tag.startsWith('#') ? tag : `#${tag}`}</span>`),
+      ...(def.tags || []).map((tag) => {
+        const formatted = `#${String(tag).replace(/^#+/, '')}`;
+        return `<span class="frame-tag-pill tag-pill tag-tier-1">${formatted}</span>`;
+      }),
     ];
     const formattedTagsHtml = allLabels.length > 0
       ? allLabels.join(' ')
-      : '<span class="frame-tag-pill">#몬스터</span>';
+      : '<span class="frame-tag-pill tag-pill">#몬스터</span>';
     bottomContentHtml = `
       <div class="overlay-tags" title="${[...(def.keywords || []), ...(def.tags || [])].join(', ')}">${formattedTagsHtml}</div>
       <div class="overlay-attack-group" title="공격력">
@@ -156,32 +183,46 @@ export function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicD
       </div>
     `;
   } else {
-    const triggerHtml = def.spellTriggerType
-      ? `<div style="font-size:calc(var(--card-unit, 0.5cqw) * 9); color:#047857; font-weight:800; margin-bottom:2px;">[${def.spellTriggerType}]</div>`
+    const triggerLabel = def.spellTriggerType ? t(`trigger.${def.spellTriggerType}`) : '';
+    const triggerHtml = (!def.condition && triggerLabel)
+      ? `<div class="spell-trigger-line">[${triggerLabel}]</div>`
       : '';
-    const spellSummary = def.target ? `[대상: ${def.target}] ${def.effect || def.description}` : (def.effect || def.description || def.effectType);
+    const condLine = def.condition
+      ? `<div class="spell-clause-line"><strong>조건:</strong> ${def.condition}</div>`
+      : '';
+    const effectBody = def.effect || def.description || def.effectType || '';
+    const targetPrefix = def.target && !effectBody.includes(def.target) ? `[대상: ${def.target}] ` : '';
+    const effectLine = `<div class="spell-clause-line">${condLine ? '<strong>효과:</strong> ' : ''}${targetPrefix}${effectBody}</div>`;
     bottomContentHtml = `
       <div class="overlay-spell-effect" title="${def.description || def.effectType}">
         ${triggerHtml}
-        <div>${spellSummary}</div>
+        ${condLine}
+        ${effectLine}
       </div>
     `;
   }
 
-  const wrapperClass = isBattlefield ? 'card-composite-wrapper battlefield-view' : 'card-composite-wrapper';
+  const wrapperClass = [
+    'card-composite-wrapper',
+    isBattlefield ? 'battlefield-view' : '',
+    isToken ? 'is-token-card' : '',
+  ].filter(Boolean).join(' ');
 
   return `
-    <div class="${wrapperClass}" data-rarity="${rarityKey}" data-rarity-preset="${rarityPreset}">
+    <div class="${wrapperClass}" data-card-id="${def.id || ''}" data-rarity="${rarityKey}" data-rarity-preset="${rarityPreset}" ${masteryAttrs} ${masteryStyle ? `style="${masteryStyle}"` : ''}>
+      <div class="mastery-fx-overlay"></div>
       <div class="layer-1-art">
-        ${getCardArtHtml(def)}
+        ${getCardArtHtml(def, { compact })}
         <div class="rarity-art-fx-layer"></div>
       </div>
       <div class="layer-2-frame">
-        <img src="${frameSvg}" alt="${isMonster ? 'Monster Frame' : 'Spell Frame'}" />
+        <img src="${frameSvg}" data-compact="${compact ? '1' : '0'}" alt="${isMonster ? 'Monster Frame' : 'Spell Frame'}" />
       </div>
       <div class="layer-3-dynamic-labels">
-        ${formatCardNameHtml(def.name, isMonster, level)}
-        ${isMonster ? generateClawLevelHtml(level) : ''}
+        <div class="overlay-header-bar ${isMonster ? 'is-monster' : 'is-spell'}">
+          ${formatCardNameHtml(def.name, isMonster, level)}
+          ${isMonster ? generateClawLevelHtml(level) : ''}
+        </div>
         ${bottomContentHtml}
       </div>
     </div>
@@ -233,7 +274,7 @@ export function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = n
     pillsHtml += `<span class="badge-god-tier">${svgIcon('crown')} 덱 마스터</span> `;
   }
   if (isGod) {
-    pillsHtml += `<span class="badge-god-tier">${svgIcon('crown')} 6성 신(神)</span> `;
+    pillsHtml += `<span class="badge-god-tier">${svgIcon('crown')} 신(神)</span> `;
   }
 
   const kwIds = cardOrDef.kw || def.kw || [];
@@ -248,8 +289,8 @@ export function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = n
   if (tags.length > 0) {
     pillsHtml += tags
       .map((tag) => {
-        const formatted = tag.startsWith('#') ? tag : `#${tag}`;
-        return `<span class="badge-race-tag" title="종족 / 소속 표기">${formatted}</span>`;
+        const formatted = `#${String(tag).replace(/^#+/, '')}`;
+        return `<span class="badge-race-tag tag-tier-1" title="태그 (${formatted})">${formatted}</span>`;
       })
       .join(' ');
   }
@@ -282,29 +323,24 @@ export function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = n
   }
 
   if (def.condition || def.effect) {
-    contentHtml += `
-      <div class="rule-block condition-block">
-        <span class="rule-badge-condition">[조건]</span>
-        <span class="rule-content-condition">${def.condition}</span>
-      </div>
-      <div class="rule-block effect-block">
-        <span class="rule-badge-effect">[효과]</span>
-        <span class="rule-content-effect">${def.effect}</span>
-      </div>
-    `;
+    if (def.condition) {
+      contentHtml += `
+        <div class="rule-block condition-block">
+          <span class="rule-badge-condition">[조건]</span>
+          <span class="rule-content-condition">${def.condition}</span>
+        </div>
+      `;
+    }
+    if (def.effect) {
+      contentHtml += `
+        <div class="rule-block effect-block">
+          <span class="rule-badge-effect">[효과]</span>
+          <span class="rule-content-effect">${def.effect}</span>
+        </div>
+      `;
+    }
   } else if (kwList.length === 0) {
     contentHtml += '<div class="rule-block effect-block"><span class="rule-content-effect">특수 효과가 없는 몬스터입니다.</span></div>';
-  }
-
-  if (def.type === 'SPELL' && def.spellTriggerType && def.spellTriggerType !== 'INSTANT') {
-    contentHtml += '<div class="rule-block"><span class="rule-badge-target">[사용법]</span> <span class="rule-content-target">필드에 세트해 두면 조건이 맞을 때 자동으로 발동합니다.</span></div>';
-  }
-  if (def.type === 'SPELL') {
-    contentHtml += `
-      <div class="rule-fizzle-clause">
-        <span class="fizzle-icon">${svgIcon('warn')}</span> 대상이 소멸·파괴되거나 존재하지 않을 경우(미아 상태) 대상 부재로 효과는 <strong>불발</strong> 처리되어 묘지로 보내집니다.
-      </div>
-    `;
   }
 
   effectTargets.forEach((el) => { el.innerHTML = contentHtml; });

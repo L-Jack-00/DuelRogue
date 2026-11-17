@@ -47,6 +47,7 @@ export function factionPool(faction, { includeNeutral = true, includeLegendary =
 
 /** 티어별 레벨 분포(몬스터 장수)와 희귀도 가중치 */
 const DECK_TIERS = {
+  0: { levels: { 1: 18, 2: 2, 3: 0, 4: 0, 5: 0 }, rarity: { COMMON: 12, UNCOMMON: 0, RARE: 0, EPIC: 0 } },
   1: { levels: { 1: 10, 2: 7, 3: 3, 4: 0, 5: 0 }, rarity: { COMMON: 6, UNCOMMON: 3, RARE: 0.4, EPIC: 0 } },
   2: { levels: { 1: 9, 2: 7, 3: 3, 4: 1, 5: 0 }, rarity: { COMMON: 4, UNCOMMON: 4, RARE: 1.2, EPIC: 0.1 } },
   3: { levels: { 1: 8, 2: 7, 3: 3, 4: 1, 5: 1 }, rarity: { COMMON: 3, UNCOMMON: 4, RARE: 2.5, EPIC: 0.6 } },
@@ -64,7 +65,7 @@ const DECK_TIERS = {
  * @param {number} [opts.neutralWeight] 중립 카드 선택 가중치 (기본 0.45)
  */
 export function buildDeck({ faction, tier = 1, rng, godId = null, neutralWeight = 0.45 }) {
-  const cfg = DECK_TIERS[Math.max(1, Math.min(5, tier))];
+  const cfg = DECK_TIERS[Math.max(0, Math.min(5, tier))];
   const masterId = DECK_MASTER_OF_FACTION[faction] || 'C_BLUE_01';
   const pool = factionPool(faction);
   const deck = [masterId, masterId];
@@ -143,16 +144,16 @@ export function createStarterDeck(destiny) {
 // --------------------------------------------------------------------------
 
 export const PACK_DEFS = [
-  { id: 'PACK_BLUE', name: '푸른 성역의 결계 (정의 팩)', type: 'CONTROL', faction: 'BLUE', price: 500, color: '#38bdf8', tag: '방어/카운터',
-    description: '기사단·천사·골렘과 결계 마법이 담긴 정의 진영 팩 (중립 카드 포함)' },
-  { id: 'PACK_RED', name: '진홍빛 화룡의 돌격 (열의 팩)', type: 'AGGRO', faction: 'RED', price: 500, color: '#f87171', tag: '돌격/관통',
-    description: '돌격대·용족·암살단과 화염 마법이 담긴 열의 진영 팩 (중립 카드 포함)' },
-  { id: 'PACK_PURPLE', name: '심연의 도박과 룰렛 (혼돈 팩)', type: 'CHAOS_RNG', faction: 'PURPLE', price: 500, color: '#c084fc', tag: '도박/변수',
-    description: '악마·도박꾼·환영과 뒤틀린 비술이 담긴 혼돈 진영 팩 (중립 카드 포함)' },
-  { id: 'PACK_WILD', name: '방랑자의 보따리 (중립 팩)', type: 'NEUTRAL', faction: 'NEUTRAL', price: 500, color: '#a3e635', tag: '야수/기계/언데드',
-    description: '어느 덱에나 어울리는 야수·기계·정령·언데드·용병 카드 팩' },
-  { id: 'PACK_LEGEND', name: '태초의 신과 거신 (신화 팩)', type: 'LEGEND', faction: 'ALL', price: 1000, color: '#facc15', tag: '신/고위력',
-    description: '희귀 이상 카드만 담긴 팩. 낮은 확률로 3대 신이 등장한다' },
+  { id: 'PACK_BLUE', name: '푸른 성역의 결계', type: 'CONTROL', faction: 'BLUE', price: 500, color: '#38bdf8', tag: '방어 · 결계',
+    description: '기사단·천사·골렘과 결계 마법이 수록된 정의 진영 팩' },
+  { id: 'PACK_RED', name: '진홍빛 화룡의 돌격', type: 'AGGRO', faction: 'RED', price: 500, color: '#f87171', tag: '돌격 · 관통',
+    description: '돌격대·용족·암살단과 화염 마법이 수록된 열의 진영 팩' },
+  { id: 'PACK_PURPLE', name: '심연의 도박과 룰렛', type: 'CHAOS_RNG', faction: 'PURPLE', price: 500, color: '#c084fc', tag: '변수 · 비술',
+    description: '악마·도박꾼·환영과 변칙 마법이 수록된 혼돈 진영 팩' },
+  { id: 'PACK_WILD', name: '방랑자의 보따리', type: 'NEUTRAL', faction: 'NEUTRAL', price: 500, color: '#a3e635', tag: '야수 · 기계 · 용병',
+    description: '어느 덱에나 어울리는 야수·기계·정령·언데드·용병 중립 팩' },
+  { id: 'PACK_LEGEND', name: '태초의 신과 거신', type: 'LEGEND', faction: 'ALL', price: 1000, color: '#facc15', tag: '에픽 ~ 레전드',
+    description: '에픽 이상 등급의 카드만 수록된 특별 팩' },
 ];
 
 function packPool(pack) {
@@ -205,7 +206,7 @@ export function rollShopSingles(rng, round, count) {
 }
 
 export function rarityLabel(r) {
-  return { COMMON: '일반', UNCOMMON: '고급', RARE: '희귀', EPIC: '영웅', LEGENDARY: '전설' }[r] || r;
+  return { COMMON: '노말', UNCOMMON: '레어', RARE: '에픽', EPIC: '유니크', LEGENDARY: '레전드' }[r] || r;
 }
 
 /** 상인 교환 보상 후보 */
@@ -249,11 +250,11 @@ export const DUELISTS = [
 ];
 
 const TIER_STYLE = {
-  1: { stars: '★☆☆☆☆', label: '하 (EASY)', color: '#4ade80', reward: 500, luck: 0.0 },
-  2: { stars: '★★☆☆☆', label: '중 (NORMAL)', color: '#38bdf8', reward: 650, luck: 0.04 },
-  3: { stars: '★★★☆☆', label: '상 (HARD)', color: '#f59e0b', reward: 800, luck: 0.07 },
-  4: { stars: '★★★★☆', label: '극상 (EXPERT)', color: '#fb7185', reward: 950, luck: 0.1 },
-  5: { stars: '★★★★★', label: '지옥 (HELL)', color: '#a855f7', reward: 1000, luck: 0.14 },
+  1: { stars: '★☆☆☆☆', label: '낮음', color: '#4ade80', reward: 500, luck: 0.0 },
+  2: { stars: '★★☆☆☆', label: '보통', color: '#38bdf8', reward: 650, luck: 0.04 },
+  3: { stars: '★★★☆☆', label: '높음', color: '#f59e0b', reward: 800, luck: 0.07 },
+  4: { stars: '★★★★☆', label: '매우 높음', color: '#fb7185', reward: 950, luck: 0.1 },
+  5: { stars: '★★★★★', label: '위험', color: '#a855f7', reward: 1000, luck: 0.14 },
 };
 
 /** 라운드에 맞는 상대를 고른다 */
@@ -264,23 +265,27 @@ export function rollEncounter(round, rng) {
   const style = TIER_STYLE[tier];
   const faction = d.faction === 'ANY' ? ['BLUE', 'RED', 'PURPLE'][Math.floor(rng.nextFloat() * 3)] : d.faction;
   const extra = Math.max(0, round - 5);
-  const name = tier === 5 && round > 5 ? `${d.name} (Lv ${round})` : d.name;
+  const name = `ROUND ${round}`;
+  const isBeginner = round === 1;
   return {
     round,
     tier,
+    isBeginner,
+    cpuLp: isBeginner ? 40 : 100,
+    deckTierOverride: isBeginner ? 0 : null,
     duelistId: tier === 5 ? `${d.id}_${round}` : d.id,
     name,
     opponentName: name,
     title: d.title,
     opponentTitle: d.title,
     stars: style.stars,
-    difficultyLabel: style.label,
+    difficultyLabel: isBeginner ? '입문' : style.label,
     difficultyColor: style.color,
     faction,
     deckArchetype: DESTINY_OF_FACTION[faction],
     personality: d.personality,
-    volatility: d.volatility,
-    luckBias: Math.min(0.3, style.luck + extra * 0.02),
+    volatility: isBeginner ? 0.25 : d.volatility,
+    luckBias: isBeginner ? 0 : Math.min(0.3, style.luck + extra * 0.02),
     rewardGold: style.reward + extra * 200,
     deckSeed: Math.floor(rng.nextFloat() * 1e9),
     description: d.description,
@@ -288,9 +293,9 @@ export function rollEncounter(round, rng) {
 }
 
 export const BOSSES = {
-  BOSS_RED_UNSTOPPABLE_AGGRO: { name: '종언의 어그로 군주 볼카', faction: 'RED', personality: 'AGGRESSIVE', volatility: 0.55, luckBias: 0.12 },
+  BOSS_RED_UNSTOPPABLE_AGGRO: { name: '종언의 화염군주 볼카', faction: 'RED', personality: 'AGGRESSIVE', volatility: 0.55, luckBias: 0.12 },
   BOSS_BLUE_FORTRESS_CONTROL: { name: '절대방벽의 집행관 실피드', faction: 'BLUE', personality: 'DEFENSIVE', volatility: 0.4, luckBias: 0.12 },
-  BOSS_PURPLE_RIGGED_FATE: { name: '사기적 행운의 지배자 조커', faction: 'PURPLE', personality: 'GAMBLER', volatility: 0.8, luckBias: 0.3 },
+  BOSS_PURPLE_RIGGED_FATE: { name: '뒤틀린 운명의 지배자 조커', faction: 'PURPLE', personality: 'GAMBLER', volatility: 0.8, luckBias: 0.3 },
 };
 
 export function bossDeck(bossId, rng) {

@@ -211,6 +211,45 @@ Deno.test('체크포인트 허브 E2E: 상점 → 트레이더 → 덱 편집 �
 
     snap = engine.moveCardTrunkToDeck(card);
     assert(snap.playerDeckCardIds.length === 30, '가방에서 덱으로 복귀 시 30장이 되어야 합니다.');
+
+    // 임의의 레벨 1 몬스터로 덱 마스터 변경 검증
+    const altLv1InDeck = snap.playerDeckCardIds.find((c: string) => {
+      if (c === snap.playerDeckMasterCardId) return false;
+      const def = engine.getCardDef(c);
+      return def.type === 'MONSTER' && (def.level ?? 1) === 1;
+    });
+    assert(!!altLv1InDeck, '덱 내에 변경 가능한 다른 레벨 1 몬스터가 있어야 합니다.');
+    const oldMaster = snap.playerDeckMasterCardId;
+    snap = engine.setDeckMaster(altLv1InDeck);
+    assert(snap.playerDeckMasterCardId === altLv1InDeck, '다른 레벨 1 몬스터로 덱 마스터를 변경할 수 있어야 합니다.');
+
+    // 예전 덱 마스터는 이제 가방으로 이동 가능해야 함
+    snap = engine.moveCardDeckToTrunk(oldMaster);
+    assert(snap.playerDeckCardIds.length === 29, '덱 마스터에서 해제된 카드는 가방으로 이동할 수 있어야 합니다.');
+
+    // 가방으로 뺀 카드를 다시 덱으로 편성하면 30장 유지 및 재지정 가능
+    snap = engine.moveCardTrunkToDeck(oldMaster);
+    snap = engine.setDeckMaster(oldMaster);
+    assert(snap.playerDeckMasterCardId === oldMaster && snap.playerDeckCardIds.length === 30, '원래 덱 마스터도 다시 지정할 수 있어야 합니다.');
+
+    // 덱에 없는(가방에만 있는) 임의의 레벨 1 몬스터를 덱 마스터로 직접 지정 시 30장 유지하며 교체
+    const trunkOnlyLv1 = 'C_RED_01';
+    engine.state.playerTrunkCardIds.push(trunkOnlyLv1);
+    snap = engine.setDeckMaster(trunkOnlyLv1);
+    assert(snap.playerDeckMasterCardId === trunkOnlyLv1 && snap.playerDeckCardIds.length === 30, '가방에만 있던 레벨 1 몬스터도 30장을 유지하며 덱 마스터로 지정할 수 있어야 합니다.');
+    snap = engine.setDeckMaster(oldMaster);
+    assert(snap.playerDeckMasterCardId === oldMaster && snap.playerDeckCardIds.length === 30, '초기 덱 마스터로 원복 시에도 30장이어야 합니다.');
+
+    // 레벨 2 이상 또는 마법 카드는 덱 마스터 지정 거부
+    const nonLv1 = snap.playerDeckCardIds.find((c: string) => {
+      const def = engine.getCardDef(c);
+      return def.type !== 'MONSTER' || (def.level ?? 1) !== 1;
+    });
+    let nonLv1Blocked = false;
+    if (nonLv1) {
+      try { engine.setDeckMaster(nonLv1); } catch { nonLv1Blocked = true; }
+      assert(nonLv1Blocked, '레벨 2 이상 또는 마법 카드는 덱 마스터로 지정할 수 없어야 합니다.');
+    }
   });
 
   await t.step('5. 인카운터 승리 → 상금 획득, 라운드 2', () => {

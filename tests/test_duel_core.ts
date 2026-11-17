@@ -12,10 +12,12 @@ import {
   cloneDuel,
   legalActions,
   attackableTargets,
+  previewAttack,
+  getManualTargetSpec,
   SUDDEN_DEATH_TURN,
 } from '../src/duel/duelCore.js';
 import { chooseAction, createMind, shiftMood, PERSONALITIES } from '../src/ai/duelAi.js';
-import { buildDeck, createStarterDeck } from '../src/run/content.js';
+import { buildDeck, createStarterDeck, rollEncounter } from '../src/run/content.js';
 import { validateDeckComposition, SeededRng } from '../src/duelRogueEngine.js';
 import { runDuel, randomDeck } from './sim_lib.js';
 
@@ -246,38 +248,90 @@ Deno.test('세트 마법: 공격받으면 지뢰가 발동해 공격자를 파�
   assert(duel.seats[1].board.length === 1, '수비 몬스터 생존');
 });
 
-Deno.test('불발: 대상이 없으면 효과 없이 묘지로, 세트형 마법은 즉시 발동 불가', () => {
+Deno.test('모든 마법은 즉시 발동 가능하며, 대상이 없을 때만 불발된다', () => {
   const duel = setup();
   const flash = give(duel, 0, 'C_BLUE_02');
   duel.seats[1].lp = 100;
   applyCommand(duel, { type: 'PLAY_CARD', seat: 0, cardInstanceId: flash.instanceId });
   assert(duel.seats[1].lp === 88, '몬스터가 없어도 본체 피해 효과는 적용');
-  const sniper = COLLECTIBLE_CARDS.find((c) => c.type === 'SPELL' && c.spellTriggerType === 'INSTANT' && c.abilities[0].effects.length === 1 && c.abilities[0].effects[0].op === 'DAMAGE_UNIT' && !c.abilities[0].chance);
+
+  // 대상 없는 단일 유닛 피해 마법은 불발
+  const sniper = COLLECTIBLE_CARDS.find((c) => c.type === 'SPELL' && c.abilities[0].effects.length === 1 && c.abilities[0].effects[0].op === 'DAMAGE_UNIT' && c.abilities[0].effects[0].target === 'ENEMY_STRONGEST' && !c.abilities[0].chance);
   const s = give(duel, 0, sniper.id);
   const r = applyCommand(duel, { type: 'PLAY_CARD', seat: 0, cardInstanceId: s.instanceId });
   assert(r.resolved === false, '대상 없는 단일 피해 마법은 불발');
-  const trap = give(duel, 0, 'S_RED_01');
-  let threw = false;
-  try {
-    applyCommand(duel, { type: 'PLAY_CARD', seat: 0, cardInstanceId: trap.instanceId });
-  } catch {
-    threw = true;
-  }
-  assert(threw, '함정은 즉시 발동 불가');
+
+  // 기존 세트 전용이던 마법(지뢰, 축복 등)도 손패에서 즉시 발동 가능
+  const mineEmpty = give(duel, 0, 'S_RED_01');
+  const rMineEmpty = applyCommand(duel, { type: 'PLAY_CARD', seat: 0, cardInstanceId: mineEmpty.instanceId });
+  assert(rMineEmpty.resolved === false, '적이 없으면 지뢰 즉시 발동도 불발');
+
+  const enemy = place(duel, 1, 'C_BLUE_01'); // DEF 14
+  const mineHit = give(duel, 0, 'S_RED_01'); // 16 dmg -> strongest enemy
+  const rMineHit = applyCommand(duel, { type: 'PLAY_CARD', seat: 0, cardInstanceId: mineHit.instanceId });
+  assert(rMineHit.resolved === true && duel.seats[1].board.length === 0, `지뢰 즉시 발동으로 적(${enemy.name}) 파괴`);
+
+  duel.seats[0].lp = 70;
+  const blessing = give(duel, 0, 'S_BLUE_02');
+  const rBless = applyCommand(duel, { type: 'PLAY_CARD', seat: 0, cardInstanceId: blessing.instanceId });
+  assert(rBless.resolved === true && duel.seats[0].lp === 85, '기존 턴 시작 마법도 즉시 발동 가능');
 });
 
-Deno.test('상대 소환 반응 마법이 발동한다', () => {
-  const ambush = COLLECTIBLE_CARDS.find((c) => c.spellTriggerType === 'ON_ENEMY_SUMMON' && c.abilities[0].effects[0].op === 'DAMAGE_UNIT');
-  assert(ambush, '매복 마법 존재');
-  const duel = setup();
-  duel.activeSeat = 1;
-  const card = give(duel, 1, ambush.id);
-  applyCommand(duel, { type: 'SET_SPELL', seat: 1, cardInstanceId: card.instanceId, slotType: 'FIELD_LEFT' });
-  duel.activeSeat = 0;
-  const m = give(duel, 0, 'C_RED_01');
-  applyCommand(duel, { type: 'PLAY_CARD', seat: 0, cardInstanceId: m.instanceId });
-  assert(duel.fieldSetSlots.left === null, '세트 마법 소모');
-  assert(m.currentDefense < 6 || !duel.seats[0].board.length, '소환된 몬스터가 피해를 입음');
+Deno.test('세트 장소별 발동 타이밍: FIELD_LEFT=상대 턴 시작, FIELD_RIGHT=상대 턴 종료, MONSTER_FRONT=피격', () => {
+  // 1) FIELD_LEFT: 내 턴이나 상대 턴 종료에는 미발동, 상대 턴 시작 시 발동
+  const d1 = setup();
+  d1.activeSeat = 1;
+  const leftBolt = give(d1, 1, 'C_RED_02'); // 상대 본체에 16 피해
+  applyCommand(d1, { type: 'SET_SPELL', seat: 1, cardInstanceId: leftBolt.instanceId, slotType: 'FIELD_LEFT' });
+  applyCommand(d1, { type: 'END_TURN', seat: 1 });
+  // Seat 0 턴 시작 시점(=Seat 1 기준 상대 턴 시작)에 즉시 FIELD_LEFT 발동!
+  assert(d1.fieldSetSlots.left === null && d1.seats[0].lp === 84, `FIELD_LEFT는 상대 턴 시작 시 발동 (상대 LP ${d1.seats[0].lp})`);
+
+  // 역방향 검증: Seat 0가 세트한 뒤 Seat 0 본인 턴 종료 시에는 미발동, Seat 1 턴 시작 시 발동
+  const d1b = setup();
+  const s0Left = give(d1b, 0, 'C_RED_02');
+  applyCommand(d1b, { type: 'SET_SPELL', seat: 0, cardInstanceId: s0Left.instanceId, slotType: 'FIELD_LEFT' });
+  assert(d1b.fieldSetSlots.left !== null && d1b.seats[1].lp === 100, 'FIELD_LEFT 세트 직후 미발동');
+  applyCommand(d1b, { type: 'END_TURN', seat: 0 }); // Seat 0 종료 -> Seat 1(=상대) 턴 시작
+  assert(d1b.fieldSetSlots.left === null && d1b.seats[1].lp === 84, 'Seat 0의 FIELD_LEFT는 Seat 1 턴 시작 시 발동');
+
+  // 2) FIELD_RIGHT: 내 턴 종료 및 상대 턴 시작에는 미발동, 상대 턴 종료 시 발동 + EXTRA_SUMMON 다음 턴 이월 검증
+  const d2 = setup();
+  d2.activeSeat = 1;
+  const rightSpell = give(d2, 1, 'S_PURP_02'); // 1드로우 + 일반 소환권 +1
+  const handBefore = d2.seats[1].hand.length;
+  applyCommand(d2, { type: 'SET_SPELL', seat: 1, cardInstanceId: rightSpell.instanceId, slotType: 'FIELD_RIGHT' });
+  assert(d2.fieldSetSlots.right !== null, 'FIELD_RIGHT 세트 완료');
+  applyCommand(d2, { type: 'END_TURN', seat: 1 }); // Seat 1 본인 턴 종료 + Seat 0 턴 시작: 아직 미발동!
+  assert(d2.fieldSetSlots.right !== null, 'FIELD_RIGHT는 본인 턴 종료 및 상대 턴 시작에 미발동');
+  const p0 = give(d2, 0, 'C_RED_01');
+  applyCommand(d2, { type: 'PLAY_CARD', seat: 0, cardInstanceId: p0.instanceId });
+  assert(d2.fieldSetSlots.right !== null, 'FIELD_RIGHT는 상대 소환 시에도 미발동');
+  applyCommand(d2, { type: 'END_TURN', seat: 0 }); // Seat 0(=상대) 턴 종료 -> FIELD_RIGHT 발동 후 Seat 1 턴 시작!
+  assert(d2.fieldSetSlots.right === null, 'FIELD_RIGHT는 상대 턴 종료 시 소모·발동');
+  assert(d2.seats[1].normalSummonsRemaining === 2, `상대 턴 종료 시 발동한 EXTRA_SUMMON이 내 턴 소환권(${d2.seats[1].normalSummonsRemaining})에 이월`);
+  // 세트 시 패 -1, Seat 1 턴 시작 드로우 +1 => handBefore 유지
+  assert(d2.seats[1].hand.length === handBefore, `FIELD_RIGHT 발동 후 다음 턴 시작 드로우 반영 (패 ${d2.seats[1].hand.length}장)`);
+
+  // 3) MONSTER_FRONT: 지정 몬스터가 공격받을 때만 발동 (턴 시작·종료·다른 대상 공격에는 미발동)
+  const d3 = setup();
+  d3.activeSeat = 1;
+  const g1 = place(d3, 1, 'C_BLUE_01');
+  const g2 = place(d3, 1, 'C_RED_01');
+  const frontBolt = give(d3, 1, 'C_RED_02'); // 기존 즉시 마법 -> 16 피해
+  applyCommand(d3, { type: 'SET_SPELL', seat: 1, cardInstanceId: frontBolt.instanceId, slotType: 'MONSTER_FRONT', targetMonsterInstanceId: g1.instanceId });
+  applyCommand(d3, { type: 'END_TURN', seat: 1 }); // Seat 0 턴
+  applyCommand(d3, { type: 'END_TURN', seat: 0 }); // Seat 0 종료 / Seat 1 시작: MONSTER_FRONT 미발동!
+  assert(d3.seats[1].setSpells.length === 1 && d3.seats[0].lp === 100, 'MONSTER_FRONT는 턴 시작·종료에 미발동');
+  applyCommand(d3, { type: 'END_TURN', seat: 1 }); // Seat 0 턴: g2 공격 -> g1 앞 마법 미발동 (g1 도발 해제 후 테스트)
+  g1.kw = [];
+  const a0 = place(d3, 0, 'C_RED_03');
+  applyCommand(d3, { type: 'ATTACK', seat: 0, attackerInstanceId: a0.instanceId, targetInstanceId: g2.instanceId });
+  assert(d3.seats[1].setSpells.length === 1 && d3.seats[0].lp === 100, '다른 몬스터 공격 시 MONSTER_FRONT 미발동');
+  a0.canAttack = true;
+  a0.attacksLeft = 1;
+  applyCommand(d3, { type: 'ATTACK', seat: 0, attackerInstanceId: a0.instanceId, targetInstanceId: g1.instanceId });
+  assert(d3.seats[1].setSpells.length === 0 && d3.seats[0].lp === 84, '보호 대상 몬스터 피격 시 MONSTER_FRONT 발동');
 });
 
 // --------------------------------------------------------------------------
@@ -293,7 +347,7 @@ Deno.test('후공은 1장 더 들고 시작하고, 덱이 비면 탈진, 결전�
     ],
   });
   const first = duel.firstPlayerSeat;
-  assert(duel.seats[first].hand.length === 5 && duel.seats[1 - first].hand.length === 6, '후공 6장');
+  assert(duel.seats[first].hand.length === 4 && duel.seats[1 - first].hand.length === 5, '선공 4장 · 후공 5장');
 
   const d = setup();
   d.seats[1].deck = [];
@@ -371,6 +425,135 @@ Deno.test('AI 대전 100판이 모두 승패로 끝난다', () => {
   }
 });
 
+Deno.test('공격 결과 프리뷰(previewAttack): 처치/관통/불굴/반사2배/도발차단 정확 판정', () => {
+  const duel = setup();
+  const atk = place(duel, 0, 'C_TITAN_01', { currentAttack: 32, kw: ['PIERCE'] });
+  const weak = place(duel, 1, 'C_RED_01', { currentDefense: 10 });
+  const undy = place(duel, 1, 'C_BLUE_01', { currentDefense: 10, kw: ['UNDYING'] });
+  const prevKill = previewAttack(duel, atk, weak);
+  assert(prevKill.canAttack && prevKill.canKill && prevKill.pierceDamage === 22, '처치 + 관통 피해 예측');
+  const prevUndy = previewAttack(duel, atk, undy);
+  assert(prevUndy.canAttack && !prevUndy.canKill && prevUndy.survivesUndying, '불굴 생존 예측');
+
+  const d2 = setup();
+  const lowAtk = place(d2, 0, 'C_RED_01', { currentAttack: 5 });
+  const wall = place(d2, 1, 'C_BLUE_01', { currentDefense: 11, kw: ['BULWARK'] });
+  const prevWall = previewAttack(d2, lowAtk, wall);
+  assert(prevWall.canAttack && !prevWall.canKill && prevWall.recoilDamage === 12, `철벽 2배 반사 예측 (${prevWall.recoilDamage})`);
+  assert(!previewAttack(d2, lowAtk, null).canAttack, '수호벽으로 직공 차단 예측');
+});
+
+Deno.test('AI 룰 고도화: 불발 마법 회피, 공격 후 제물 소환, 킬각 콤보 및 1라운드 입문자 설정', () => {
+  // 1) 상대 보드가 비어 있으면 적 타겟 마법을 즉시 발동해 불발시키지 않고 세트·대기 선택
+  const d1 = setup();
+  d1.activeSeat = 1;
+  give(d1, 1, 'S_RED_01');
+  const act1 = chooseAction(d1, 1, PERSONALITIES.CALCULATING, getCardDef);
+  assert(act1.type === 'SET_SPELL', `대상이 없어 불발될 마법은 즉시 발동 대신 세트 (${act1.type})`);
+
+  // 2) 공격 가능 Lv1으로 때린 뒤 Lv2로 제물 진화하면 상대 LP를 0으로 만들 수 있는 경우: 먼저 ATTACK 선택!
+  const d2 = setup();
+  d2.activeSeat = 1;
+  d2.seats[0].lp = 10;
+  place(d2, 1, 'C_RED_01', { currentAttack: 10, canAttack: true, attacksLeft: 1 });
+  give(d2, 1, 'C_RED_02');
+  const act2 = chooseAction(d2, 1, PERSONALITIES.CALCULATING, getCardDef);
+  assert(act2.type === 'ATTACK', `제물 소환 전 킬각 공격 우선 (${act2.type})`);
+
+  // 3) 1라운드 입문자 인카운터 설정 검증
+  const enc1 = rollEncounter(1, new SeededRng(42));
+  assert(enc1.tier === 1 && enc1.isBeginner === true && enc1.cpuLp === 40 && enc1.deckTierOverride === 0, '1라운드 입문자 인카운터 설정');
+});
+
+Deno.test('수동 대상 지정(CHOSEN_*): 전투의 함성, 단일 표적 마법, 신성 제외, 빈 보드 소환 허용 및 AI 선택', () => {
+  const TEST_DEFS = {
+    TEST_CHOSEN_UNIT_M: {
+      id: 'TEST_CHOSEN_UNIT_M',
+      name: '테스트 저격수',
+      type: 'MONSTER',
+      faction: 'RED',
+      level: 1,
+      attack: 6,
+      defense: 5,
+      kw: [],
+      tags: [],
+      abilities: [{ trigger: 'ON_SUMMON', effects: [{ op: 'DAMAGE_UNIT', target: 'CHOSEN_ENEMY', value: 6 }] }],
+    },
+    TEST_CHOSEN_BUFF_S: {
+      id: 'TEST_CHOSEN_BUFF_S',
+      name: '테스트 성별축복',
+      type: 'SPELL',
+      faction: 'BLUE',
+      level: 1,
+      kw: [],
+      tags: [],
+      abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'BUFF', target: 'CHOSEN_ALLY', atk: 5, def: 5 }] }],
+    },
+    TEST_CHOSEN_ANY_S: {
+      id: 'TEST_CHOSEN_ANY_S',
+      name: '테스트 마력탄',
+      type: 'SPELL',
+      faction: 'PURPLE',
+      level: 1,
+      kw: [],
+      tags: [],
+      abilities: [{ trigger: 'UNIVERSAL', effects: [{ op: 'DAMAGE_UNIT', target: 'CHOSEN_ANY', value: 8 }] }],
+    },
+  };
+  const getTestDef = (id) => TEST_DEFS[id] || getCardDef(id);
+  registerCatalog(getTestDef);
+  try {
+    // 1) 적이 2마리(일반 vs 신성) 있을 때 getManualTargetSpec는 신성 제외 + 지정된 적만 피해
+    const d1 = setup();
+    const sniper = instantiateCard(d1, 'TEST_CHOSEN_UNIT_M', 0);
+    d1.seats[0].hand.push(sniper);
+    const enemyWeak = place(d1, 1, 'C_RED_01', { currentDefense: 6 });
+    const enemyDiv = place(d1, 1, 'C_BLUE_01', { currentDefense: 6, kw: ['DIVINE'] });
+    const spec1 = getManualTargetSpec(d1, TEST_DEFS.TEST_CHOSEN_UNIT_M, 0);
+    assert(spec1 && spec1.unitIds.length === 1 && spec1.unitIds[0] === enemyWeak.instanceId, 'DIVINE 적은 CHOSEN_ENEMY 대상 제외');
+    applyCommand(d1, {
+      type: 'PLAY_CARD',
+      seat: 0,
+      cardInstanceId: sniper.instanceId,
+      chosenTarget: { type: 'UNIT', instanceId: enemyWeak.instanceId },
+    });
+    assert(d1.seats[1].board.length === 1 && d1.seats[1].board[0].instanceId === enemyDiv.instanceId, '지정한 적만 정확히 파괴');
+
+    // 2) CHOSEN_ENEMY 전투의 함성 몬스터는 적이 비어 있어도 필드에 소환 가능 (하스스톤 룰)
+    const dEmpty = setup();
+    const sniper2 = instantiateCard(dEmpty, 'TEST_CHOSEN_UNIT_M', 0);
+    dEmpty.seats[0].hand.push(sniper2);
+    applyCommand(dEmpty, { type: 'PLAY_CARD', seat: 0, cardInstanceId: sniper2.instanceId });
+    assert(dEmpty.seats[0].board.length === 1 && dEmpty.seats[0].board[0].instanceId === sniper2.instanceId, '빈 보드에서도 전투의 함성 몬스터 소환');
+
+    // 3) CHOSEN_ALLY 주문: 지정한 아군에게 정확히 버프 적용
+    const dAlly = setup();
+    const a1 = place(dAlly, 0, 'C_RED_01', { currentAttack: 5, currentDefense: 5 });
+    const a2 = place(dAlly, 0, 'C_BLUE_01', { currentAttack: 4, currentDefense: 14 });
+    const buffSpell = instantiateCard(dAlly, 'TEST_CHOSEN_BUFF_S', 0);
+    dAlly.seats[0].hand.push(buffSpell);
+    applyCommand(dAlly, {
+      type: 'PLAY_CARD',
+      seat: 0,
+      cardInstanceId: buffSpell.instanceId,
+      chosenTarget: { type: 'UNIT', instanceId: a2.instanceId },
+    });
+    assert(a2.currentAttack === 9 && a1.currentAttack === 5, 'CHOSEN_ALLY로 지정한 아군만 버프');
+
+    // 4) CHOSEN_ANY + AI 킬각 판단: 적 몬스터가 있어도 적 본체 LP 8이면 AI가 본체 타겟으로 킬각 실행
+    const dAny = setup();
+    dAny.activeSeat = 1;
+    dAny.seats[0].lp = 8;
+    place(dAny, 0, 'C_BLUE_01', { currentDefense: 14 });
+    const bolt = instantiateCard(dAny, 'TEST_CHOSEN_ANY_S', 1);
+    dAny.seats[1].hand.push(bolt);
+    const aiMove = chooseAction(dAny, 1, PERSONALITIES.CALCULATING, getTestDef);
+    assert(aiMove.type === 'PLAY_CARD' && aiMove.chosenTarget?.type === 'HERO' && aiMove.chosenTarget?.seat === 0, 'AI가 CHOSEN_ANY로 적 본체 킬각 선택');
+  } finally {
+    registerCatalog(getCardDef);
+  }
+});
+
 // --------------------------------------------------------------------------
 // 카드 데이터 규격
 // --------------------------------------------------------------------------
@@ -391,8 +574,19 @@ Deno.test('카드 데이터: 카드 디자인 원칙을 지킨다', () => {
     for (const ab of c.abilities) {
       for (const e of [...ab.effects, ...(ab.elseEffects || [])]) {
         if (e.op === 'SUMMON_TOKEN') assert(tokenIds.has(e.token), `${c.id} 없는 토큰 ${e.token}`);
-        if (e.op === 'DRAW' && c.type === 'SPELL' && ab.trigger === 'INSTANT') assert(ab.condition || ab.chance, `${c.id} 무조건 즉시 드로우 금지`);
+        if (e.op === 'DRAW' && (e.value || 1) >= 2 && c.type === 'SPELL') assert(ab.condition || ab.chance, `${c.id} 무조건 다중 드로우 금지`);
       }
+    }
+    if (c.type === 'SPELL') {
+      assert(!c.description.includes('세트 후 '), `${c.id} 구버전 세트 조건 문구 잔존: ${c.description}`);
+    }
+    if (Array.isArray(c.tags)) {
+      c.tags.forEach((tg: string) => {
+        assert(tg.startsWith('#') && !tg.startsWith('##'), `${c.id} 태그 단일 # 접두사 불일치: ${tg}`);
+      });
+    }
+    if (c.type === 'MONSTER') {
+      assert(Array.isArray(c.tags) && c.tags.length >= 3, `${c.id} 몬스터 태그 부족`);
     }
     if (c.type !== 'MONSTER' || c.isToken) continue;
     if (c.isGod) {
