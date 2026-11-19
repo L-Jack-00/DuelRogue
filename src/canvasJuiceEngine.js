@@ -422,7 +422,15 @@ export class CanvasJuiceEngine {
     const { x1, y1, x2, y2, color } = this.aimingArrow;
     const pulse = (Math.sin(this.auraPhase * 1.4) + 1) * 0.5;
     const stroke =
-      color === 'GREEN' ? '#22c55e' : color === 'PURPLE' ? '#a855f7' : color === 'YELLOW' ? '#facc15' : '#ef4444';
+      color === 'GREEN'
+        ? '#22c55e'
+        : color === 'WHITE'
+        ? '#ffffff'
+        : color === 'PURPLE'
+        ? '#a855f7'
+        : color === 'YELLOW'
+        ? '#facc15'
+        : '#ef4444';
     const angle = Math.atan2(y2 - y1, x2 - x1);
     const ctrlX = (x1 + x2) * 0.5;
     const ctrlY = Math.min(y1, y2) - Math.min(90, Math.hypot(x2 - x1, y2 - y1) * 0.28);
@@ -464,7 +472,10 @@ export class CanvasJuiceEngine {
     this.activeAuras.forEach(({ rect, colorType }) => {
       let strokeColor = '#22c55e';
       let glowColor = 'rgba(34, 197, 94, 0.4)';
-      if (colorType === 'PURPLE') {
+      if (colorType === 'WHITE') {
+        strokeColor = '#ffffff';
+        glowColor = 'rgba(255, 255, 255, 0.36)';
+      } else if (colorType === 'PURPLE') {
         strokeColor = '#a855f7';
         glowColor = 'rgba(168, 85, 247, 0.42)';
       } else if (colorType === 'YELLOW') {

@@ -67,12 +67,15 @@ export function openAppDialog({
     }
   }
 
+  modal.classList.remove('modal-crt-closing');
   modal.classList.add('active');
   okBtn.focus();
 
   return new Promise((resolve) => {
+    let closed = false;
     const finish = (val) => {
-      modal.classList.remove('active');
+      if (closed) return;
+      closed = true;
       okBtn.onclick = null;
       if (neutralBtn) neutralBtn.onclick = null;
       if (cancelBtn) cancelBtn.onclick = null;
@@ -80,6 +83,12 @@ export function openAppDialog({
       modal.onclick = null;
       document.removeEventListener('keydown', onKeyDown);
       activeAppDialogResolver = null;
+      modal.classList.add('modal-crt-closing');
+      window.setTimeout(() => {
+        if (activeAppDialogResolver) return;
+        modal.classList.remove('modal-crt-closing');
+        modal.classList.remove('active');
+      }, 190);
       resolve(val);
     };
 

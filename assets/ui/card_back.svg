@@ -1,119 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 448" width="100%" height="100%">
   <defs>
-    <radialGradient id="cb-bg" cx="50%" cy="50%" r="72%">
-      <stop offset="0%" stop-color="#1e294a" />
-      <stop offset="52%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#060913" />
+    <radialGradient id="cbBg" cx="50%" cy="48%" r="68%">
+      <stop offset="0%" stop-color="#192552"/>
+      <stop offset="58%" stop-color="#0d132e"/>
+      <stop offset="100%" stop-color="#050814"/>
     </radialGradient>
-    <radialGradient id="cb-core-glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#7dd3fc" stop-opacity="0.85" />
-      <stop offset="35%" stop-color="#0284c7" stop-opacity="0.45" />
-      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
-    </radialGradient>
-    <linearGradient id="cb-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fef3c7" />
-      <stop offset="28%" stop-color="#eab308" />
-      <stop offset="55%" stop-color="#785310" />
-      <stop offset="82%" stop-color="#facc15" />
-      <stop offset="100%" stop-color="#422a06" />
+    <linearGradient id="cbGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="48%" stop-color="#eab308"/>
+      <stop offset="100%" stop-color="#9a6704"/>
     </linearGradient>
-    <linearGradient id="cb-gold-soft" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#fde68a" />
-      <stop offset="50%" stop-color="#b48524" />
-      <stop offset="100%" stop-color="#5a3d0a" />
-    </linearGradient>
-    <radialGradient id="cb-gem" cx="35%" cy="30%" r="65%">
-      <stop offset="0%" stop-color="#e0f2fe" />
-      <stop offset="40%" stop-color="#38bdf8" />
-      <stop offset="85%" stop-color="#0369a1" />
-      <stop offset="100%" stop-color="#0c192c" />
+    <radialGradient id="cbOrb" cx="42%" cy="38%" r="55%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="42%" stop-color="#38bdf8"/>
+      <stop offset="82%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0f172a"/>
     </radialGradient>
-    <pattern id="cb-hatch" width="16" height="16" patternUnits="userSpaceOnUse">
-      <path d="M 0 8 L 8 0 L 16 8 L 8 16 Z" fill="none" stroke="#38bdf8" stroke-width="0.45" opacity="0.12" />
-    </pattern>
-    <filter id="cb-glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="4" result="blur" />
-      <feMerge>
-        <feMergeNode in="blur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
   </defs>
 
-  <!-- 외곽 프레임 및 다크 네이비 바탕 -->
-  <rect x="4" y="4" width="312" height="440" rx="18" fill="url(#cb-bg)" stroke="url(#cb-gold)" stroke-width="6" />
-  <rect x="14" y="14" width="292" height="420" rx="12" fill="url(#cb-hatch)" stroke="url(#cb-gold-soft)" stroke-width="1.5" opacity="0.9" />
-  <rect x="22" y="22" width="276" height="404" rx="8" fill="none" stroke="#93c5fd" stroke-width="0.6" stroke-dasharray="4 3" opacity="0.4" />
+  <!-- Outer Gold Frame & Deep Navy Panel -->
+  <rect x="8" y="8" width="304" height="432" rx="18" fill="url(#cbBg)" stroke="url(#cbGold)" stroke-width="12"/>
+  <rect x="24" y="24" width="272" height="400" rx="10" fill="none" stroke="url(#cbGold)" stroke-width="4" opacity="0.72"/>
 
-  <!-- 사방 코너 대칭 고딕 필리그리 -->
-  <g stroke="url(#cb-gold)" fill="none" stroke-width="1.8">
-    <!-- 좌상 -->
-    <path d="M 22,58 L 22,26 Q 22,22 26,22 L 58,22" />
-    <path d="M 22,42 Q 36,42 42,22" />
-    <circle cx="30" cy="30" r="3" fill="url(#cb-gold)" />
-    <!-- 우상 -->
-    <path d="M 298,58 L 298,26 Q 298,22 294,22 L 262,22" />
-    <path d="M 298,42 Q 284,42 278,22" />
-    <circle cx="290" cy="30" r="3" fill="url(#cb-gold)" />
-    <!-- 좌하 -->
-    <path d="M 22,390 L 22,422 Q 22,426 26,426 L 58,426" />
-    <path d="M 22,406 Q 36,406 42,426" />
-    <circle cx="30" cy="418" r="3" fill="url(#cb-gold)" />
-    <!-- 우하 -->
-    <path d="M 298,390 L 298,422 Q 298,426 294,426 L 262,426" />
-    <path d="M 298,406 Q 284,406 278,426" />
-    <circle cx="290" cy="418" r="3" fill="url(#cb-gold)" />
+  <!-- 4 Bold Corner Diamonds -->
+  <g fill="url(#cbGold)">
+    <polygon points="40,32 48,40 40,48 32,40"/>
+    <polygon points="280,32 288,40 280,48 272,40"/>
+    <polygon points="40,400 48,408 40,416 32,408"/>
+    <polygon points="280,400 288,408 280,416 272,408"/>
   </g>
 
-  <!-- 상하 대칭 아케인 왕관 문양 -->
-  <g fill="none" stroke="url(#cb-gold-soft)" stroke-width="1.4" opacity="0.85">
-    <path d="M 110,46 L 160,28 L 210,46 L 160,62 Z" />
-    <path d="M 110,402 L 160,420 L 210,402 L 160,386 Z" />
-    <circle cx="160" cy="45" r="4" fill="url(#cb-gold)" />
-    <circle cx="160" cy="403" r="4" fill="url(#cb-gold)" />
+  <!-- Simple Crisp Magic Circle Rings -->
+  <circle cx="160" cy="224" r="98" fill="#1e3a8a" fill-opacity="0.18" stroke="url(#cbGold)" stroke-width="7"/>
+  <circle cx="160" cy="224" r="80" fill="none" stroke="url(#cbGold)" stroke-width="3" opacity="0.78"/>
+
+  <!-- Bold Interlocking Hexagram Star Seal (app_icon motif) -->
+  <g stroke="url(#cbGold)" stroke-width="8.5" stroke-linejoin="round" fill="none">
+    <polygon points="160,130 241,271 79,271"/>
+    <polygon points="160,318 79,177 241,177"/>
   </g>
 
-  <!-- 중앙 소용돌이 발광 & 다중 동심원 마법진 -->
-  <circle cx="160" cy="224" r="118" fill="url(#cb-core-glow)" />
-
-  <g stroke="url(#cb-gold)" fill="none" opacity="0.9">
-    <circle cx="160" cy="224" r="108" stroke-width="2.2" />
-    <circle cx="160" cy="224" r="98" stroke-width="1" stroke-dasharray="6 4" />
-    <circle cx="160" cy="224" r="84" stroke-width="1.5" />
-    <circle cx="160" cy="224" r="62" stroke-width="1.1" stroke-dasharray="2 4" />
-    <!-- 8방위 룬 광선 -->
-    <line x1="160" y1="108" x2="160" y2="340" stroke-width="0.9" opacity="0.45" />
-    <line x1="44" y1="224" x2="276" y2="224" stroke-width="0.9" opacity="0.45" />
-    <line x1="78" y1="142" x2="242" y2="306" stroke-width="0.8" opacity="0.35" />
-    <line x1="242" y1="142" x2="78" y2="306" stroke-width="0.8" opacity="0.35" />
-  </g>
-
-  <!-- 12각형 아케인 별 & 이중 역삼각형 -->
-  <g stroke="url(#cb-gold)" fill="none" stroke-width="1.6" filter="url(#cb-glow)">
-    <polygon points="160,126 244,273 76,273" opacity="0.88" />
-    <polygon points="160,322 244,175 76,175" opacity="0.88" />
-    <polygon points="160,144 216,224 160,304 104,224" stroke-width="1.3" opacity="0.7" />
-  </g>
-
-  <!-- 8개 궤도 보석 노드 -->
-  <g fill="url(#cb-gold)" stroke="#0f172a" stroke-width="1">
-    <circle cx="160" cy="116" r="4.5" />
-    <circle cx="160" cy="332" r="4.5" />
-    <circle cx="52" cy="224" r="4.5" />
-    <circle cx="268" cy="224" r="4.5" />
-    <circle cx="84" cy="148" r="3.5" />
-    <circle cx="236" cy="148" r="3.5" />
-    <circle cx="84" cy="300" r="3.5" />
-    <circle cx="236" cy="300" r="3.5" />
-  </g>
-
-  <!-- 중앙 눈과 별의 인장 (Eye-and-Star Emblem) -->
-  <g filter="url(#cb-glow)">
-    <path d="M 112,224 Q 160,186 208,224 Q 160,262 112,224 Z" fill="#091124" stroke="url(#cb-gold)" stroke-width="3" />
-    <circle cx="160" cy="224" r="24" fill="url(#cb-gem)" stroke="url(#cb-gold)" stroke-width="2" />
-    <!-- 눈동자 내부 팔각 별 -->
-    <polygon points="160,204 165,219 180,224 165,229 160,244 155,229 140,224 155,219" fill="#e0f2fe" opacity="0.95" />
-    <circle cx="160" cy="224" r="5" fill="#082f49" />
-    <circle cx="157" cy="220" r="2.2" fill="#ffffff" opacity="0.9" />
-  </g>
+  <!-- Center Eye & Sapphire Star Seal -->
+  <circle cx="160" cy="224" r="42" fill="#070d22" stroke="url(#cbGold)" stroke-width="5"/>
+  <path d="M 122,224 Q 160,188 198,224 Q 160,260 122,224 Z" fill="#020617" stroke="url(#cbGold)" stroke-width="4.5" stroke-linejoin="round"/>
+  <circle cx="160" cy="224" r="17" fill="url(#cbOrb)" stroke="#e0f2fe" stroke-width="2"/>
+  <circle cx="160" cy="224" r="7" fill="#050814"/>
+  <path d="M 160,211 L 163,221 L 173,224 L 163,227 L 160,237 L 157,227 L 147,224 L 157,221 Z" fill="#fef08a"/>
 </svg>

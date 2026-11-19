@@ -142,6 +142,8 @@ export const DESTINY_PROFILES = {
 export const DEFAULT_CARD_CATALOG = CARD_CATALOG;
 export const BINDER_CATALOG = COLLECTIBLE_CARDS;
 
+export const MAX_RUN_CHANCES = 3;
+
 export function validateDeckComposition(deckCardIds, catalogMap, deckMasterCardId) {
   if (!deckCardIds || deckCardIds.length !== 30) {
     return {
@@ -214,6 +216,9 @@ export class DuelRogueEngine {
       isSeededRun: Boolean(opts.isSeededRun),
       phase: 'IDLE',
       runMode: 'CHECKPOINT',
+      maxChances: MAX_RUN_CHANCES,
+      remainingChances: MAX_RUN_CHANCES,
+      lastDefeatInfo: null,
       selectedDestiny: null,
       assignedFinalBoss: null,
       playerDeckCardIds: [],
@@ -251,6 +256,12 @@ export class DuelRogueEngine {
     this.state = JSON.parse(JSON.stringify(data.state));
     this.rng = new SeededRng(1);
     this.rng.state = data.rngState >>> 0;
+    if (this.state.maxChances == null) {
+      this.state.maxChances = this.state.runMode === 'LINEAR' ? 1 : MAX_RUN_CHANCES;
+    }
+    if (this.state.remainingChances == null) {
+      this.state.remainingChances = this.state.phase === 'RUN_FAILED' ? 0 : this.state.maxChances;
+    }
     // 진행 중이던 CPU 턴 계획은 다시 세운다
     if (this.state.activeDuel?.cpuMind) this.state.activeDuel.cpuMind.turnPlanned = null;
     return this.getSnapshot();
@@ -326,12 +337,19 @@ export class DuelRogueEngine {
     this.state.runMode = mode;
 
     if (mode === 'CHECKPOINT') {
+      this.state.maxChances = MAX_RUN_CHANCES;
+      this.state.remainingChances = MAX_RUN_CHANCES;
+      this.state.lastDefeatInfo = null;
       this.state.gold = 1000;
       this.state.roundNumber = 1;
       this.state.phase = 'STAGE_CHECKPOINT';
       this.generateCheckpointState();
       return this.getSnapshot();
     }
+
+    this.state.maxChances = 1;
+    this.state.remainingChances = 1;
+    this.state.lastDefeatInfo = null;
 
     // 레거시 선형 런 모드 (Suite 3 100% 호환)
     const cpuDeck = createStartingDeck('RED_ZEAL');
@@ -392,6 +410,7 @@ export class DuelRogueEngine {
    */
   generateCheckpointState() {
     const round = this.state.roundNumber || 1;
+    this.state.shopVisitedRound = null;
     const eventRng = this.subRng('checkpoint', round, 'event');
 
     // 0. 돌발 랜덤 이벤트 추첨 (덱 편집/최종 보스를 제외한 상점/암시장/보급/현상금 요소)
@@ -420,7 +439,7 @@ export class DuelRogueEngine {
     const stockBonus = checkpointEvent.id === 'SURPLUS_SUPPLY' ? 1 : 0;
 
     for (let i = 0; i < Math.min(normals.length, basePackCount); i++) {
-      const stock = Math.floor(shopRng.nextFloat() * 3) + 1 + stockBonus;
+      const stock = Math.max(1, Math.floor(shopRng.nextFloat() * 3) + 1 + stockBonus);
       const entry = packShelfEntry(normals[i], shopRng);
       shopPacks.push({
         ...entry,
@@ -432,7 +451,7 @@ export class DuelRogueEngine {
     const legendChance = round >= 2 ? 0.68 : 0.25;
     if (shopRng.nextFloat() < legendChance || checkpointEvent.id === 'SURPLUS_SUPPLY') {
       const legendEntry = packShelfEntry(PACK_DEFS.find((p) => p.faction === 'ALL'), shopRng);
-      const legendStock = round >= 3 && shopRng.nextFloat() < 0.3 ? 2 : 1;
+      const legendStock = Math.max(1, round >= 3 && shopRng.nextFloat() < 0.3 ? 2 : 1);
       shopPacks.push({
         ...legendEntry,
         price: Math.max(200, Math.round((legendEntry.price * discountRate) / 50) * 50),
@@ -612,7 +631,10 @@ export class DuelRogueEngine {
       tier: encounter.deckTierOverride ?? encounter.tier ?? Math.min(5, encounter.round),
       rng: deckRng,
     });
-    const duelSeed = hashSeedParts(this.state.seed, 'duel_encounter', round, encounter.duelistId);
+    const attemptIndex = Math.max(0, (this.state.maxChances ?? MAX_RUN_CHANCES) - (this.state.remainingChances ?? MAX_RUN_CHANCES));
+    const duelSeed = attemptIndex > 0
+      ? hashSeedParts(this.state.seed, 'duel_encounter', round, encounter.duelistId, 'retry', attemptIndex)
+      : hashSeedParts(this.state.seed, 'duel_encounter', round, encounter.duelistId);
 
     this.state.phase = 'DUEL_ENCOUNTER';
     this.state.activeDuel = this.createSymmetricDuel(
@@ -1012,7 +1034,10 @@ export class DuelRogueEngine {
     const bossId = this.state.assignedFinalBoss || 'BOSS_RED_UNSTOPPABLE_AGGRO';
     const boss = BOSSES[bossId] || BOSSES.BOSS_RED_UNSTOPPABLE_AGGRO;
     const deck = bossDeck(bossId, this.subRng('boss_deck', bossId));
-    const bossDuelSeed = hashSeedParts(this.state.seed, 'duel_boss', bossId);
+    const attemptIndex = Math.max(0, (this.state.maxChances ?? MAX_RUN_CHANCES) - (this.state.remainingChances ?? MAX_RUN_CHANCES));
+    const bossDuelSeed = attemptIndex > 0
+      ? hashSeedParts(this.state.seed, 'duel_boss', bossId, 'retry', attemptIndex)
+      : hashSeedParts(this.state.seed, 'duel_boss', bossId);
     return this.createSymmetricDuel(
       'DUEL_STAGE_5_BOSS',
       bossId,
@@ -1136,7 +1161,51 @@ export class DuelRogueEngine {
     } else if (duel.status === 'SEAT_1_WIN' || seat0.lp <= 0) {
       duel.outcomeApplied = true;
       duel.status = 'SEAT_1_WIN';
-      this.state.phase = 'RUN_FAILED'; // 인카운터든 보스든 패배 시 즉시 런 실패 (영구 사망)
+      const isBossDuel = this.state.phase === 'STAGE_5_FINAL_BOSS';
+      if (isBossDuel) {
+        this.state.remainingChances = 0;
+        duel.remainingChancesAfterDefeat = 0;
+        duel.bossInstantDefeat = true;
+        this.state.lastDefeatInfo = {
+          duelistName: duel.seats?.[1]?.duelistName || '최종 보스',
+          roundNumber: this.state.roundNumber || 1,
+          wasBoss: true,
+          remainingChances: 0,
+          maxChances: this.state.maxChances || MAX_RUN_CHANCES,
+        };
+        this.state.phase = 'RUN_FAILED';
+      } else if (this.state.runMode === 'CHECKPOINT') {
+        const prevChances = this.state.remainingChances ?? (this.state.maxChances || MAX_RUN_CHANCES);
+        const nextChances = Math.max(0, prevChances - 1);
+        this.state.remainingChances = nextChances;
+        duel.remainingChancesAfterDefeat = nextChances;
+        if (nextChances > 0) {
+          this.state.lastEncounterReward = 0;
+          this.state.roundNumber = (this.state.roundNumber || 1) + 1;
+          this.state.lastDefeatInfo = {
+            duelistName: duel.seats?.[1]?.duelistName || '상대',
+            roundNumber: this.state.roundNumber - 1,
+            nextRoundNumber: this.state.roundNumber,
+            wasBoss: false,
+            remainingChances: nextChances,
+            maxChances: this.state.maxChances || MAX_RUN_CHANCES,
+          };
+          this.state.phase = 'STAGE_CHECKPOINT';
+          this.generateCheckpointState();
+        } else {
+          this.state.lastDefeatInfo = {
+            duelistName: duel.seats?.[1]?.duelistName || '상대',
+            roundNumber: this.state.roundNumber || 1,
+            wasBoss: false,
+            remainingChances: 0,
+            maxChances: this.state.maxChances || MAX_RUN_CHANCES,
+          };
+          this.state.phase = 'RUN_FAILED';
+        }
+      } else {
+        this.state.remainingChances = 0;
+        this.state.phase = 'RUN_FAILED';
+      }
     }
     return this.getSnapshot();
   }

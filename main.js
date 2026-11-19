@@ -37,8 +37,10 @@ import {
   configureCardRenderer,
   generateClawLevelHtml,
   generateCardBackHtml,
+  getCardArtSrc,
   getCardArtHtml,
   formatCardNameHtml,
+  fitCardNameTextBoxes,
   generateCompositeCardHtml,
   generateIdleCardHtml,
   updateCardInspector,
@@ -47,6 +49,8 @@ import {
   RARITY_TIERS,
   RARITY_LABELS_KO,
   RARITY_PRESET_INFO,
+  CARD_NAME_FONT_PRESETS,
+  DEFAULT_CARD_NAME_FONT_SETTINGS,
   loadRarityConfig,
   saveRarityConfig,
   cloneDefaultRarityConfig,
@@ -65,16 +69,34 @@ import {
   resolveBakedAsset,
   upgradeDomSvgImages,
 } from './src/ui/vectorBaker.js';
+import { applySceneBackdrop, npcPortraitChain, npcDialogue, productWrapHtml } from './src/ui/sceneArt.js';
+import {
+  SLEEVE_PRESETS,
+  MAT_PRESETS,
+  MAT_RECOMMENDED_SIZE,
+  CUSTOM_SLEEVE_OPTIONS,
+  DEFAULT_CUSTOM_SLEEVE,
+  normalizeCustomSleeve,
+  dialColorToCss,
+  buildCustomSleeveSvgDataUri,
+  loadCosmeticsConfig,
+  saveCosmeticsConfig,
+  resolvePlayerSleeveSpec,
+  applyDuelCosmetics,
+} from './src/ui/cosmeticsSystem.js';
 
 let rarityConfig = loadRarityConfig();
 let masteryFxConfig = loadMasteryFxConfig();
+let cosmeticsConfig = loadCosmeticsConfig();
 applyRarityConfigToRoot(rarityConfig);
+applyDuelCosmetics(cosmeticsConfig);
 configureCardRenderer({
   rarityPresetResolver: (rarityKey) => rarityConfig[rarityKey]?.preset || 'NONE',
   masteryVisualResolver: (cardId) => {
     const entry = typeof binder !== 'undefined' ? binder?.entries?.[cardId] : null;
     return resolveCardMasteryVisual(cardId, entry?.masteryPoints || 0, entry?.state || 0, masteryFxConfig);
   },
+  sleeveResolver: () => resolvePlayerSleeveSpec(cosmeticsConfig),
 });
 
 // 1. 브라우저 개입 원천 차단기 (우클릭, F5, Ctrl+R, 줌 차단)
@@ -113,7 +135,7 @@ const runSaves = new RunSaveStore(window.localStorage);
 function artImg(src, className, fallbackHtml) {
   if (!src) return fallbackHtml;
   const resolvedSrc = resolveBakedAsset(src);
-  return `<img src="${resolvedSrc}" data-raw-src="${src}" class="${className}" alt="" draggable="false" onerror="this.remove(); this.nextElementSibling && this.nextElementSibling.classList.remove('art-fallback-hidden');" onload="this.nextElementSibling && this.nextElementSibling.classList.add('art-fallback-hidden');" /><span class="art-fallback art-fallback-hidden">${fallbackHtml}</span>`;
+  return `<img src="${resolvedSrc}" data-raw-src="${src}" class="${className}" alt="" draggable="false" onerror="var n = this.nextElementSibling; this.remove(); n && n.classList.remove('art-fallback-hidden');" onload="this.nextElementSibling && this.nextElementSibling.classList.add('art-fallback-hidden');" /><span class="art-fallback art-fallback-hidden">${fallbackHtml}</span>`;
 }
 
 const PACK_ART = {
@@ -124,19 +146,32 @@ const PACK_ART = {
   PACK_LEGEND: 'assets/ui/pack_legend.svg',
 };
 
-/** 상점 주인·수상한 상인 초상화: 내장 벡터 SVG 초상화 반환 */
-function npcPortraitSrc(kind, _round, _mood = null) {
-  if (kind === 'shop') return 'assets/ui/npc_shopkeeper.svg';
-  if (kind === 'merchant') return 'assets/ui/npc_merchant.svg';
-  return null;
+/** Image chain as nested artImg markup: the first file that loads is shown. */
+function artChainHtml(chain, className, finalFallbackHtml) {
+  return chain.reduceRight((fallback, src) => artImg(src, className, fallback), finalFallbackHtml);
 }
 
-/** index.html에 미리 넣어 둔 그림 슬롯([data-art])을 채운다 */
+/**
+ * Shopkeeper or back-alley dealer for this encounter. A different person per
+ * run and round; mood picks the expression, with the person's base picture
+ * and then the vector portrait as fallbacks.
+ * @returns {{ key: string, html: string }}
+ */
+function npcPortraitHtml(kind, round, mood = null) {
+  const chain = npcPortraitChain(kind, engine?.state?.seed, round, mood);
+  return { key: chain.join('|'), html: artChainHtml(chain, 'npc-portrait-img', svgIcon(kind === 'shop' ? 'shop' : 'merchant')) };
+}
+
+/**
+ * Fills the art slots written in index.html ([data-art]).
+ * data-art-fallback lists more files to try, separated by spaces.
+ */
 function hydrateStaticArt(root = document) {
   root.querySelectorAll('[data-art]').forEach((el) => {
     if (el.dataset.hydrated) return;
     el.dataset.hydrated = '1';
-    el.innerHTML = artImg(el.dataset.art, el.dataset.artClass || 'static-art-img', el.innerHTML);
+    const chain = [el.dataset.art, ...(el.dataset.artFallback || '').split(/\s+/).filter(Boolean)];
+    el.innerHTML = artChainHtml(chain, el.dataset.artClass || 'static-art-img', el.innerHTML);
   });
 }
 hydrateStaticArt();
@@ -149,21 +184,33 @@ function applyStaticTranslations(root = document) {
 }
 applyStaticTranslations();
 
-/** 진행 상황을 저장한다. 런이 끝났으면 저장본을 지운다. (잦은 호출을 묶어 한 번만 쓴다) */
+/** 진행 상황을 저장한다. 런이 끝났으면 저장본을 지운다. */
 let saveTimer = null;
+function saveRunNow() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  const phase = engine?.state?.phase;
+  if (!phase || phase === 'IDLE') return;
+  if (phase === 'RUN_VICTORY' || phase === 'RUN_FAILED') {
+    runSaves.clear();
+  } else {
+    runSaves.save(engine.exportSave());
+  }
+  refreshContinueButton();
+}
+
 function scheduleRunSave() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    const phase = engine.state.phase;
-    if (phase === 'IDLE') return;
-    if (phase === 'RUN_VICTORY' || phase === 'RUN_FAILED') {
-      runSaves.clear();
-    } else {
-      runSaves.save(engine.exportSave());
-    }
-    refreshContinueButton();
+    saveTimer = null;
+    saveRunNow();
   }, 250);
 }
+
+window.addEventListener('beforeunload', () => saveRunNow());
+window.addEventListener('pagehide', () => saveRunNow());
 
 function refreshContinueButton() {
   const btn = document.getElementById('btn-continue-run');
@@ -250,13 +297,15 @@ class DuelTurnTimer {
     if (!this.isPlayerTurn || this.isPaused) return;
     this.isPaused = true;
     this.stopInterval();
-    document.getElementById('timer-pause-popup')?.classList.remove('is-hidden');
+    const popup = document.getElementById('timer-pause-popup');
+    if (popup) openModalWithCrt(popup, { mode: 'hidden' });
     document.getElementById('turn-timer-container')?.classList.add('is-paused');
   }
 
   resume() {
     this.isPaused = false;
-    document.getElementById('timer-pause-popup')?.classList.add('is-hidden');
+    const popup = document.getElementById('timer-pause-popup');
+    if (popup) closeModalWithCrt(popup, { mode: 'hidden' });
     document.getElementById('turn-timer-container')?.classList.remove('is-paused');
     if (this.isPlayerTurn && this.active) {
       this.stopInterval();
@@ -280,7 +329,8 @@ class DuelTurnTimer {
     this.active = true;
     this.isPlayerTurn = true;
     this.isPaused = false;
-    document.getElementById('timer-pause-popup')?.classList.add('is-hidden');
+    const popup = document.getElementById('timer-pause-popup');
+    if (popup) closeModalWithCrt(popup, { mode: 'hidden' });
     document.getElementById('turn-timer-container')?.classList.remove('is-paused');
     this.updateUI();
 
@@ -301,7 +351,8 @@ class DuelTurnTimer {
     this.isPlayerTurn = false;
     this.active = false;
     this.isPaused = false;
-    document.getElementById('timer-pause-popup')?.classList.add('is-hidden');
+    const popup = document.getElementById('timer-pause-popup');
+    if (popup) closeModalWithCrt(popup, { mode: 'hidden' });
     document.getElementById('turn-timer-container')?.classList.remove('is-paused');
     this.updateCpuTurnUI();
   }
@@ -319,7 +370,8 @@ class DuelTurnTimer {
     this.isPlayerTurn = false;
     this.isPaused = false;
     this.lastTurnKey = null;
-    document.getElementById('timer-pause-popup')?.classList.add('is-hidden');
+    const popup = document.getElementById('timer-pause-popup');
+    if (popup) closeModalWithCrt(popup, { mode: 'hidden' });
     document.getElementById('turn-timer-container')?.classList.remove('is-paused');
   }
 
@@ -404,7 +456,79 @@ const VIEW_BGM = {
 let currentViewKey = null;
 let viewTransitionTimerId = null;
 
-function switchView(viewKey) {
+/** Background of the current view (see src/ui/sceneArt.js). */
+function refreshSceneBackdrop(viewKey = currentViewKey) {
+  if (!viewKey) return;
+  const phase = engine?.state?.phase;
+  applySceneBackdrop(viewKey, {
+    boss: phase === 'STAGE_5_FINAL_BOSS' ? engine.state.assignedFinalBoss : '',
+    victory: phase === 'RUN_VICTORY',
+    alleyMerchant: document.body.dataset.alleyMerchant === '1',
+  });
+}
+
+const VIEW_DEPTH = {
+  VIEW_TITLE_LOBBY: 0,
+  VIEW_FORTUNE_TELLER: 1,
+  VIEW_CHECKPOINT: 2,
+  VIEW_CHECKPOINT_SHOP: 3,
+  VIEW_CHECKPOINT_MERCHANT: 3,
+  VIEW_CHECKPOINT_DECK_EDITOR: 3,
+  VIEW_DUEL_ARENA: 3,
+  VIEW_PACK_OPENING: 4,
+  VIEW_MERCHANT_EVENT: 4,
+  VIEW_RUN_SUMMARY: 4,
+};
+
+function openModalWithCrt(modalEl, { mode = 'hidden' } = {}) {
+  if (!modalEl) return;
+  if (modalEl.__crtCloseTimer) {
+    clearTimeout(modalEl.__crtCloseTimer);
+    modalEl.__crtCloseTimer = null;
+  }
+  modalEl.classList.remove('modal-crt-closing');
+  if (mode === 'active') {
+    modalEl.classList.add('active');
+  } else if (mode === 'collapsed') {
+    modalEl.classList.remove('is-collapsed');
+  } else {
+    modalEl.classList.remove('is-hidden');
+  }
+  fitCardNameTextBoxes(modalEl);
+  requestAnimationFrame(() => fitCardNameTextBoxes(modalEl));
+}
+
+function closeModalWithCrt(modalEl, { mode = 'hidden', onClosed = null } = {}) {
+  if (!modalEl) return;
+  const isAlreadyHidden = mode === 'active'
+    ? !modalEl.classList.contains('active')
+    : mode === 'collapsed'
+      ? modalEl.classList.contains('is-collapsed')
+      : modalEl.classList.contains('is-hidden');
+  if (isAlreadyHidden) {
+    modalEl.classList.remove('modal-crt-closing');
+    if (onClosed) onClosed();
+    return;
+  }
+  if (modalEl.__crtCloseTimer) clearTimeout(modalEl.__crtCloseTimer);
+  modalEl.classList.add('modal-crt-closing');
+  modalEl.__crtCloseTimer = setTimeout(() => {
+    modalEl.__crtCloseTimer = null;
+    if (mode === 'active') {
+      modalEl.classList.remove('active');
+    } else if (mode === 'collapsed') {
+      modalEl.classList.add('is-collapsed');
+    } else {
+      modalEl.classList.add('is-hidden');
+    }
+    requestAnimationFrame(() => {
+      modalEl.classList.remove('modal-crt-closing');
+      if (onClosed) onClosed();
+    });
+  }, 190);
+}
+
+function switchView(viewKey, opts = {}) {
   if (viewKey !== 'VIEW_DUEL_ARENA') {
     duelTurnTimer.stop();
   }
@@ -415,21 +539,40 @@ function switchView(viewKey) {
   if (bgm) audio.playBgm(bgm);
   document.body.dataset.view = viewKey;
   document.body.dataset.boss = phase === 'STAGE_5_FINAL_BOSS' ? engine.state.assignedFinalBoss || '' : '';
+  refreshSceneBackdrop(viewKey);
 
-  const isActualChange = Boolean(currentViewKey && currentViewKey !== viewKey);
+  const prevKey = currentViewKey;
+  const isActualChange = Boolean(prevKey && prevKey !== viewKey);
   currentViewKey = viewKey;
   const transMs = Math.max(0, Number(tunerSettings?.transitionMs ?? 260));
   document.documentElement.style.setProperty('--view-transition-ms', `${transMs}ms`);
 
   const veil = document.getElementById('view-transition-veil');
-  const applySwitch = () => {
-    Object.values(views).forEach((v) => v?.classList.remove('active', 'screen-entering'));
+  const applySwitch = (playEnterCrt = true) => {
+    Object.values(views).forEach((v) => v?.classList.remove('active', 'screen-entering', 'screen-crt-closing'));
     if (views[viewKey]) {
-      views[viewKey].classList.add('active');
-      if (isActualChange && transMs > 0) {
-        void views[viewKey].offsetWidth;
-        views[viewKey].classList.add('screen-entering');
+      const targetView = views[viewKey];
+      targetView.classList.add('active');
+      if (targetView.__enterCleanupTimer) {
+        clearTimeout(targetView.__enterCleanupTimer);
+        targetView.__enterCleanupTimer = null;
       }
+      if (playEnterCrt && isActualChange && transMs > 0) {
+        void targetView.offsetWidth;
+        targetView.classList.add('screen-entering');
+        const finishEnter = () => {
+          if (targetView.__enterCleanupTimer) {
+            clearTimeout(targetView.__enterCleanupTimer);
+            targetView.__enterCleanupTimer = null;
+          }
+          targetView.classList.remove('screen-entering');
+          fitCardNameTextBoxes(targetView);
+        };
+        targetView.addEventListener('animationend', finishEnter, { once: true });
+        targetView.__enterCleanupTimer = setTimeout(finishEnter, transMs + 60);
+      }
+      fitCardNameTextBoxes(targetView);
+      requestAnimationFrame(() => fitCardNameTextBoxes(targetView));
     }
     if (isActualChange && viewKey === 'VIEW_DUEL_ARENA' && fxCanvas) {
       const r = fxCanvas.getBoundingClientRect();
@@ -437,17 +580,41 @@ function switchView(viewKey) {
     }
   };
 
-  if (isActualChange && transMs > 0 && veil) {
-    if (viewTransitionTimerId) clearTimeout(viewTransitionTimerId);
-    veil.classList.add('is-active');
-    applySwitch();
-    viewTransitionTimerId = setTimeout(() => {
-      veil.classList.remove('is-active');
-      viewTransitionTimerId = null;
-    }, Math.min(180, Math.round(transMs * 0.55)));
+  if (viewTransitionTimerId) {
+    clearTimeout(viewTransitionTimerId);
+    viewTransitionTimerId = null;
+  }
+
+  const isBackNavigation = opts.direction === 'back'
+    || (opts.direction !== 'forward' && isActualChange && (VIEW_DEPTH[viewKey] ?? 0) < (VIEW_DEPTH[prevKey] ?? 0));
+
+  if (isActualChange && transMs > 0) {
+    const prevEl = views[prevKey];
+    if (isBackNavigation && prevEl) {
+      Object.values(views).forEach((v) => v?.classList.remove('screen-entering', 'screen-crt-closing'));
+      if (views[viewKey]) views[viewKey].classList.add('active');
+      prevEl.classList.remove('active');
+      prevEl.classList.add('screen-crt-closing');
+      veil?.classList.add('is-active');
+      viewTransitionTimerId = setTimeout(() => {
+        prevEl.classList.remove('screen-crt-closing');
+        veil?.classList.remove('is-active');
+        applySwitch(false);
+        viewTransitionTimerId = null;
+      }, Math.min(220, Math.max(150, Math.round(transMs * 0.8))));
+    } else if (veil) {
+      veil.classList.add('is-active');
+      applySwitch(true);
+      viewTransitionTimerId = setTimeout(() => {
+        veil.classList.remove('is-active');
+        viewTransitionTimerId = null;
+      }, Math.min(180, Math.round(transMs * 0.55)));
+    } else {
+      applySwitch(true);
+    }
   } else {
     veil?.classList.remove('is-active');
-    applySwitch();
+    applySwitch(false);
   }
 }
 
@@ -512,6 +679,7 @@ function showCardPlayShowcase(cardOrDef, { actorLabel = '카드 발동', isCpu =
 document.getElementById('btn-return-main-menu')?.addEventListener('click', () => {
   const goLobby = () => {
     audio.playCardPickup();
+    saveRunNow();
     engine.state = engine.createEmptyRunState('RUN_INIT', Date.now());
     resetRunUiTransitionState('IDLE');
     refreshContinueButton();
@@ -553,7 +721,7 @@ document.getElementById('btn-toggle-binder-global')?.addEventListener('click', (
   toggleBinderModal();
 });
 document.getElementById('btn-close-binder')?.addEventListener('click', () => {
-  overlayBinderBook.classList.remove('active');
+  closeModalWithCrt(overlayBinderBook, { mode: 'active' });
 });
 
 // ============================================================================
@@ -608,6 +776,7 @@ document.getElementById('btn-start-run')?.addEventListener('click', async () => 
     });
   }
   resetRunUiTransitionState('STAGE_0_FORTUNE');
+  saveRunNow();
   switchView('VIEW_FORTUNE_TELLER');
 });
 
@@ -670,18 +839,23 @@ updateLogToggleUI();
 btnToggleLogDrawer?.addEventListener('click', (e) => {
   e.stopPropagation();
   audio.playCardPickup();
-  const willOpen = combatLogDrawer?.classList.contains('is-collapsed');
-  combatLogDrawer?.classList.toggle('is-collapsed');
-  updateLogToggleUI();
-  if (!willOpen && typeof hideLogCardHoverPreview === 'function') {
-    hideLogCardHoverPreview();
-  }
+  const willOpen = combatLogDrawer?.classList.contains('is-collapsed') && !combatLogDrawer?.classList.contains('modal-crt-closing');
   if (willOpen) {
+    openModalWithCrt(combatLogDrawer, { mode: 'collapsed' });
+    updateLogToggleUI();
     const logContainer = document.getElementById('combat-log-history');
     if (logContainer) {
       requestAnimationFrame(() => {
         logContainer.scrollTop = logContainer.scrollHeight;
       });
+    }
+  } else {
+    closeModalWithCrt(combatLogDrawer, {
+      mode: 'collapsed',
+      onClosed: () => updateLogToggleUI(),
+    });
+    if (typeof hideLogCardHoverPreview === 'function') {
+      hideLogCardHoverPreview();
     }
   }
 });
@@ -689,8 +863,10 @@ btnToggleLogDrawer?.addEventListener('click', (e) => {
 btnCloseCombatLogPopup?.addEventListener('click', (e) => {
   e.stopPropagation();
   audio.playCardPickup();
-  combatLogDrawer?.classList.add('is-collapsed');
-  updateLogToggleUI();
+  closeModalWithCrt(combatLogDrawer, {
+    mode: 'collapsed',
+    onClosed: () => updateLogToggleUI(),
+  });
   hideLogCardHoverPreview();
 });
 
@@ -743,6 +919,35 @@ function refreshOptionsModalContext() {
   }
 }
 
+const UI_FONT_STORAGE_KEY = 'duel_rogue_ui_font_v1';
+
+function applyUiFontMode(mode) {
+  const normalized = mode === 'win2k-retro' ? 'win2k-retro' : 'modern';
+  document.body.dataset.uiFont = normalized;
+  const sel = document.getElementById('opt-ui-font');
+  if (sel && sel.value !== normalized) {
+    sel.value = normalized;
+  }
+  try {
+    localStorage.setItem(UI_FONT_STORAGE_KEY, normalized);
+  } catch { /* ignore */ }
+}
+
+function loadSavedUiFontMode() {
+  try {
+    return localStorage.getItem(UI_FONT_STORAGE_KEY) || 'modern';
+  } catch {
+    return 'modern';
+  }
+}
+
+applyUiFontMode(loadSavedUiFontMode());
+
+document.getElementById('opt-ui-font')?.addEventListener('change', (e) => {
+  audio.playCardPickup();
+  applyUiFontMode(e.target.value);
+});
+
 function toggleInGameOptions(show) {
   if (!inGameOptionsModal) return;
   const isCurrentlyHidden = inGameOptionsModal.classList.contains('is-hidden');
@@ -750,15 +955,16 @@ function toggleInGameOptions(show) {
 
   if (shouldOpen) {
     refreshOptionsModalContext();
+    applyUiFontMode(loadSavedUiFontMode());
     audio.playCardPickup();
-    inGameOptionsModal.classList.remove('is-hidden');
+    openModalWithCrt(inGameOptionsModal, { mode: 'hidden' });
     btnInGameOptions?.classList.add('active');
     btnTitleOptions?.classList.add('active');
   } else {
     audio.playCardPickup();
-    inGameOptionsModal.classList.add('is-hidden');
     btnInGameOptions?.classList.remove('active');
     btnTitleOptions?.classList.remove('active');
+    closeModalWithCrt(inGameOptionsModal, { mode: 'hidden' });
   }
 }
 
@@ -809,13 +1015,13 @@ function toggleSeedConfigModal(show) {
     audio.playCardPickup();
     if (seedConfigInput) seedConfigInput.value = pendingCustomSeedText;
     updateSeedPreviewStatus();
-    seedConfigModal.classList.remove('is-hidden');
+    openModalWithCrt(seedConfigModal, { mode: 'hidden' });
     btnTitleSeedConfig?.classList.add('active');
     setTimeout(() => seedConfigInput?.focus(), 40);
   } else {
     audio.playCardPickup();
-    seedConfigModal.classList.add('is-hidden');
     btnTitleSeedConfig?.classList.remove('active');
+    closeModalWithCrt(seedConfigModal, { mode: 'hidden' });
   }
 }
 
@@ -859,12 +1065,12 @@ function toggleRulebookModal(show) {
   audio.playCardPickup();
   if (shouldOpen) {
     switchRulebookTab('basics');
-    rulebookModal.classList.remove('is-hidden');
+    openModalWithCrt(rulebookModal, { mode: 'hidden' });
     btnTitleRulebook?.classList.add('active');
     hydrateVectorIcons(rulebookModal);
   } else {
-    rulebookModal.classList.add('is-hidden');
     btnTitleRulebook?.classList.remove('active');
+    closeModalWithCrt(rulebookModal, { mode: 'hidden' });
   }
 }
 
@@ -959,6 +1165,7 @@ function openGraveyardViewer(seatIndex) {
   const gy = seat.graveyard || [];
   titleEl.innerHTML = `${svgIcon('skull')} ${isPlayer ? '플레이어' : '상대'} 묘지 <span class="gy-count-tag">(총 ${gy.length}장 / 최신순)</span>`;
 
+  hideLogCardHoverPreview();
   container.innerHTML = '';
   if (gy.length === 0) {
     container.innerHTML = `
@@ -1012,16 +1219,16 @@ function openGraveyardViewer(seatIndex) {
     });
   }
 
-  modal.classList.remove('is-hidden');
+  openModalWithCrt(modal, { mode: 'hidden' });
 }
 
 document.getElementById('player-graveyard')?.addEventListener('click', () => openGraveyardViewer(0));
 document.getElementById('cpu-graveyard')?.addEventListener('click', () => openGraveyardViewer(1));
 btnCloseGraveyard?.addEventListener('click', () => {
-  graveyardViewerModal?.classList.add('is-hidden');
+  closeModalWithCrt(graveyardViewerModal, { mode: 'hidden' });
 });
 gyModalBackdrop?.addEventListener('click', () => {
-  graveyardViewerModal?.classList.add('is-hidden');
+  closeModalWithCrt(graveyardViewerModal, { mode: 'hidden' });
 });
 
 // 4. 턴 타이머 일시정지 팝업 모달 이벤트
@@ -1041,6 +1248,17 @@ document.getElementById('turn-timer-container')?.addEventListener('click', (e) =
 // ESC 키로 열려있는 모달들 닫기 & Space 키로 타이머 일시정지 토글
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    const deckOverviewModal = document.getElementById('modal-deck-overview');
+    if (deckOverviewModal && !deckOverviewModal.classList.contains('is-hidden')) {
+      closeModalWithCrt(deckOverviewModal, { mode: 'hidden' });
+    }
+    const customSleeveModal = document.getElementById('modal-custom-sleeve');
+    if (customSleeveModal && !customSleeveModal.classList.contains('is-hidden')) {
+      closeModalWithCrt(customSleeveModal, { mode: 'hidden' });
+    }
+    if (rulebookModal && !rulebookModal.classList.contains('is-hidden')) {
+      toggleRulebookModal(false);
+    }
     if (seedConfigModal && !seedConfigModal.classList.contains('is-hidden')) {
       toggleSeedConfigModal(false);
     }
@@ -1048,7 +1266,7 @@ window.addEventListener('keydown', (e) => {
       toggleInGameOptions(false);
     }
     if (graveyardViewerModal && !graveyardViewerModal.classList.contains('is-hidden')) {
-      graveyardViewerModal.classList.add('is-hidden');
+      closeModalWithCrt(graveyardViewerModal, { mode: 'hidden' });
     }
     if (duelTurnTimer.isPaused) {
       duelTurnTimer.resume();
@@ -1118,7 +1336,82 @@ function captureBoardRects(boardSelector) {
   return map;
 }
 
-function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, prePlayerMetaRect, preCpuIds, prePlayerIds, preLastSpell, act, liveDuel }) {
+function getPlayerHandImpactElement() {
+  return (
+    document.getElementById('player-hand-row') ||
+    document.querySelector('.player-interaction-tray') ||
+    document.getElementById('player-seat')
+  );
+}
+
+function animateCpuAttackerSlam(attackerEl, rawTargetRect, atkPower, onImpact, onReturnComplete) {
+  if (!attackerEl || !rawTargetRect) {
+    onImpact?.();
+    onReturnComplete?.();
+    return;
+  }
+  const atkRect = attackerEl.getBoundingClientRect();
+  const ax = atkRect.left + atkRect.width / 2;
+  const ay = atkRect.top + atkRect.height / 2;
+  const tx = rawTargetRect.left + rawTargetRect.width / 2;
+  const ty = rawTargetRect.top + rawTargetRect.height / 2;
+
+  const dx = tx - ax;
+  const dy = ty - ay;
+  const rawDist = Math.hypot(dx, dy);
+  const angleDeg = rawDist > 5 ? (Math.atan2(dy, dx) * 180) / Math.PI + 90 : 180;
+  const windupDist = 24;
+  const nx = rawDist > 5 ? dx / rawDist : 0;
+  const ny = rawDist > 5 ? dy / rawDist : 1;
+  const wx = -nx * windupDist;
+  const wy = -ny * windupDist;
+
+  const windupTime = Math.max(80, 160 / (tunerSettings.slamSpeed || 1));
+  const slamTime = Math.max(60, 110 / (tunerSettings.slamSpeed || 1));
+
+  attackerEl.closest('.board-zone')?.classList.add('has-dragging-attacker');
+  attackerEl.closest('.duel-arena-field')?.classList.add('has-dragging-attacker');
+  attackerEl.style.setProperty('--windup-tx', `${wx.toFixed(1)}px`);
+  attackerEl.style.setProperty('--windup-ty', `${wy.toFixed(1)}px`);
+  attackerEl.style.setProperty('--target-dx', `${dx.toFixed(1)}px`);
+  attackerEl.style.setProperty('--target-dy', `${dy.toFixed(1)}px`);
+  attackerEl.style.setProperty('--slam-rot-z', `${angleDeg.toFixed(1)}deg`);
+  attackerEl.style.setProperty('--windup-duration', `${windupTime}ms`);
+  attackerEl.style.setProperty('--slam-duration', `${slamTime}ms`);
+
+  attackerEl.classList.add('slam-windup');
+  if (atkPower <= 4) {
+    audio.playLightTap();
+  } else {
+    audio.playHeavyImpact(atkPower);
+  }
+
+  setTimeout(() => {
+    attackerEl.classList.remove('slam-windup');
+    attackerEl.classList.add('slam-down');
+
+    setTimeout(() => {
+      onImpact?.();
+      setTimeout(() => {
+        attackerEl.classList.remove('slam-down');
+        attackerEl.classList.add('slam-return');
+        setTimeout(() => {
+          attackerEl.classList.remove('slam-return');
+          attackerEl.closest('.board-zone')?.classList.remove('has-dragging-attacker');
+          attackerEl.closest('.duel-arena-field')?.classList.remove('has-dragging-attacker');
+          ['--card-tx', '--card-ty', '--card-tz', '--target-dx', '--target-dy', '--windup-tx', '--windup-ty'].forEach((p) =>
+            attackerEl.style.setProperty(p, '0px')
+          );
+          attackerEl.style.setProperty('--slam-rot-z', '0deg');
+          attackerEl.style.setProperty('--slam-rot-x', '0deg');
+          onReturnComplete?.();
+        }, 280);
+      }, 60);
+    }, slamTime);
+  }, windupTime);
+}
+
+function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, preCpuIds, prePlayerIds, preLastSpell, act, liveDuel }) {
   const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0, width: 1280, height: 800 };
   const playerGyEl = document.getElementById('player-graveyard');
   const cpuGyEl = document.getElementById('cpu-graveyard');
@@ -1137,24 +1430,36 @@ function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, prePlayerMetaRe
     }
   }
 
-  // 2. 사라진 플레이어 유닛 파괴 파편 & 영혼 궤적
-  const postPlayerIds = new Set((liveDuel?.seats?.[0]?.board || []).map((u) => u.instanceId));
-  prePlayerIds.forEach((id) => {
-    if (!postPlayerIds.has(id)) {
-      const deadRect = prePlayerRects.get(id);
-      if (deadRect) {
-        const localR = toCanvasLocalRect(deadRect);
-        fxEngine.spawnCardShatter(localR, tunerSettings.shatterShards);
-        fxEngine.spawnSoulWisp(localR, pGyRect, () => {});
-        audio.playCardShatter();
+  // 2. 사라진 플레이어 유닛 파괴 파편 & 영혼 궤적 (공격 스텝은 타격 직후 별도 처리)
+  if (act?.type !== 'ATTACK') {
+    const postPlayerIds = new Set((liveDuel?.seats?.[0]?.board || []).map((u) => u.instanceId));
+    prePlayerIds.forEach((id) => {
+      if (!postPlayerIds.has(id)) {
+        const deadRect = prePlayerRects.get(id);
+        if (deadRect) {
+          const localR = toCanvasLocalRect(deadRect);
+          fxEngine.spawnCardShatter(localR, tunerSettings.shatterShards);
+          fxEngine.spawnSoulWisp(localR, pGyRect, () => {});
+          audio.playCardShatter();
+        }
       }
-    }
-  });
+    });
+  }
 
   if (!act) return;
 
   if (act.type === 'PLAY_CARD') {
     const cpuSeat = liveDuel?.seats?.[1];
+    if (Array.isArray(act.tributeInstanceIds) && act.tributeInstanceIds.length > 0) {
+      act.tributeInstanceIds.forEach((tid) => {
+        const tRect = preCpuRects.get(tid);
+        if (tRect) {
+          const localTr = toCanvasLocalRect(tRect);
+          fxEngine.spawnCardShatter(localTr, Math.max(8, Math.floor((tunerSettings.shatterShards || 18) * 0.6)));
+          fxEngine.spawnSoulWisp(localTr, cGyRect, () => {});
+        }
+      });
+    }
     const summonedUnit = (cpuSeat?.board || []).find((u) => !preCpuIds.has(u.instanceId));
     if (summonedUnit) {
       audio.playCardPlayImpact();
@@ -1162,7 +1467,7 @@ function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, prePlayerMetaRe
       if (unitEl) {
         unitEl.classList.add('summon-slam-enter');
         const ur = unitEl.getBoundingClientRect();
-        fxEngine.spawnSummonBurst(ur.left - cRect.left + ur.width / 2, ur.top - cRect.top + ur.height / 2, '#f43f5e', 105);
+        fxEngine.spawnSummonBurst(ur.left - cRect.left + ur.width / 2, ur.top - cRect.top + ur.height / 2, '#38bdf8', 105);
       }
       showCardPlayShowcase(summonedUnit, {
         actorLabel: '상대 몬스터 소환',
@@ -1179,61 +1484,96 @@ function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, prePlayerMetaRe
       const ar = arenaEl ? arenaEl.getBoundingClientRect() : cRect;
       const sx = ar.left - cRect.left + ar.width / 2;
       const sy = ar.top - cRect.top + ar.height * 0.42;
-      fxEngine.spawnSummonBurst(sx, sy, '#c084fc', 135);
+      fxEngine.spawnSummonBurst(sx, sy, '#34d399', 130);
       fxEngine.triggerScreenShake(7);
+      if (act.chosenTarget?.targetInstanceId) {
+        const tEl = document.querySelector(`.unit-field-card[data-instance-id="${act.chosenTarget.targetInstanceId}"]`);
+        if (tEl) {
+          const tr = tEl.getBoundingClientRect();
+          fxEngine.spawnShockwave(tr.left - cRect.left + tr.width / 2, tr.top - cRect.top + tr.height / 2, 110, '#34d399');
+        }
+      }
       if (spellDef) {
         showCardPlayShowcase(spellDef, { actorLabel: '상대 마법 발동', isCpu: true });
       }
     }
   } else if (act.type === 'SET_SPELL') {
-    audio.playCardPickup();
+    audio.playCardPlayImpact();
     const slotEl = act.slotType === 'FIELD_RIGHT'
       ? document.getElementById('field-set-right')
       : act.slotType === 'FIELD_LEFT'
         ? document.getElementById('field-set-left')
-        : document.querySelector('#cpu-board .unit-field-card') || document.getElementById('cpu-board');
+        : document.querySelector(`#cpu-board .unit-field-card[data-instance-id="${act.targetMonsterInstanceId}"]`)
+          || document.getElementById('cpu-board');
     if (slotEl) {
       const sr = slotEl.getBoundingClientRect();
-      fxEngine.spawnSummonBurst(sr.left - cRect.left + sr.width / 2, sr.top - cRect.top + sr.height / 2, '#818cf8', 68);
+      fxEngine.spawnSummonBurst(sr.left - cRect.left + sr.width / 2, sr.top - cRect.top + sr.height / 2, '#ffffff', 95);
     }
-  } else if (act.type === 'ATTACK') {
-    const res = engine.lastAttackResult;
-    if (!res) return;
-    const atkPower = res.attackerAttack || 6;
-    const isHeroHit = res.targetType === 'HERO' || !res.targetInstanceId;
-    const rawTargetRect = isHeroHit
-      ? prePlayerMetaRect
-      : (prePlayerRects.get(res.targetInstanceId) || prePlayerMetaRect);
-    if (!rawTargetRect) return;
+  }
+}
 
-    const tx = rawTargetRect.left - cRect.left + rawTargetRect.width / 2;
-    const ty = rawTargetRect.top - cRect.top + rawTargetRect.height / 2;
+function playCpuAttackVisualEffects({ preCpuRects, prePlayerRects, prePlayerHandRect, prePlayerIds, liveDuel, onComplete }) {
+  const res = engine.lastAttackResult;
+  if (!res) {
+    syncRunPhaseView();
+    onComplete?.();
+    return;
+  }
+  const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0, width: 1280, height: 800 };
+  const playerGyEl = document.getElementById('player-graveyard');
+  const cpuGyEl = document.getElementById('cpu-graveyard');
+  const pGyRect = playerGyEl ? toCanvasLocalRect(playerGyEl.getBoundingClientRect()) : { left: 100, top: 650, width: 70, height: 90 };
+  const cGyRect = cpuGyEl ? toCanvasLocalRect(cpuGyEl.getBoundingClientRect()) : { left: 1100, top: 100, width: 70, height: 90 };
 
-    const atkEl = document.querySelector(`#cpu-board .unit-field-card[data-instance-id="${res.attackerInstanceId}"]`);
-    if (atkEl) {
-      atkEl.classList.add('summon-slam-enter');
-    }
+  const atkPower = res.attackerAttack || 6;
+  const isHeroHit = res.targetType === 'HERO' || !res.targetInstanceId;
+  const playerHandEl = getPlayerHandImpactElement();
+  const handFallbackRect = playerHandEl ? playerHandEl.getBoundingClientRect() : prePlayerHandRect;
+  const rawTargetRect = isHeroHit
+    ? (handFallbackRect || prePlayerHandRect)
+    : (prePlayerRects.get(res.targetInstanceId) || handFallbackRect);
+  const attackerEl = document.querySelector(`#cpu-board .unit-field-card[data-instance-id="${res.attackerInstanceId}"]`);
 
-    fxEngine.triggerHitstop(tunerSettings.hitstopMs || 50);
-    fxEngine.triggerScreenShake(Math.min(25, 4 + atkPower * 1.25));
+  animateCpuAttackerSlam(attackerEl, rawTargetRect, atkPower, () => {
+    const postPlayerIds = new Set((liveDuel?.seats?.[0]?.board || []).map((u) => u.instanceId));
+    if (rawTargetRect) {
+      const tx = rawTargetRect.left - cRect.left + rawTargetRect.width / 2;
+      const ty = rawTargetRect.top - cRect.top + rawTargetRect.height / 2;
+      fxEngine.triggerHitstop(tunerSettings.hitstopMs || 50);
+      fxEngine.triggerScreenShake(Math.min(25, 4 + atkPower * 1.25));
 
-    if (isHeroHit) {
-      audio.playPlayerImpact(atkPower);
-      fxEngine.spawnShockwave(tx, ty, 220, '#f43f5e');
-      fxEngine.spawnImpactStarburst(tx, ty, 58, '#f43f5e');
-      fxEngine.spawnPlayerDustPuff(tx, ty, rawTargetRect.width, rawTargetRect.height, 42);
-      fxEngine.showFloatingText(tx, ty - 26, `-${res.damageDealt}`, '#ef4444', 32);
-    } else {
-      audio.playDamageHit();
-      fxEngine.spawnShockwave(tx, ty, Math.min(130, 45 + atkPower * 3.5), '#f43f5e');
-      fxEngine.spawnImpactStarburst(tx, ty, Math.min(45, 16 + atkPower * 2), atkPower > 10 ? '#f59e0b' : '#f43f5e');
-      fxEngine.showFloatingText(tx, ty - 24, `-${res.damageDealt}`, '#ef4444', 28);
-      const targetNowEl = document.querySelector(`#player-board .unit-field-card[data-instance-id="${res.targetInstanceId}"]`);
-      if (targetNowEl) {
-        targetNowEl.classList.add('slam-hit-target');
-        setTimeout(() => targetNowEl.classList.remove('slam-hit-target'), 320);
+      if (isHeroHit) {
+        audio.playPlayerImpact(atkPower);
+        fxEngine.spawnShockwave(tx, ty, 240, '#ffffff');
+        fxEngine.spawnImpactStarburst(tx, ty, 65, '#f43f5e');
+        fxEngine.spawnPlayerDustPuff(tx, ty, Math.max(200, rawTargetRect.width * 0.75), Math.max(85, rawTargetRect.height), 48);
+        fxEngine.showFloatingText(tx, ty - 26, `-${res.damageDealt}`, '#ef4444', 32);
+        playerHandEl?.classList.add('slam-hit-target');
+        setTimeout(() => playerHandEl?.classList.remove('slam-hit-target'), 320);
+      } else {
+        audio.playDamageHit();
+        fxEngine.spawnShockwave(tx, ty, Math.min(130, 45 + atkPower * 3.5), '#ffffff');
+        fxEngine.spawnImpactStarburst(tx, ty, Math.min(45, 16 + atkPower * 2), atkPower > 10 ? '#f59e0b' : '#38bdf8');
+        fxEngine.showFloatingText(tx, ty - 24, `-${res.damageDealt}`, '#ef4444', 28);
+        const targetNowEl = document.querySelector(`#player-board .unit-field-card[data-instance-id="${res.targetInstanceId}"]`);
+        if (targetNowEl) {
+          targetNowEl.classList.add('slam-hit-target');
+          if (res.defenderDied) targetNowEl.classList.add('card-whiteout');
+        }
       }
     }
+
+    prePlayerIds.forEach((id) => {
+      if (!postPlayerIds.has(id)) {
+        const deadRect = prePlayerRects.get(id);
+        if (deadRect) {
+          const localR = toCanvasLocalRect(deadRect);
+          fxEngine.spawnCardShatter(localR, tunerSettings.shatterShards);
+          fxEngine.spawnSoulWisp(localR, pGyRect, () => {});
+          audio.playCardShatter();
+        }
+      }
+    });
 
     if (res.attackerDied) {
       const deadCpuRect = preCpuRects.get(res.attackerInstanceId);
@@ -1246,24 +1586,40 @@ function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, prePlayerMetaRe
     }
 
     if (res.recoilDamage > 0) {
-      const cpuMetaEl = document.getElementById('cpu-meta') || document.getElementById('cpu-seat');
+      const cpuMetaEl = document.getElementById('cpu-hand-container') || document.getElementById('cpu-seat');
       if (cpuMetaEl) {
         const mr = cpuMetaEl.getBoundingClientRect();
         const mx = mr.left - cRect.left + mr.width / 2;
         const my = mr.top - cRect.top + mr.height / 2;
         audio.playPlayerImpact(res.recoilDamage);
-        fxEngine.spawnShockwave(mx, my, 160, '#f97316');
-        fxEngine.showFloatingText(mx, my + 24, `반사 -${res.recoilDamage}`, '#f97316', 26);
+        fxEngine.spawnShockwave(mx, my, 180, '#f97316');
+        fxEngine.spawnPlayerDustPuff(mx, my, mr.width, mr.height, 36);
+        fxEngine.showFloatingText(mx, my + 24, `💥 반사 -${res.recoilDamage}`, '#f97316', 28);
       }
     }
 
-    if (res.pierceDamage > 0 && prePlayerMetaRect) {
+    if (res.pierceDamage > 0 && handFallbackRect) {
       audio.playPiercingBolt();
-      fxEngine.spawnPiercingBolt(toCanvasLocalRect(rawTargetRect), toCanvasLocalRect(prePlayerMetaRect), res.pierceDamage, () => {
+      fxEngine.spawnPiercingBolt(toCanvasLocalRect(rawTargetRect || handFallbackRect), toCanvasLocalRect(handFallbackRect), res.pierceDamage, () => {
         audio.playPlayerImpact(res.pierceDamage);
+        playerHandEl?.classList.add('slam-hit-target');
+        setTimeout(() => playerHandEl?.classList.remove('slam-hit-target'), 300);
       });
     }
-  }
+
+    if (res.triggeredSpell) {
+      const trigDef = lookupCardDef(res.triggeredSpell.cardId);
+      if (trigDef) {
+        showCardPlayShowcase(trigDef, {
+          actorLabel: res.triggeredSpell.fizzled ? `마법 불발 (${trigDef.name})` : (res.triggeredSpell.ownerSeat === 1 ? '상대 세트 마법 발동!' : '내 세트 마법 발동!'),
+          isCpu: res.triggeredSpell.ownerSeat === 1,
+        });
+      }
+    }
+  }, () => {
+    syncRunPhaseView();
+    onComplete?.();
+  });
 }
 
 let cpuStepTimerId = null;
@@ -1280,7 +1636,7 @@ function scheduleCpuTurnIfNeeded(snap) {
   const epoch = runSessionEpoch;
   const cpuTempo = Math.max(0.4, Number(tunerSettings?.cpuTempo ?? 1.0));
 
-  // 상대는 한 수씩 둔다: 사전 좌표 캡처 → 행동 실행 → 화면 갱신 → 상대 이펙트 & 쇼케이스 재생
+  // 상대는 한 수씩 둔다: 사전 좌표 캡처 → 행동 실행 → 동일 타격/발동 이펙트 재생 → 화면 갱신
   const step = () => {
     cpuStepTimerId = null;
     if (epoch !== runSessionEpoch) {
@@ -1294,8 +1650,8 @@ function scheduleCpuTurnIfNeeded(snap) {
     }
     const preCpuRects = captureBoardRects('#cpu-board');
     const prePlayerRects = captureBoardRects('#player-board');
-    const prePlayerMetaEl = document.getElementById('player-meta') || document.getElementById('player-seat');
-    const prePlayerMetaRect = prePlayerMetaEl ? prePlayerMetaEl.getBoundingClientRect() : null;
+    const prePlayerHandEl = getPlayerHandImpactElement();
+    const prePlayerHandRect = prePlayerHandEl ? prePlayerHandEl.getBoundingClientRect() : null;
     const preCpuIds = new Set((preDuel?.seats?.[1]?.board || []).map((u) => u.instanceId));
     const prePlayerIds = new Set((preDuel?.seats?.[0]?.board || []).map((u) => u.instanceId));
     const preLastSpell = preDuel?.lastSpellTriggerResult || null;
@@ -1312,32 +1668,45 @@ function scheduleCpuTurnIfNeeded(snap) {
       return;
     }
 
-    syncRunPhaseView();
     const liveDuel = engine.getSnapshot().activeDuel;
+    const scheduleNextOrFinish = (baseDelay) => {
+      if (!result.done && liveDuel && liveDuel.status === 'ONGOING' && liveDuel.activeSeat === 1) {
+        if (epoch !== runSessionEpoch) {
+          isCpuTurnScheduled = false;
+          return;
+        }
+        cpuStepTimerId = setTimeout(step, Math.round(baseDelay / cpuTempo));
+      } else {
+        isCpuTurnScheduled = false;
+        if (epoch === runSessionEpoch) {
+          syncRunPhaseView();
+        }
+      }
+    };
+
+    if (result.action?.type === 'ATTACK') {
+      playCpuAttackVisualEffects({
+        preCpuRects,
+        prePlayerRects,
+        prePlayerHandRect,
+        prePlayerIds,
+        liveDuel,
+        onComplete: () => scheduleNextOrFinish(920),
+      });
+      return;
+    }
+
+    syncRunPhaseView();
     playCpuStepVisualEffects({
       preCpuRects,
       prePlayerRects,
-      prePlayerMetaRect,
       preCpuIds,
       prePlayerIds,
       preLastSpell,
       act: result.action,
       liveDuel,
     });
-
-    if (!result.done && liveDuel && liveDuel.status === 'ONGOING' && liveDuel.activeSeat === 1) {
-      if (epoch !== runSessionEpoch) {
-        isCpuTurnScheduled = false;
-        return;
-      }
-      const baseDelay = result.action?.type === 'ATTACK' ? 980 : 760;
-      cpuStepTimerId = setTimeout(step, Math.round(baseDelay / cpuTempo));
-    } else {
-      isCpuTurnScheduled = false;
-      if (epoch === runSessionEpoch) {
-        syncRunPhaseView();
-      }
-    }
+    scheduleNextOrFinish(780);
   };
   const startDelay = Math.max(
     Math.round(750 / cpuTempo),
@@ -1464,15 +1833,41 @@ function showLogCardHoverPreview(cardIds, anchorEl) {
         0.72,
         false
       );
-      const isMonster = def.type === 'MONSTER';
-      const effectHtml = isMonster && def.effect
-        ? `<div class="log-hover-effect">${escapeLogHtml(def.effect)}</div>`
+      const kwIds = def.kw || [];
+      const godPill = (def.isGod || def.level === 6)
+        ? `<span class="badge-god-tier">${svgIcon('crown')} 신(神)</span>`
         : '';
-      return `<div class="log-hover-card-item">${cardHtml}${effectHtml}</div>`;
+      const kwPills = (def.keywords || []).map((k, i) => {
+        const kwId = kwIds[i] || k;
+        const desc = keywordDesc(kwId);
+        return `<span class="badge-keyword log-hover-kw" title="${escapeLogHtml(desc || '')}">${keywordIcon(kwId)}${escapeLogHtml(k)}</span>`;
+      });
+      const tagPills = (def.tags || []).map((tg) => {
+        const formatted = `#${String(tg).replace(/^#+/, '')}`;
+        return `<span class="badge-race-tag tag-tier-1 log-hover-tag">${escapeLogHtml(formatted)}</span>`;
+      });
+      const pills = [godPill, ...kwPills, ...tagPills].filter(Boolean);
+      const tagsHtml = pills.length > 0
+        ? `<div class="log-hover-tags">${pills.join('')}</div>`
+        : '';
+
+      const condLine = def.condition
+        ? `<span class="log-hover-cond">[${escapeLogHtml(def.condition)}]</span> `
+        : '';
+      const bodyText = def.effect
+        ? `${condLine}${escapeLogHtml(def.effect)}`
+        : kwIds.length > 0
+          ? kwIds.map((id) => `${escapeLogHtml(t(`kw.${id}`))}: ${escapeLogHtml(keywordDesc(id))}`).join(' / ')
+          : '';
+      const effectHtml = bodyText
+        ? `<div class="log-hover-effect">${bodyText}</div>`
+        : '';
+      return `<div class="log-hover-card-item">${cardHtml}${tagsHtml}${effectHtml}</div>`;
     })
     .join('');
 
   preview.classList.remove('is-hidden');
+  fitCardNameTextBoxes(preview);
 
   const anchorRect = anchorEl.getBoundingClientRect();
   const prevRect = preview.getBoundingClientRect();
@@ -1547,6 +1942,59 @@ function bindLogCardHoverDelegation() {
 }
 
 bindLogCardHoverDelegation();
+
+function bindWantedCardHoverDelegation() {
+  const attachHover = (hostEl, selector) => {
+    if (!hostEl || hostEl.dataset.wantedHoverBound) return;
+    hostEl.dataset.wantedHoverBound = '1';
+    hostEl.addEventListener('mouseover', (e) => {
+      const chip = e.target.closest(selector);
+      if (chip && chip.dataset.cardId) {
+        showLogCardHoverPreview([chip.dataset.cardId], chip);
+        return;
+      }
+      hideLogCardHoverPreview();
+    });
+    hostEl.addEventListener('mouseleave', hideLogCardHoverPreview);
+    hostEl.addEventListener('scroll', hideLogCardHoverPreview, { passive: true });
+  };
+  const merchantSelector = '.wanted-chip[data-card-id], .deal-offer-side[data-card-id], .merchant-item-card[data-card-id]';
+  attachHover(document.getElementById('checkpoint-merchant-deals-container'), merchantSelector);
+  attachHover(document.getElementById('checkpoint-merchant-shelf-container'), merchantSelector);
+  attachHover(document.getElementById('checkpoint-shop-singles-container'), '.shop-single-card-item[data-card-id]');
+  attachHover(document.getElementById('modal-trade-select'), '.modal-wanted-item[data-card-id], .modal-trade-offer-preview[data-card-id]');
+}
+bindWantedCardHoverDelegation();
+
+function bindDynamicCardNameFitter() {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  let rafId = 0;
+  const schedule = () => {
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => {
+      rafId = 0;
+      fitCardNameTextBoxes(document);
+    });
+  };
+  window.addEventListener('resize', schedule, { passive: true });
+  document.fonts?.ready?.then(schedule).catch(() => {});
+
+  const appRoot = document.body || document.getElementById('game-app');
+  if (appRoot && typeof MutationObserver !== 'undefined') {
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.nodeType === 1 && (node.matches?.('.card-composite-wrapper, .overlay-name') || node.querySelector?.('.overlay-name'))) {
+            schedule();
+            return;
+          }
+        }
+      }
+    });
+    observer.observe(appRoot, { childList: true, subtree: true });
+  }
+}
+bindDynamicCardNameFitter();
 
 function formatCompactDuelEvent(ev) {
   if (!ev || !ev.key) return '';
@@ -1742,6 +2190,7 @@ function resetRunUiTransitionState(initialPhase = null, { clearTimers = true } =
   document.getElementById('duel-defeat-overlay')?.classList.remove('is-visible');
   document.getElementById('duel-start-overlay')?.classList.remove('is-visible');
   document.getElementById('checkpoint-encounter-toast')?.classList.remove('is-visible');
+  hidePackOpeningResultBanner();
   document.body.classList.remove('run-victory');
 }
 
@@ -1755,7 +2204,7 @@ function triggerCheckpointEncounterToast(snap) {
   const enc = snap.nextEncounterInfo;
   const subEl = document.getElementById('checkpoint-toast-sub');
   const metaEl = document.getElementById('checkpoint-toast-meta');
-  if (subEl) subEl.textContent = `라운드 ${snap.roundNumber || 1} 도전자 출현 · 골목길에서 대전을 시작할 수 있습니다.`;
+  if (subEl) subEl.textContent = `라운드 ${snap.roundNumber || 1} 도전자 출현 · [도전!]에서 대전을 시작할 수 있습니다.`;
   if (metaEl) metaEl.textContent = `${enc.stars || '★☆☆☆☆'} · +${(enc.rewardGold || 500).toLocaleString()}원`;
 
   toast.classList.remove('is-visible');
@@ -1812,10 +2261,72 @@ function triggerDuelVictoryFX(headline = 'VICTORY!', subtext = '결투에서 승
   }
 }
 
-function triggerDuelDefeatFX(durationMs = 1500) {
+function renderChancesHeartsHtml(remaining, max = 3) {
+  const safeMax = Math.max(1, Number(max) || 3);
+  const safeRem = Math.max(0, Math.min(safeMax, Number(remaining ?? safeMax)));
+  let html = '';
+  for (let i = 0; i < safeMax; i += 1) {
+    const isFull = i < safeRem;
+    if (isFull) {
+      html += `<svg class="chance-heart-svg is-full" data-chance-filled="true" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ef4444" stroke="#7f1d1d" stroke-width="1.6"/></svg>`;
+    } else {
+      html += `<svg class="chance-heart-svg is-empty" data-chance-filled="false" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="#94a3b8" stroke-width="2.1"/></svg>`;
+    }
+  }
+  return html;
+}
+
+function updateChancesElement(el, remaining, max = 3) {
+  if (!el) return;
+  const safeMax = Math.max(1, Number(max) || 3);
+  const safeRem = Math.max(0, Math.min(safeMax, Number(remaining ?? safeMax)));
+  el.innerHTML = renderChancesHeartsHtml(safeRem, safeMax);
+  el.setAttribute('data-remaining-chances', String(safeRem));
+  el.setAttribute('data-max-chances', String(safeMax));
+  el.setAttribute('aria-label', `남은 기회 ${safeRem} / ${safeMax}`);
+}
+
+function triggerDuelDefeatFX(durationMs = 1750, snap = null) {
   const overlay = document.getElementById('duel-defeat-overlay');
+  const titleEl = document.getElementById('duel-defeat-title');
+  const subEl = document.getElementById('duel-defeat-subtext');
+  const chancesEl = document.getElementById('duel-defeat-chances');
   const arenaEl = document.getElementById('view-duel-arena');
-  if (arenaEl) arenaEl.classList.add('is-defeat-desaturate');
+  const maxChances = snap?.maxChances ?? 3;
+  const remaining = snap?.remainingChances ?? 0;
+
+  if (arenaEl) {
+    const r = arenaEl.getBoundingClientRect();
+    const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0 };
+    const cx = (r.left - cRect.left) + (r.width || window.innerWidth) * 0.5;
+    const cy = (r.top - cRect.top) + (r.height || window.innerHeight) * 0.45;
+    fxEngine.triggerScreenShake(14);
+    fxEngine.spawnShockwave(cx, cy, 240, '#ef4444');
+    fxEngine.spawnImpactStarburst(cx, cy, 48, '#ef4444');
+  }
+  audio.playPlayerImpact(20);
+
+  if (titleEl) {
+    titleEl.textContent = remaining > 0 ? 'ROUND DEFEAT' : 'DEFEAT';
+  }
+  if (subEl) {
+    if (snap?.lastDefeatInfo?.wasBoss) {
+      subEl.textContent = '최종 보스에게 패배하여 여정이 즉시 종료되었습니다';
+    } else if (remaining > 0) {
+      const nextRnd = snap?.roundNumber || snap?.lastDefeatInfo?.nextRoundNumber || 1;
+      subEl.textContent = `기회 1개를 잃었습니다 · 앞으로 ${remaining}번의 기회가 남았습니다! (ROUND ${nextRnd} 이동 · 승리 보상 미지급)`;
+    } else {
+      subEl.textContent = '모든 기회를 소진해 여정이 종료되었습니다';
+    }
+  }
+  if (chancesEl) {
+    chancesEl.hidden = false;
+    updateChancesElement(chancesEl, remaining, maxChances);
+  }
+
+  if (arenaEl) {
+    arenaEl.classList.add('is-arena-blurred', 'is-defeat-desaturate');
+  }
   if (overlay) {
     overlay.classList.remove('is-visible');
     void overlay.offsetWidth;
@@ -1893,10 +2404,11 @@ function syncRunPhaseView({ skipOutcomeTransition = false } = {}) {
   const wasDuelPhase = !skipOutcomeTransition && sameRun && DUEL_COMBAT_PHASES.has(previousUiRunPhase);
   previousUiRunPhase = snap.phase;
   previousUiRunId = snap.runId || null;
-  scheduleRunSave();
+  saveRunNow();
 
-  const isVictoryTransition = wasDuelPhase && (snap.phase === 'STAGE_CHECKPOINT' || snap.phase === 'STAGE_2_REWARD_PACK' || snap.phase === 'RUN_VICTORY');
-  const isDefeatTransition = wasDuelPhase && snap.phase === 'RUN_FAILED';
+  const duelEndedLost = snap.activeDuel?.status === 'SEAT_1_WIN';
+  const isDefeatTransition = wasDuelPhase && (snap.phase === 'RUN_FAILED' || (snap.phase === 'STAGE_CHECKPOINT' && duelEndedLost));
+  const isVictoryTransition = wasDuelPhase && !duelEndedLost && (snap.phase === 'STAGE_CHECKPOINT' || snap.phase === 'STAGE_2_REWARD_PACK' || snap.phase === 'RUN_VICTORY');
 
   if (isVictoryTransition) {
     if (isDuelEndTransitionPending) return;
@@ -1923,7 +2435,7 @@ function syncRunPhaseView({ skipOutcomeTransition = false } = {}) {
     if (isDuelEndTransitionPending) return;
     isDuelEndTransitionPending = true;
     if (snap.activeDuel) renderDuelArena(snap);
-    const holdMs = triggerDuelDefeatFX(1500);
+    const holdMs = triggerDuelDefeatFX(1750, snap);
     if (duelTransitionTimer) clearTimeout(duelTransitionTimer);
     duelTransitionTimer = setTimeout(() => {
       isDuelEndTransitionPending = false;
@@ -2022,8 +2534,10 @@ function syncTunerInputs() {
 
 function toggleTunerModal() {
   if (!overlayLiveTuner) return;
-  overlayLiveTuner.classList.toggle('active');
   if (overlayLiveTuner.classList.contains('active')) {
+    closeModalWithCrt(overlayLiveTuner, { mode: 'active' });
+  } else {
+    openModalWithCrt(overlayLiveTuner, { mode: 'active' });
     syncTunerInputs();
   }
 }
@@ -2034,16 +2548,16 @@ function saveTunerSettings() {
     const logEl = document.getElementById('duel-narrative-log');
     if (logEl) logEl.textContent = '전투 연출 설정이 저장되었습니다.';
   } catch (e) {}
-  if (overlayLiveTuner) overlayLiveTuner.classList.remove('active');
+  if (overlayLiveTuner) closeModalWithCrt(overlayLiveTuner, { mode: 'active' });
 }
 
 window.__TOGGLE_LIVE_TUNER = toggleTunerModal;
 window.__SAVE_LIVE_TUNER = saveTunerSettings;
 
 document.getElementById('btn-toggle-tuner')?.addEventListener('click', toggleTunerModal);
-document.getElementById('btn-close-tuner')?.addEventListener('click', () => overlayLiveTuner?.classList.remove('active'));
+document.getElementById('btn-close-tuner')?.addEventListener('click', () => closeModalWithCrt(overlayLiveTuner, { mode: 'active' }));
 document.getElementById('btn-tuner-to-playground')?.addEventListener('click', () => {
-  overlayLiveTuner?.classList.remove('active');
+  closeModalWithCrt(overlayLiveTuner, { mode: 'active' });
   window.__TOGGLE_SLAM_PLAYGROUND?.();
 });
 document.getElementById('btn-tuner-save')?.addEventListener('click', saveTunerSettings);
@@ -2101,6 +2615,16 @@ TUNER_SLIDER_MAP.forEach(([sliderId, valId, prop, fmt, isInt]) => {
 const overlayRarityTuner = document.getElementById('overlay-rarity-tuner');
 let activeRarityTab = 'LEGENDARY';
 let activeRarityPreviewType = 'MONSTER';
+let activeRarityPreviewCompact = true;
+
+function populateCardNameFontSelect() {
+  const fontSel = document.getElementById('sel-card-name-font');
+  if (!fontSel || fontSel.options.length > 0) return;
+  fontSel.innerHTML = Object.entries(CARD_NAME_FONT_PRESETS)
+    .map(([key, meta]) => `<option value="${key}">${meta.label}</option>`)
+    .join('');
+}
+populateCardNameFontSelect();
 
 function getRaritySampleDef(tier, type) {
   const found = DEFAULT_CARD_CATALOG.find(
@@ -2117,26 +2641,51 @@ function renderRarityTunerPreview() {
   if (!mount) return;
   const tierCfg = rarityConfig[activeRarityTab] || rarityConfig.COMMON;
   const sampleDef = getRaritySampleDef(activeRarityTab, activeRarityPreviewType);
-  mount.innerHTML = generateCompositeCardHtml(sampleDef, sampleDef.attack, sampleDef.defense ?? sampleDef.health, 0.95, false);
+  mount.classList.toggle('is-compact-preview', activeRarityPreviewCompact);
+  mount.innerHTML = generateCompositeCardHtml(
+    sampleDef,
+    sampleDef.attack,
+    sampleDef.defense ?? sampleDef.health,
+    activeRarityPreviewCompact ? 0.55 : 0.95,
+    activeRarityPreviewCompact
+  );
+  fitCardNameTextBoxes(mount);
+  requestAnimationFrame(() => fitCardNameTextBoxes(mount));
   if (caption) {
     const info = RARITY_PRESET_INFO[tierCfg.preset];
-    caption.textContent = `${RARITY_LABELS_KO[activeRarityTab] || activeRarityTab} · ${info ? info.label : tierCfg.preset}`;
+    const fontKey = rarityConfig.fontSettings?.fontPreset || 'NOTO_SANS';
+    const fontLabel = CARD_NAME_FONT_PRESETS[fontKey]?.label?.split('(')[0]?.trim() || fontKey;
+    caption.textContent = `${RARITY_LABELS_KO[activeRarityTab] || activeRarityTab} · ${info ? info.label : tierCfg.preset} · ${fontLabel}`;
   }
 }
 
 function syncRarityTunerControls() {
+  populateCardNameFontSelect();
   const tierCfg = rarityConfig[activeRarityTab] || rarityConfig.COMMON;
   const sel = document.getElementById('sel-rarity-preset');
   const colorInput = document.getElementById('input-rarity-name-color');
   const artFxSlider = document.getElementById('slider-rarity-art-fx');
   const glowSlider = document.getElementById('slider-rarity-glow');
   const nameGlowSlider = document.getElementById('slider-rarity-name-glow');
+  const fontSel = document.getElementById('sel-card-name-font');
+  const weightSel = document.getElementById('sel-card-name-weight');
+  const customInput = document.getElementById('input-card-name-custom');
+  const compactBtn = document.getElementById('btn-rarity-preview-compact');
 
   if (sel) sel.value = tierCfg.preset || 'NONE';
   if (colorInput) colorInput.value = tierCfg.nameColor || '#1a0f05';
   if (artFxSlider) artFxSlider.value = String(tierCfg.artFx ?? 0);
   if (glowSlider) glowSlider.value = String(tierCfg.glow ?? 0);
   if (nameGlowSlider) nameGlowSlider.value = String(tierCfg.nameGlow ?? 0);
+
+  const fs = rarityConfig.fontSettings || DEFAULT_CARD_NAME_FONT_SETTINGS;
+  if (fontSel) fontSel.value = CARD_NAME_FONT_PRESETS[fs.fontPreset] ? fs.fontPreset : 'NOTO_SANS';
+  if (weightSel) weightSel.value = String(fs.fontWeight || '400');
+  if (customInput) {
+    customInput.value = fs.customFont || '';
+    customInput.hidden = (fs.fontPreset !== 'CUSTOM');
+  }
+  if (compactBtn) compactBtn.classList.toggle('active', activeRarityPreviewCompact);
 
   const setText = (id, v) => {
     const el = document.getElementById(id);
@@ -2153,12 +2702,16 @@ function syncRarityTunerControls() {
 
   applyRarityConfigToRoot(rarityConfig);
   renderRarityTunerPreview();
+  requestAnimationFrame(() => fitCardNameTextBoxes(document));
+  document.fonts?.ready?.then(() => fitCardNameTextBoxes(document)).catch(() => {});
 }
 
 function toggleRarityTunerModal() {
   if (!overlayRarityTuner) return;
-  overlayRarityTuner.classList.toggle('active');
   if (overlayRarityTuner.classList.contains('active')) {
+    closeModalWithCrt(overlayRarityTuner, { mode: 'active' });
+  } else {
+    openModalWithCrt(overlayRarityTuner, { mode: 'active' });
     syncRarityTunerControls();
   }
 }
@@ -2166,7 +2719,7 @@ function toggleRarityTunerModal() {
 window.__TOGGLE_RARITY_TUNER = toggleRarityTunerModal;
 
 document.getElementById('btn-toggle-rarity-tuner')?.addEventListener('click', toggleRarityTunerModal);
-document.getElementById('btn-close-rarity-tuner')?.addEventListener('click', () => overlayRarityTuner?.classList.remove('active'));
+document.getElementById('btn-close-rarity-tuner')?.addEventListener('click', () => closeModalWithCrt(overlayRarityTuner, { mode: 'active' }));
 
 document.querySelectorAll('#rarity-tuner-tabs .rarity-tab').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -2187,6 +2740,29 @@ document.getElementById('btn-rarity-preview-spell')?.addEventListener('click', (
   e.currentTarget.classList.add('active');
   document.getElementById('btn-rarity-preview-monster')?.classList.remove('active');
   renderRarityTunerPreview();
+});
+document.getElementById('btn-rarity-preview-compact')?.addEventListener('click', () => {
+  activeRarityPreviewCompact = !activeRarityPreviewCompact;
+  syncRarityTunerControls();
+});
+
+document.getElementById('sel-card-name-font')?.addEventListener('change', (e) => {
+  if (!rarityConfig.fontSettings) rarityConfig.fontSettings = { ...DEFAULT_CARD_NAME_FONT_SETTINGS };
+  rarityConfig.fontSettings.fontPreset = e.target.value;
+  syncRarityTunerControls();
+});
+
+document.getElementById('sel-card-name-weight')?.addEventListener('change', (e) => {
+  if (!rarityConfig.fontSettings) rarityConfig.fontSettings = { ...DEFAULT_CARD_NAME_FONT_SETTINGS };
+  rarityConfig.fontSettings.fontWeight = e.target.value;
+  syncRarityTunerControls();
+});
+
+document.getElementById('input-card-name-custom')?.addEventListener('input', (e) => {
+  if (!rarityConfig.fontSettings) rarityConfig.fontSettings = { ...DEFAULT_CARD_NAME_FONT_SETTINGS };
+  rarityConfig.fontSettings.fontPreset = 'CUSTOM';
+  rarityConfig.fontSettings.customFont = e.target.value;
+  syncRarityTunerControls();
 });
 
 document.getElementById('sel-rarity-preset')?.addEventListener('change', (e) => {
@@ -2240,7 +2816,7 @@ document.getElementById('btn-rarity-reset')?.addEventListener('click', () => {
 document.getElementById('btn-rarity-save')?.addEventListener('click', () => {
   saveRarityConfig(rarityConfig);
   applyRarityConfigToRoot(rarityConfig);
-  overlayRarityTuner?.classList.remove('active');
+  closeModalWithCrt(overlayRarityTuner, { mode: 'active' });
   const logEl = document.getElementById('duel-narrative-log');
   if (logEl) logEl.textContent = '카드 비주얼 설정이 저장되었습니다.';
 });
@@ -2659,6 +3235,8 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
   // 1. 공격자 카드가 드래그 중이었다면 즉시 홈 슬롯 위치로 강제 스냅 (트랜지션 없이 좌표 정렬)
   attackerEl.style.transition = 'none';
   attackerEl.classList.remove('is-dragging-attacker');
+  document.getElementById('player-board')?.classList.remove('has-dragging-attacker');
+  document.getElementById('arena-field')?.classList.remove('has-dragging-attacker');
   attackerEl.style.setProperty('--card-tx', '0px');
   attackerEl.style.setProperty('--card-ty', '0px');
   attackerEl.style.setProperty('--card-tz', '0px');
@@ -2856,8 +3434,8 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
           const logEl = document.getElementById('duel-narrative-log');
           if (logEl) logEl.textContent = `💥 [수비 반사 피해!] 적 수비력이 공격력보다 높아 -${res.recoilDamage}의 본체 반사 피해를 입었습니다!`;
 
-          // 공격자 본체 위에 반사 데미지 텍스트 팝업 및 피격 반응 (중앙 플레이어 영역)
-          const playerLeaderEl = document.getElementById('player-meta') || document.getElementById('player-seat');
+          // 공격자 본체 위에 반사 데미지 텍스트 팝업 및 피격 반응 (내 패 쪽 직접 타격)
+          const playerLeaderEl = getPlayerHandImpactElement();
           if (playerLeaderEl) {
             const pRect = playerLeaderEl.getBoundingClientRect();
             const px = pRect.left - canvasRect.left + pRect.width / 2;
@@ -2938,7 +3516,7 @@ let lastLoggedTurnKey = null;
  * - 덱 매수(잔여량)에 비례하여 동적으로 덱 높이(두께)와 3D 측면 적층 음영이 조절되는 연출
  * - 0장 소진 시 ∅ 슬롯 프레임 표시
  */
-function renderDeckStack(stackEl, count) {
+function renderDeckStack(stackEl, count, usePlayerCosmetic = false) {
   if (!stackEl) return;
   if (count <= 0) {
     stackEl.innerHTML = `
@@ -2973,7 +3551,7 @@ function renderDeckStack(stackEl, count) {
   stackEl.innerHTML = `
     ${rimsHtml}
     <div class="deck-card-layer layer-top" style="top: 0; left: 0; box-shadow: ${stackShadow};">
-      ${generateCardBackHtml(0.36)}
+      ${generateCardBackHtml(0.36, { usePlayerCosmetic })}
       <div class="deck-count-badge">${count}</div>
     </div>
   `;
@@ -2982,6 +3560,7 @@ function renderDeckStack(stackEl, count) {
 function renderDuelArena(snap) {
   const duel = snap.activeDuel;
   if (!duel) return;
+  applyDuelCosmetics(cosmeticsConfig);
   if (duel.status !== 'ONGOING' || duel.activeSeat !== 0) {
     closeFieldTargetMode();
   }
@@ -3016,6 +3595,7 @@ function renderDuelArena(snap) {
   const playerHp = Math.max(0, player.lp);
   const cpuHp = Math.max(0, cpu.lp);
   document.getElementById('player-lp').textContent = playerHp;
+  updateChancesElement(document.getElementById('duel-player-chances'), snap.remainingChances ?? 3, snap.maxChances ?? 3);
   const playerSummonEl = document.getElementById('player-summon');
   if (playerSummonEl) playerSummonEl.textContent = `${player.normalSummonsRemaining ?? 0}/1`;
 
@@ -3078,7 +3658,7 @@ function renderDuelArena(snap) {
               <div class="sinister-wisp wisp-left"></div>
               <div class="sinister-wisp wisp-right"></div>
             </div>
-            ${generateCardBackHtml(0.70)}
+            ${generateCardBackHtml(0.70, { usePlayerCosmetic: isMine })}
           </div>
           <div class="set-card-glow-overlay"></div>
           <div class="set-card-label-badge ${isMine ? '' : 'enemy-badge'}">${badgeText}</div>
@@ -3134,13 +3714,13 @@ function renderDuelArena(snap) {
 
   // 상대 덱 스택 렌더링 & 호버 매수 툴팁
   const cpuDeckStack = document.getElementById('cpu-deck-stack');
-  renderDeckStack(cpuDeckStack, cpu.deck.length);
+  renderDeckStack(cpuDeckStack, cpu.deck.length, false);
   const cpuDeckTooltip = document.getElementById('cpu-deck-tooltip');
   if (cpuDeckTooltip) cpuDeckTooltip.innerHTML = `상대 덱: <strong id="cpu-deck-count-text">${cpu.deck.length}</strong>장 남음`;
 
   // 플레이어 덱 스택 렌더링 & 호버 매수 툴팁
   const playerDeckStack = document.getElementById('player-deck-stack');
-  renderDeckStack(playerDeckStack, player.deck.length);
+  renderDeckStack(playerDeckStack, player.deck.length, true);
   const playerDeckTooltip = document.getElementById('player-deck-tooltip');
   if (playerDeckTooltip) playerDeckTooltip.innerHTML = `내 덱: <strong id="player-deck-count-text">${player.deck.length}</strong>장 남음`;
 
@@ -3225,6 +3805,9 @@ function renderDuelArena(snap) {
 
   // 플레이어 필드 보드 렌더링
   const playerBoardEl = document.getElementById('player-board');
+  const arenaFieldEl = document.getElementById('arena-field');
+  playerBoardEl.classList.remove('has-dragging-attacker');
+  arenaFieldEl?.classList.remove('has-dragging-attacker');
   playerBoardEl.innerHTML = '';
   player.board.forEach((unit) => {
     const unitEl = createUnitElement(unit, true, player.setSpells || []);
@@ -3250,6 +3833,8 @@ function renderDuelArena(snap) {
         hoveredTargetEl = null;
         unitEl.setPointerCapture(e.pointerId);
         unitEl.classList.add('is-dragging-attacker');
+        playerBoardEl.classList.add('has-dragging-attacker');
+        arenaFieldEl?.classList.add('has-dragging-attacker');
 
         // 적 유닛/본체 공격 결과(처치 가능/반사/차단) 프리뷰 및 합법 타겟 하이라이트
         const legalIds = new Set(attackableTargets(duel, 0).map((u) => u.instanceId));
@@ -3330,6 +3915,8 @@ function renderDuelArena(snap) {
           unitEl.releasePointerCapture(e.pointerId);
         }
         unitEl.classList.remove('is-dragging-attacker');
+        playerBoardEl.classList.remove('has-dragging-attacker');
+        arenaFieldEl?.classList.remove('has-dragging-attacker');
         if (hoveredTargetEl) {
           hoveredTargetEl.classList.remove('target-drag-hovered');
         }
@@ -3450,7 +4037,7 @@ function renderDuelArena(snap) {
     const offsetFromMid = idx - midIndex;
     const fanRotZ = (offsetFromMid * 4.5).toFixed(1);
     const fanArchY = (Math.abs(offsetFromMid) * 4.5).toFixed(1);
-    const fanTiltX = -8;
+    const fanTiltX = 0;
 
     const cardEl = document.createElement('div');
     cardEl.className = 'duel-card';
@@ -3461,9 +4048,9 @@ function renderDuelArena(snap) {
     if (idx < handCount - 1) {
       cardEl.style.marginRight = `${dynamicMarginRight.toFixed(1)}px`;
     }
-    // 맨 왼쪽 카드가 제일 위로 올라오도록 좌에서 우 순으로 순차적 z-index 및 3D Depth 배치 (0번 카드가 최상위)
+    // 맨 왼쪽 카드가 제일 위로 올라오도록 좌에서 우 순으로 순차적 z-index 배치 (평소 3D 깊이 오프셋 미적용)
     const cardDepth = (handCount - idx) * 10;
-    const fanDepthZ = (handCount - idx) * 3;
+    const fanDepthZ = 0;
     cardEl.style.zIndex = `${cardDepth}`;
     cardEl.style.setProperty('--card-z', `${cardDepth}`);
     cardEl.style.setProperty('--fan-tz', `${fanDepthZ}px`);
@@ -3640,6 +4227,9 @@ function renderDuelArena(snap) {
 
   // 버튼 활성화 여부
   document.getElementById('btn-end-turn').disabled = duel.activeSeat !== 0;
+
+  // 전장·패 카드 실제 텍스트박스 폭 기반 동적 이름 압축
+  fitCardNameTextBoxes(document.getElementById('view-duel-arena'));
 }
 
 // ============================================================================
@@ -3698,6 +4288,17 @@ function handleSetSpell(cardInstanceId, slotType, targetMonsterInstanceId = null
       targetMonsterInstanceId,
     });
     syncRunPhaseView();
+    const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0 };
+    const slotEl = slotType === 'FIELD_RIGHT'
+      ? document.getElementById('field-set-right')
+      : slotType === 'FIELD_LEFT'
+        ? document.getElementById('field-set-left')
+        : document.querySelector(`#player-board .unit-field-card[data-instance-id="${targetMonsterInstanceId}"]`)
+          || document.getElementById('player-board');
+    if (slotEl) {
+      const sr = slotEl.getBoundingClientRect();
+      fxEngine.spawnSummonBurst(sr.left - cRect.left + sr.width / 2, sr.top - cRect.top + sr.height / 2, '#ffffff', 95);
+    }
     const slotDesc =
       slotType === 'FIELD_LEFT'
         ? '필드 중앙 좌측 · 상대 턴 시작 시 발동'
@@ -3860,8 +4461,8 @@ function createUnitElement(unit, isPlayer, setSpells = []) {
       </div>
       <!-- 몬스터 카드 뒤에 겹쳐진 풀사이즈 실물 세트 카드 (우측/하단으로 오프셋) -->
       <div class="monster-stacked-set-card ${isMine ? 'mine' : 'enemy'}" title="${title}">
-        ${generateCardBackHtml(0.58)}
-        <span class="front-set-pill">${isMine ? frontSpell.name : '세트'}</span>
+        ${generateCardBackHtml(0.58, { usePlayerCosmetic: isMine })}
+        <span class="front-set-pill">${isMine ? frontSpell.name : `${svgIcon('lock')} ?`}</span>
       </div>
     `;
   } else {
@@ -4025,7 +4626,7 @@ function startFieldTargetMode({ mode, cardInst, cardDef, duel, tributeIds = [] }
   document.body.appendChild(banner);
 
   const selectedTributeIds = new Set(tributeIds || []);
-  let arrowColor = mode === 'SET_MONSTER_FRONT' ? 'PURPLE' : mode === 'TRIBUTE_SUMMON' ? 'YELLOW' : 'RED';
+  let arrowColor = mode === 'SET_MONSTER_FRONT' ? 'WHITE' : mode === 'TRIBUTE_SUMMON' ? 'YELLOW' : 'RED';
 
   function refreshTargetVisuals() {
     clearTargetHighlights();
@@ -4034,7 +4635,7 @@ function startFieldTargetMode({ mode, cardInst, cardDef, duel, tributeIds = [] }
     });
 
     if (mode === 'SET_MONSTER_FRONT') {
-      arrowColor = 'PURPLE';
+      arrowColor = 'WHITE';
       const validEls = [];
       playerBoardEl?.querySelectorAll('.unit-field-card:not(.field-pending-unit)').forEach((el) => {
         const uId = el.getAttribute('data-instance-id');
@@ -4044,7 +4645,7 @@ function startFieldTargetMode({ mode, cardInst, cardDef, duel, tributeIds = [] }
           validEls.push(el);
         }
       });
-      if (validEls.length > 0) fxEngine.setTargetAura(validEls, 'PURPLE', true);
+      if (validEls.length > 0) fxEngine.setTargetAura(validEls, 'WHITE', true);
       banner.innerHTML = `
         <span>${svgIcon('shield')} <strong>${cardDef.name}</strong> · 몬스터 앞 세트 — 보호할 아군 몬스터를 클릭하세요</span>
         <div class="banner-actions">
@@ -4275,16 +4876,17 @@ document.getElementById('btn-end-turn')?.addEventListener('click', () => {
   syncRunPhaseView();
 });
 
-// 진행 포기 및 메인 메뉴 복귀 버튼
+// 진행 저장 후 메인 메뉴 복귀 버튼
 document.getElementById('btn-abandon-run')?.addEventListener('click', async () => {
-  const ok = await showGameConfirm('현재 진행 중인 여정을 포기하고 메인 메뉴로 돌아가시겠습니까?', {
-    title: '여정 포기',
-    confirmText: '포기하기',
+  const ok = await showGameConfirm('현재 진행 상황을 저장하고 메인 메뉴로 돌아가시겠습니까?', {
+    title: '저장하고 나가기',
+    confirmText: '저장하고 나가기',
     cancelText: '계속 진행',
-    icon: 'flag',
-    danger: true,
+    icon: 'home',
+    danger: false,
   });
   if (ok) {
+    saveRunNow();
     toggleInGameOptions(false);
     audio.playCardPickup();
     engine.state = engine.createEmptyRunState('RUN_INIT', Date.now());
@@ -4346,6 +4948,11 @@ function renderCheckpointView(snap) {
   if (goldAmountEl) {
     goldAmountEl.textContent = (snap.gold ?? 0).toLocaleString();
   }
+  updateChancesElement(
+    document.getElementById('checkpoint-chances-hearts'),
+    snap.remainingChances ?? 3,
+    snap.maxChances ?? 3
+  );
 
   const deckCountEl = document.getElementById('checkpoint-deck-count');
   const deckCount = snap.playerDeckCardIds?.length || 30;
@@ -4364,49 +4971,38 @@ function renderCheckpointView(snap) {
     }
   }
 
-  // 포털 1: 다음 듀얼 인카운터 (상대 이름/전술 비공개 · 난이도와 보상만 표시)
+  // 포털 1: 다음 듀얼 인카운터 (다음 라운드 난이도 및 보상 명시)
   const enc = snap.nextEncounterInfo;
   if (enc) {
     const starsEl = document.getElementById('hub-encounter-stars');
     const rewardEl = document.getElementById('hub-encounter-reward');
 
-    if (starsEl) starsEl.textContent = `${enc.stars || '★☆☆☆☆'}`;
+    if (starsEl) starsEl.textContent = `다음 라운드 난이도: ${enc.stars || '★☆☆☆☆'}`;
     if (rewardEl) rewardEl.textContent = `+${(enc.rewardGold || 500).toLocaleString()}원`;
   }
 
-  // 포털 2: 정발 카드팩 상점
+  // 포털 2: 듀얼 숍 (미확인 시 NEW! 강조 배지, 확인 후 재고 요약 표시)
+  const currentRound = snap.roundNumber || 1;
+  const shopVisited = (snap.shopVisitedRound ?? engine?.state?.shopVisitedRound) === currentRound;
+  const shopNewBadge = document.getElementById('hub-shop-new-badge');
   const totalStock = (snap.checkpointShopStock || []).reduce((acc, p) => acc + (p.stock || 0), 0);
   const packKinds = (snap.checkpointShopStock || []).length;
   const shopStockEl = document.getElementById('hub-shop-stock-count');
+  if (shopNewBadge) shopNewBadge.hidden = shopVisited;
   if (shopStockEl) {
+    shopStockEl.hidden = !shopVisited;
     shopStockEl.textContent = `${packKinds}종 · ${totalStock}팩`;
   }
 
-  // 포털 3: 수상한 상인의 뒷골목
-  const merchantBadge = document.getElementById('hub-merchant-status-badge');
-  const merchantAvailDesc = document.getElementById('hub-merchant-avail-desc');
-  const hasMerchant = snap.suspiciousMerchant && snap.suspiciousMerchant.items && snap.suspiciousMerchant.items.length > 0;
-  if (hasMerchant) {
-    if (merchantBadge) {
-      merchantBadge.textContent = '방문 중';
-      merchantBadge.className = 'portal-tag tag-merchant';
-    }
-    if (merchantAvailDesc) {
-      const unboughtCount = snap.suspiciousMerchant.items.filter((i) => !i.purchased).length;
-      merchantAvailDesc.textContent = unboughtCount > 0 ? `${unboughtCount}건 교환` : '완판';
-      merchantAvailDesc.style.color = '#f472b6';
-    }
-  } else {
-    if (merchantBadge) {
-      merchantBadge.textContent = '미출현';
-      merchantBadge.className = 'portal-tag';
-      merchantBadge.style.background = 'rgba(100, 116, 139, 0.2)';
-      merchantBadge.style.color = '#94a3b8';
-      merchantBadge.style.border = '1px solid #475569';
-    }
-    if (merchantAvailDesc) {
-      merchantAvailDesc.textContent = '부재중';
-      merchantAvailDesc.style.color = '#94a3b8';
+  // 포털 3: 도전! (수상한 거래상 또는 골목 돌발 이벤트 존재 시 인기척 배지 표시)
+  const presencePill = document.getElementById('hub-alley-presence-pill');
+  const hasMerchant = Boolean(snap.suspiciousMerchant?.deals?.length || snap.suspiciousMerchant?.items?.length);
+  const hasAlleyEvent = Boolean(snap.alleySpecialEvent || snap.hasAlleyEncounterEvent);
+  if (presencePill) {
+    const hasPresence = hasMerchant || hasAlleyEvent;
+    presencePill.hidden = !hasPresence;
+    if (hasPresence) {
+      presencePill.textContent = '누군가의 인기척이 느껴집니다...';
     }
   }
 
@@ -4457,6 +5053,17 @@ function renderCheckpointEncounterSubpage(snap) {
     }
   }
 
+  const defeatRuleEl = document.getElementById('encounter-defeat-rule-text');
+  if (defeatRuleEl) {
+    const rem = snap.remainingChances ?? 3;
+    const maxC = snap.maxChances ?? 3;
+    if (rem <= 1) {
+      defeatRuleEl.innerHTML = `${svgIcon('warn')} 마지막 기회! 패배 시 여정 종료`;
+    } else {
+      defeatRuleEl.textContent = `기회 1 감소 (남은 기회 ${rem - 1}/${maxC}) · 다음 라운드`;
+    }
+  }
+
   const hintEl = document.getElementById('encounter-dossier-deck-hint');
   const duelBtn = document.getElementById('btn-start-encounter-from-subpage');
   if (deckCount === 30) {
@@ -4475,18 +5082,55 @@ function renderCheckpointEncounterSubpage(snap) {
 }
 
 /** 3. 카드팩 상점 전용 페이지 */
-function renderCheckpointShopSubpage(snap) {
-  const shopPortrait = document.getElementById('shopkeeper-portrait');
-  if (shopPortrait) {
-    const allSold = (snap.checkpointShopStock || []).every((p) => p.stock <= 0);
-    const hasLegend = (snap.checkpointShopStock || []).some((p) => p.faction === 'ALL' && p.stock > 0);
-    const mood = allSold ? 3 : hasLegend ? 2 : null;
-    const src = npcPortraitSrc('shop', snap.roundNumber, mood);
-    if (shopPortrait.dataset.src !== src) {
-      shopPortrait.dataset.src = src;
-      shopPortrait.innerHTML = artImg(src, 'npc-portrait-img', svgIcon('shop'));
-    }
+let shopTiredReaction = null; // { reason: 'noGold' | 'soldOut' | 'purchased', round: number }
+let shopTiredTimer = null;
+
+function clearShopTiredReaction() {
+  shopTiredReaction = null;
+  if (shopTiredTimer) {
+    clearTimeout(shopTiredTimer);
+    shopTiredTimer = null;
   }
+}
+
+function updateShopkeeperBanner(snap) {
+  const shopPortrait = document.getElementById('shopkeeper-portrait');
+  if (!shopPortrait) return;
+  const allSold = (snap.checkpointShopStock || []).every((p) => p.stock <= 0);
+  const hasLegend = (snap.checkpointShopStock || []).some((p) => p.faction === 'ALL' && p.stock > 0);
+  const cantBuyReason = shopTiredReaction?.reason || null;
+  const mood = cantBuyReason ? 3 : hasLegend ? 2 : null;
+  const portrait = npcPortraitHtml('shop', snap.roundNumber, mood);
+  if (shopPortrait.dataset.src !== portrait.key) {
+    shopPortrait.dataset.src = portrait.key;
+    shopPortrait.innerHTML = portrait.html;
+  }
+  const speechEl = document.getElementById('shop-speech-bubble');
+  if (speechEl) {
+    speechEl.textContent = npcDialogue('shop', engine?.state?.seed, snap.roundNumber, { allSold, hasLegend, cantBuyReason });
+  }
+}
+
+function triggerShopTiredReaction(reason, roundNumber) {
+  shopTiredReaction = { reason, round: roundNumber };
+  if (shopTiredTimer) clearTimeout(shopTiredTimer);
+  if (engine?.getSnapshot) {
+    updateShopkeeperBanner(engine.getSnapshot());
+  }
+  shopTiredTimer = setTimeout(() => {
+    shopTiredReaction = null;
+    shopTiredTimer = null;
+    if (currentViewKey === 'VIEW_CHECKPOINT_SHOP' && engine?.getSnapshot) {
+      updateShopkeeperBanner(engine.getSnapshot());
+    }
+  }, 3800);
+}
+
+function renderCheckpointShopSubpage(snap) {
+  if (shopTiredReaction && shopTiredReaction.round !== snap.roundNumber) {
+    clearShopTiredReaction();
+  }
+  updateShopkeeperBanner(snap);
   const goldEl = document.getElementById('shop-subpage-gold');
   if (goldEl) goldEl.textContent = (snap.gold ?? 0).toLocaleString();
 
@@ -4528,7 +5172,7 @@ function renderCheckpointShopSubpage(snap) {
 
     packEl.innerHTML = `
       <div class="pack-visual-box ${visualClass}">
-        ${artImg(PACK_ART[pack.id], 'pack-art-img', `<span class="pack-symbol-art">${symbol}</span>`)}
+        ${productWrapHtml(pack, artImg(PACK_ART[pack.id], 'pack-art-img', `<span class="pack-symbol-art">${symbol}</span>`))}
         <div class="pack-foil-shimmer"></div>
       </div>
       <div class="pack-info-wrap">
@@ -4541,16 +5185,23 @@ function renderCheckpointShopSubpage(snap) {
           </span>
         </div>
       </div>
-      <button class="btn primary-btn btn-buy-pack" ${isSoldOut || !canAfford ? 'disabled' : ''}>
+      <button class="btn primary-btn btn-buy-pack ${isSoldOut || !canAfford ? 'is-disabled' : ''}" ${isSoldOut || !canAfford ? 'aria-disabled="true"' : ''}>
         ${isSoldOut ? '품절' : !canAfford ? '골드 부족' : `구매 (${pack.price.toLocaleString()}원)`}
       </button>
     `;
 
     const buyBtn = packEl.querySelector('.btn-buy-pack');
     buyBtn?.addEventListener('click', async () => {
+      if (isSoldOut || !canAfford) {
+        audio.playLightTap();
+        triggerShopTiredReaction(isSoldOut ? 'soldOut' : 'noGold', snap.roundNumber);
+        return;
+      }
       try {
+        clearShopTiredReaction();
         audio.playCardPlayImpact();
         const result = engine.buyBoosterPack(pack.id);
+        saveRunNow();
         audio.playVictoryJingle();
         displayPackOpeningResultBanner(result.choices);
         renderCheckpointShopSubpage(engine.getSnapshot());
@@ -4566,6 +5217,7 @@ function renderCheckpointShopSubpage(snap) {
   // 2. 단품 낱장 카드 진열대 렌더링
   const singlesContainer = document.getElementById('checkpoint-shop-singles-container');
   if (singlesContainer) {
+    hideLogCardHoverPreview();
     singlesContainer.innerHTML = '';
     const singles = snap.checkpointShopSingles || [];
     singles.forEach((item) => {
@@ -4575,6 +5227,7 @@ function renderCheckpointShopSubpage(snap) {
       const isMonster = cardDef.type === 'MONSTER' || (cardDef.attack > 0 && cardDef.type !== 'SPELL');
       const itemEl = document.createElement('div');
       itemEl.className = `shop-single-card-item ${item.purchased ? 'is-purchased' : ''}`;
+      itemEl.dataset.cardId = item.cardId;
 
       const canAfford = (snap.gold ?? 0) >= item.price && !item.purchased;
 
@@ -4590,16 +5243,23 @@ function renderCheckpointShopSubpage(snap) {
             <strong style="font-size:1.05rem; font-weight:900; color:#fde047;">${item.price.toLocaleString()}원</strong>
           </div>
         </div>
-        <button class="btn secondary-btn btn-buy-shop-single" ${!canAfford ? 'disabled' : ''}>
+        <button class="btn secondary-btn btn-buy-shop-single ${!canAfford ? 'is-disabled' : ''}" ${!canAfford ? 'aria-disabled="true"' : ''}>
           ${item.purchased ? '구매 완료' : !canAfford ? '골드 부족' : `구매 (${item.price.toLocaleString()}원)`}
         </button>
       `;
 
       const buyBtn = itemEl.querySelector('.btn-buy-shop-single');
       buyBtn?.addEventListener('click', async () => {
+        if (!canAfford) {
+          audio.playLightTap();
+          triggerShopTiredReaction(item.purchased ? 'purchased' : 'noGold', snap.roundNumber);
+          return;
+        }
         try {
+          clearShopTiredReaction();
           audio.playCardPlayImpact();
           engine.buyShopSingleCard(item.cardId);
+          saveRunNow();
           audio.playVictoryJingle();
           renderCheckpointShopSubpage(engine.getSnapshot());
         } catch (err) {
@@ -4611,6 +5271,13 @@ function renderCheckpointShopSubpage(snap) {
       singlesContainer.appendChild(itemEl);
     });
   }
+}
+
+function hidePackOpeningResultBanner() {
+  const banner = document.getElementById('shop-pack-result-banner');
+  const cardsContainer = document.getElementById('shop-pack-result-cards');
+  if (banner) banner.classList.add('is-hidden');
+  if (cardsContainer) cardsContainer.innerHTML = '';
 }
 
 function displayPackOpeningResultBanner(choices) {
@@ -4633,7 +5300,7 @@ function displayPackOpeningResultBanner(choices) {
 }
 
 document.getElementById('btn-close-pack-result')?.addEventListener('click', () => {
-  document.getElementById('shop-pack-result-banner')?.classList.add('is-hidden');
+  hidePackOpeningResultBanner();
 });
 
 /** 4. 수상한 상인의 뒷골목 전용 페이지 (암시장 물물교환) */
@@ -4662,13 +5329,15 @@ function openTradeSelectModal(deal) {
     const reqCount = deal.wantedCardIds ? deal.wantedCardIds.length : (deal.requiredCardCount || 1);
 
     targetPreviewEl.innerHTML = `
-      <div style="font-size:0.8rem; font-weight:800; color:#c084fc; margin-bottom:4px;">획득 카드</div>
-      <div style="width:130px; height:182px; display:flex; align-items:center; justify-content:center;">
-        ${rDef ? generateCompositeCardHtml(rDef, rDef.attack, rDef.defense ?? rDef.health, 0.65, false) : ''}
-      </div>
-      <div style="text-align:center; margin-top:6px;">
-        <h4 style="margin:0; font-size:1.02rem; color:#f8fafc; font-weight:800;">${rDef?.name || deal.cardName}</h4>
-        <span style="font-size:0.75rem; color:#a855f7;">${isMonster ? `Lv.${rDef.level || rDef.cost} 몬스터` : '마법 카드'}</span>
+      <div class="modal-trade-offer-preview" ${rDef ? `data-card-id="${rDef.id}"` : ''}>
+        <div style="font-size:0.8rem; font-weight:800; color:#c084fc; margin-bottom:4px; text-align:center;">획득 카드</div>
+        <div style="width:130px; height:182px; display:flex; align-items:center; justify-content:center; margin:0 auto;">
+          ${rDef ? generateCompositeCardHtml(rDef, rDef.attack, rDef.defense ?? rDef.health, 0.65, false) : ''}
+        </div>
+        <div style="text-align:center; margin-top:6px;">
+          <h4 style="margin:0; font-size:1.02rem; color:#f8fafc; font-weight:800;">${rDef?.name || deal.cardName}</h4>
+          <span style="font-size:0.75rem; color:#a855f7;">${isMonster ? `Lv.${rDef.level || rDef.cost} 몬스터` : '마법 카드'}</span>
+        </div>
       </div>
 
       <!-- 요구 카드 체크리스트 박스 -->
@@ -4687,12 +5356,13 @@ function openTradeSelectModal(deal) {
   renderTradeTrunkCards(snap);
   updateTradeModalState(snap);
 
-  modal.classList.add('active');
+  openModalWithCrt(modal, { mode: 'active' });
 }
 
 function closeTradeModal() {
+  hideLogCardHoverPreview();
   const modal = document.getElementById('modal-trade-select');
-  if (modal) modal.classList.remove('active');
+  if (modal) closeModalWithCrt(modal, { mode: 'active' });
   activeTradeDeal = null;
   activeSelectedCandidates = [];
   activeSelectedTrunkIndices = [];
@@ -4701,6 +5371,7 @@ function closeTradeModal() {
 function renderTradeTrunkCards(snap) {
   const container = document.getElementById('trade-trunk-cards-container');
   if (!container) return;
+  hideLogCardHoverPreview();
   container.innerHTML = '';
 
   const trunkCards = snap.playerTrunkCardIds || [];
@@ -4838,7 +5509,7 @@ function updateTradeModalState(snap) {
       }
       const wDef = lookupCardDef(wId);
       return `
-        <div class="modal-wanted-item ${isSatisfied ? 'is-satisfied' : 'is-pending'}">
+        <div class="modal-wanted-item ${isSatisfied ? 'is-satisfied' : 'is-pending'}" data-card-id="${wId}">
           <span>${isSatisfied ? svgIcon('check') : svgIcon('crystal')} ${wDef?.name || wId}</span>
           <span style="font-size:0.65rem; font-weight:800;">${isSatisfied ? `선택됨${sourceTag}` : '대기 중'}</span>
         </div>
@@ -4907,13 +5578,26 @@ function updateTradeModalState(snap) {
 function renderCheckpointMerchantSubpage(snap) {
   renderCheckpointEncounterSubpage(snap);
 
+  const merchantHere = Boolean(snap.suspiciousMerchant?.deals?.length || snap.suspiciousMerchant?.items?.length);
+  const alleyFlag = merchantHere ? '1' : '';
+  if (document.body.dataset.alleyMerchant !== alleyFlag) {
+    document.body.dataset.alleyMerchant = alleyFlag;
+    if (currentViewKey === 'VIEW_CHECKPOINT_MERCHANT') refreshSceneBackdrop();
+  }
+
   const merchantIcon = document.querySelector('#merchant-dialogue-banner .merchant-npc-icon');
   if (merchantIcon) {
-    const done = (snap.suspiciousMerchant?.deals || []).filter((d) => d.completed).length;
-    const src = npcPortraitSrc('merchant', snap.roundNumber, done > 0 ? 3 : null);
-    if (merchantIcon.dataset.src !== src) {
-      merchantIcon.dataset.src = src;
-      merchantIcon.innerHTML = artImg(src, 'npc-portrait-img', svgIcon('merchant'));
+    if (!merchantHere) {
+      merchantIcon.style.display = 'none';
+      merchantIcon.dataset.src = '';
+    } else {
+      merchantIcon.style.display = '';
+      const done = (snap.suspiciousMerchant?.deals || []).filter((d) => d.completed).length;
+      const portrait = npcPortraitHtml('merchant', snap.roundNumber, done > 0 ? 3 : null);
+      if (merchantIcon.dataset.src !== portrait.key) {
+        merchantIcon.dataset.src = portrait.key;
+        merchantIcon.innerHTML = portrait.html;
+      }
     }
   }
   const goldEl = document.getElementById('merchant-subpage-gold');
@@ -4939,10 +5623,18 @@ function renderCheckpointMerchantSubpage(snap) {
     return;
   }
 
-  if (dialogueText && merchant.dialogue) {
-    dialogueText.textContent = merchant.dialogue;
+  if (dialogueText) {
+    const dealsList = merchant.deals || [];
+    const doneCount = dealsList.filter((d) => d.completed).length;
+    const sampleCardName = dealsList[0]?.wantedCardNames?.[0] || '카드';
+    dialogueText.textContent = npcDialogue('merchant', engine?.state?.seed, snap.roundNumber, {
+      sampleCardName,
+      doneCount,
+      totalCount: dealsList.length,
+    }) || merchant.dialogue || '';
   }
 
+  hideLogCardHoverPreview();
   container.innerHTML = '';
 
   // 1) 신규 암시장 물물교환(Trade Deals) 제안 목록 렌더링
@@ -4996,7 +5688,7 @@ function renderCheckpointMerchantSubpage(snap) {
               : `${svgIcon('cross')} 미보유`;
 
           return `
-            <div class="wanted-chip">
+            <div class="wanted-chip" data-card-id="${wId}">
               <div class="wanted-chip-left">
                 <span style="font-size:0.75rem;">${svgIcon('target')}</span>
                 <span>${wDef?.name || wId}</span>
@@ -5008,18 +5700,17 @@ function renderCheckpointMerchantSubpage(snap) {
 
         wantedHtml = `<div class="deal-wanted-list">${chipsHtml}</div>`;
       } else {
-        wantedHtml = `<div class="req-desc">${deal.flavor || '가방의 카드를 건네고 교환합니다.'}</div>`;
+        wantedHtml = `<div class="req-desc">가방의 카드를 건네고 교환합니다.</div>`;
       }
 
       dealCardEl.innerHTML = `
-        <div class="deal-offer-side">
+        <div class="deal-offer-side" data-card-id="${cardDef.id}">
           <div class="deal-preview-mini">
             ${generateCompositeCardHtml(cardDef, cardDef.attack, cardDef.defense ?? cardDef.health, 0.48, true)}
           </div>
           <div class="deal-info-wrap">
             <h4 class="deal-card-name">${cardDef.name}</h4>
             <span class="deal-card-type">${isMonster ? `Lv.${cardDef.level || cardDef.cost} 몬스터` : '마법 카드'}</span>
-            <span style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">${deal.flavor || ''}</span>
           </div>
         </div>
 
@@ -5059,6 +5750,7 @@ function renderCheckpointMerchantSubpage(snap) {
       const isMonster = cardDef.type === 'MONSTER' || (cardDef.attack > 0 && cardDef.type !== 'SPELL');
       const itemCardEl = document.createElement('div');
       itemCardEl.className = `merchant-item-card ${item.purchased ? 'is-purchased' : ''}`;
+      itemCardEl.dataset.cardId = item.cardId;
       const canAfford = (snap.gold ?? 0) >= item.price && !item.purchased;
 
       itemCardEl.innerHTML = `
@@ -5083,6 +5775,7 @@ function renderCheckpointMerchantSubpage(snap) {
         try {
           audio.playCardPlayImpact();
           engine.buySuspiciousMerchantCard(item.cardId);
+          saveRunNow();
           audio.playVictoryJingle();
           renderCheckpointMerchantSubpage(engine.getSnapshot());
         } catch (err) {
@@ -5096,11 +5789,96 @@ function renderCheckpointMerchantSubpage(snap) {
   }
 }
 
+const PLAYER_DECK_NAME_KEY = 'duel_rogue_deck_name_v1';
+
+function getPlayerDeckName() {
+  const fromState = typeof engine?.state?.playerDeckName === 'string' ? engine.state.playerDeckName.trim() : '';
+  if (fromState) return fromState;
+  try {
+    const saved = (localStorage.getItem(PLAYER_DECK_NAME_KEY) || '').trim();
+    if (saved) return saved;
+  } catch { /* ignore */ }
+  return 'PLAYER';
+}
+
+function setPlayerDeckName(nextName) {
+  const normalized = String(nextName || '').trim().slice(0, 24) || 'PLAYER';
+  if (engine?.state) {
+    engine.state.playerDeckName = normalized;
+    if (engine.state.phase && engine.state.phase !== 'IDLE') saveRunNow();
+  }
+  try {
+    localStorage.setItem(PLAYER_DECK_NAME_KEY, normalized);
+  } catch { /* ignore */ }
+  const textEl = document.getElementById('editor-deck-name-text');
+  const inputEl = document.getElementById('input-edit-deck-name');
+  if (textEl) textEl.textContent = normalized;
+  if (inputEl && inputEl.value !== normalized) inputEl.value = normalized;
+  return normalized;
+}
+
+function sortDeckMasterFirst(cardIds, deckMasterCardId) {
+  if (!Array.isArray(cardIds)) return [];
+  if (!deckMasterCardId) return [...cardIds];
+  const masters = [];
+  const others = [];
+  for (const id of cardIds) {
+    if (id === deckMasterCardId) masters.push(id);
+    else others.push(id);
+  }
+  return [...masters, ...others];
+}
+
+(function initEditableDeckNameUi() {
+  const btn = document.getElementById('btn-edit-deck-name');
+  const input = document.getElementById('input-edit-deck-name');
+  if (!btn || !input) return;
+
+  const commit = () => {
+    setPlayerDeckName(input.value);
+    input.hidden = true;
+    btn.hidden = false;
+  };
+  const cancel = () => {
+    input.value = getPlayerDeckName();
+    input.hidden = true;
+    btn.hidden = false;
+  };
+
+  btn.addEventListener('click', () => {
+    audio.playCardPickup();
+    input.value = getPlayerDeckName();
+    btn.hidden = true;
+    input.hidden = false;
+    input.focus();
+    input.select();
+  });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      audio.playLightTap();
+      commit();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      cancel();
+    }
+  });
+  input.addEventListener('blur', commit);
+})();
+
 /** 5. 유희왕 콘솔 스타일 가방 & 덱 편집기 (트렁크) */
 function renderCheckpointDeckEditorSubpage(snap) {
-  const deckCards = snap.playerDeckCardIds || [];
+  const rawDeckCards = snap.playerDeckCardIds || [];
   const trunkCards = snap.playerTrunkCardIds || [];
   const deckMasterId = snap.playerDeckMasterCardId;
+  const deckCards = sortDeckMasterFirst(rawDeckCards, deckMasterId);
+
+  const deckNameTextEl = document.getElementById('editor-deck-name-text');
+  const deckNameInputEl = document.getElementById('input-edit-deck-name');
+  const deckName = getPlayerDeckName();
+  if (deckNameTextEl) deckNameTextEl.textContent = deckName;
+  if (deckNameInputEl && deckNameInputEl.hidden) deckNameInputEl.value = deckName;
 
   // 헤더 미터
   const currentCountEl = document.getElementById('editor-deck-current-count');
@@ -5119,19 +5897,19 @@ function renderCheckpointDeckEditorSubpage(snap) {
   if (deckCards.length === 30) {
     if (meterPill) { meterPill.className = 'meter-pill is-valid'; }
     if (noticeEl) {
-      noticeEl.innerHTML = `${svgIcon('check')} 출전 덱(30장) 구성이 완료되었습니다.`;
+      noticeEl.innerHTML = `${svgIcon('check')} 30/30장 완료`;
       noticeEl.className = 'editor-status-notice';
     }
   } else if (deckCards.length < 30) {
     if (meterPill) { meterPill.className = 'meter-pill is-invalid'; }
     if (noticeEl) {
-      noticeEl.innerHTML = `${svgIcon('warn')} 덱 매수가 부족합니다. (현재 ${deckCards.length}장 / 30장) 가방에서 ${30 - deckCards.length}장을 더 추가하세요.`;
+      noticeEl.innerHTML = `${svgIcon('warn')} ${deckCards.length}/30장 (+${30 - deckCards.length}장 필요)`;
       noticeEl.className = 'editor-status-notice is-error';
     }
   } else {
     if (meterPill) { meterPill.className = 'meter-pill is-invalid'; }
     if (noticeEl) {
-      noticeEl.innerHTML = `${svgIcon('warn')} 덱 매수가 초과되었습니다. (현재 ${deckCards.length}장 / 30장) 덱에서 ${deckCards.length - 30}장을 빼 가방으로 보내세요.`;
+      noticeEl.innerHTML = `${svgIcon('warn')} ${deckCards.length}/30장 (-${deckCards.length - 30}장 초과)`;
       noticeEl.className = 'editor-status-notice is-error';
     }
   }
@@ -5240,7 +6018,257 @@ function renderCheckpointDeckEditorSubpage(snap) {
   if (initialPreviewDef) {
     syncEditorInspectedCard(initialPreviewDef, initialPreviewDef.id === deckMasterId);
   }
+  syncEditorCosmeticsUi();
 }
+
+function syncEditorCosmeticsUi() {
+  const sleeveSel = document.getElementById('sel-editor-sleeve-preset');
+  const sleevePreview = document.getElementById('editor-sleeve-preview');
+  const sleeveCustomBtn = document.getElementById('btn-editor-sleeve-custom');
+  const matSel = document.getElementById('sel-editor-mat-preset');
+  const matPreview = document.getElementById('editor-mat-preview');
+
+  if (sleeveSel) {
+    sleeveSel.value = SLEEVE_PRESETS[cosmeticsConfig.sleevePreset]
+      ? cosmeticsConfig.sleevePreset
+      : 'DEFAULT';
+  }
+  if (sleevePreview) {
+    sleevePreview.innerHTML = generateCardBackHtml(0.24, { usePlayerCosmetic: true });
+  }
+  if (sleeveCustomBtn) {
+    sleeveCustomBtn.hidden = cosmeticsConfig.sleevePreset !== 'CUSTOM';
+  }
+
+  if (matSel) {
+    if (matSel.options.length !== Object.keys(MAT_PRESETS).length) {
+      matSel.innerHTML = Object.values(MAT_PRESETS)
+        .map((m) => `<option value="${m.id}">${m.label}</option>`)
+        .join('');
+    }
+    matSel.value = MAT_PRESETS[cosmeticsConfig.matPreset]
+      ? cosmeticsConfig.matPreset
+      : 'GRAY_SOLID';
+  }
+  if (matPreview) {
+    const mat = MAT_PRESETS[cosmeticsConfig.matPreset] || MAT_PRESETS.GRAY_SOLID;
+    matPreview.style.backgroundImage = mat.image ? `url("${mat.image}")` : 'none';
+    matPreview.style.backgroundColor = mat.color;
+    matPreview.style.borderColor = `${mat.borderTop} ${mat.borderBottom} ${mat.borderBottom} ${mat.borderTop}`;
+  }
+
+  applyDuelCosmetics(cosmeticsConfig);
+}
+
+document.getElementById('sel-editor-sleeve-preset')?.addEventListener('change', (e) => {
+  const next = e.target.value;
+  cosmeticsConfig.sleevePreset = SLEEVE_PRESETS[next] ? next : 'DEFAULT';
+  saveCosmeticsConfig(cosmeticsConfig);
+  audio.playCardPickup();
+  syncEditorCosmeticsUi();
+});
+
+document.getElementById('btn-editor-sleeve-custom')?.addEventListener('click', () => {
+  audio.playCardPickup();
+  openCustomSleeveModal();
+});
+
+document.getElementById('sel-editor-mat-preset')?.addEventListener('change', (e) => {
+  const next = e.target.value;
+  cosmeticsConfig.matPreset = MAT_PRESETS[next] ? next : 'GRAY_SOLID';
+  saveCosmeticsConfig(cosmeticsConfig);
+  audio.playCardPickup();
+  syncEditorCosmeticsUi();
+});
+
+// ================= 커스텀 카드 슬리브 빌더 모달 =================
+let draftCustomSleeve = null;
+
+function renderCustomSleevePreviews() {
+  if (!draftCustomSleeve) return;
+  const uri = buildCustomSleeveSvgDataUri(draftCustomSleeve);
+  const liveBox = document.getElementById('custom-sleeve-live-preview');
+  const miniBox = document.getElementById('custom-sleeve-mini-preview');
+  const html = `
+    <div class="card-composite-wrapper card-back-wrapper" data-sleeve="CUSTOM">
+      <div class="card-back-inner">
+        <img src="${uri}" class="card-back-svg-img" alt="커스텀 슬리브" draggable="false" />
+      </div>
+    </div>
+  `;
+  if (liveBox) liveBox.innerHTML = html;
+  if (miniBox) miniBox.innerHTML = html;
+}
+
+function buildCustomSleeveDialsUi() {
+  const grid = document.getElementById('custom-sleeve-dials-grid');
+  if (!grid || !draftCustomSleeve) return;
+  const dialDefs = [
+    { key: 'c1', label: '색깔 1 · 배경' },
+    { key: 'c2', label: '색깔 2 · 테두리' },
+    { key: 'c3', label: '색깔 3 · 문양 1' },
+    { key: 'c4', label: '색깔 4 · 문양 2' },
+  ];
+
+  grid.innerHTML = dialDefs.map(({ key, label }) => {
+    const c = draftCustomSleeve[key];
+    const cssColor = dialColorToCss(c);
+    return `
+      <div class="cs-dial-card" data-dial-key="${key}">
+        <div class="cs-dial-head">
+          <span class="cs-dial-title">${label}</span>
+          <span class="cs-dial-swatch" style="background:${cssColor};" title="${cssColor}"></span>
+        </div>
+        <div class="cs-dial-body">
+          <div class="cs-hue-wheel" data-wheel-key="${key}" title="드래그하여 색조 회전">
+            <div class="cs-hue-needle" style="transform: rotate(${c.h}deg);"></div>
+            <div class="cs-hue-center" style="background:${cssColor};">${c.h}°</div>
+          </div>
+          <div class="cs-sliders-col">
+            <label class="cs-slider-row">
+              <span>색조</span>
+              <input type="range" class="cs-hue-range" data-hue-key="${key}" min="0" max="359" value="${c.h}" />
+            </label>
+            <label class="cs-slider-row">
+              <span>채도</span>
+              <input type="range" class="cs-sat-range" data-sat-key="${key}" min="0" max="100" value="${c.s}" />
+            </label>
+            <label class="cs-slider-row">
+              <span>명도</span>
+              <input type="range" class="cs-lum-range" data-lum-key="${key}" min="10" max="88" value="${c.l}" />
+            </label>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const syncSingleDialVisual = (key) => {
+    const c = draftCustomSleeve[key];
+    const cssColor = dialColorToCss(c);
+    const card = grid.querySelector(`.cs-dial-card[data-dial-key="${key}"]`);
+    if (!card) return;
+    const swatch = card.querySelector('.cs-dial-swatch');
+    const needle = card.querySelector('.cs-hue-needle');
+    const center = card.querySelector('.cs-hue-center');
+    const hueInput = card.querySelector('.cs-hue-range');
+    if (swatch) { swatch.style.background = cssColor; swatch.title = cssColor; }
+    if (needle) needle.style.transform = `rotate(${c.h}deg)`;
+    if (center) { center.style.background = cssColor; center.textContent = `${c.h}°`; }
+    if (hueInput && Number(hueInput.value) !== c.h) hueInput.value = String(c.h);
+    renderCustomSleevePreviews();
+  };
+
+  grid.querySelectorAll('.cs-hue-wheel').forEach((wheelEl) => {
+    const key = wheelEl.dataset.wheelKey;
+    const applyPointerAngle = (clientX, clientY) => {
+      const rect = wheelEl.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const deg = (Math.round(Math.atan2(clientY - cy, clientX - cx) * (180 / Math.PI) + 90) + 360) % 360;
+      draftCustomSleeve[key].h = deg;
+      syncSingleDialVisual(key);
+    };
+    wheelEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      wheelEl.setPointerCapture?.(e.pointerId);
+      applyPointerAngle(e.clientX, e.clientY);
+      const onMove = (ev) => applyPointerAngle(ev.clientX, ev.clientY);
+      const onUp = () => {
+        wheelEl.removeEventListener('pointermove', onMove);
+        wheelEl.removeEventListener('pointerup', onUp);
+        wheelEl.removeEventListener('pointercancel', onUp);
+      };
+      wheelEl.addEventListener('pointermove', onMove);
+      wheelEl.addEventListener('pointerup', onUp);
+      wheelEl.addEventListener('pointercancel', onUp);
+    });
+  });
+
+  grid.querySelectorAll('.cs-hue-range').forEach((inp) => {
+    inp.addEventListener('input', () => {
+      const key = inp.dataset.hueKey;
+      draftCustomSleeve[key].h = Number(inp.value) || 0;
+      syncSingleDialVisual(key);
+    });
+  });
+  grid.querySelectorAll('.cs-sat-range').forEach((inp) => {
+    inp.addEventListener('input', () => {
+      const key = inp.dataset.satKey;
+      draftCustomSleeve[key].s = Number(inp.value) || 0;
+      syncSingleDialVisual(key);
+    });
+  });
+  grid.querySelectorAll('.cs-lum-range').forEach((inp) => {
+    inp.addEventListener('input', () => {
+      const key = inp.dataset.lumKey;
+      draftCustomSleeve[key].l = Number(inp.value) || 50;
+      syncSingleDialVisual(key);
+    });
+  });
+}
+
+function populateCustomSleevePartSelects() {
+  const map = [
+    { id: 'sel-cs-bg-pattern', key: 'bgPattern' },
+    { id: 'sel-cs-border-style', key: 'borderStyle' },
+    { id: 'sel-cs-emblem1', key: 'emblem1' },
+    { id: 'sel-cs-emblem2', key: 'emblem2' },
+  ];
+  map.forEach(({ id, key }) => {
+    const sel = document.getElementById(id);
+    if (!sel || !draftCustomSleeve) return;
+    if (sel.options.length === 0) {
+      sel.innerHTML = CUSTOM_SLEEVE_OPTIONS[key]
+        .map((opt) => `<option value="${opt.id}">${opt.label}</option>`)
+        .join('');
+      sel.addEventListener('change', () => {
+        if (!draftCustomSleeve) return;
+        draftCustomSleeve[key] = sel.value;
+        audio.playLightTap();
+        renderCustomSleevePreviews();
+      });
+    }
+    sel.value = draftCustomSleeve[key];
+  });
+}
+
+function openCustomSleeveModal() {
+  const modal = document.getElementById('modal-custom-sleeve');
+  if (!modal) return;
+  draftCustomSleeve = normalizeCustomSleeve(cosmeticsConfig.customSleeve);
+  populateCustomSleevePartSelects();
+  buildCustomSleeveDialsUi();
+  renderCustomSleevePreviews();
+  openModalWithCrt(modal, { mode: 'hidden' });
+}
+
+function closeCustomSleeveModal() {
+  closeModalWithCrt(document.getElementById('modal-custom-sleeve'), { mode: 'hidden' });
+}
+
+document.getElementById('btn-close-custom-sleeve')?.addEventListener('click', closeCustomSleeveModal);
+document.getElementById('btn-cs-cancel')?.addEventListener('click', closeCustomSleeveModal);
+document.getElementById('custom-sleeve-backdrop')?.addEventListener('click', closeCustomSleeveModal);
+
+document.getElementById('btn-cs-reset')?.addEventListener('click', () => {
+  draftCustomSleeve = normalizeCustomSleeve(DEFAULT_CUSTOM_SLEEVE);
+  populateCustomSleevePartSelects();
+  buildCustomSleeveDialsUi();
+  renderCustomSleevePreviews();
+  audio.playLightTap();
+});
+
+document.getElementById('btn-cs-apply')?.addEventListener('click', () => {
+  if (draftCustomSleeve) {
+    cosmeticsConfig.customSleeve = normalizeCustomSleeve(draftCustomSleeve);
+    cosmeticsConfig.sleevePreset = 'CUSTOM';
+    saveCosmeticsConfig(cosmeticsConfig);
+    audio.playCardPlayImpact();
+    syncEditorCosmeticsUi();
+  }
+  closeCustomSleeveModal();
+});
 
 let currentEditorInspectedCardId = null;
 
@@ -5336,7 +6364,7 @@ function hasDeckEditorChanges() {
 }
 
 function commitDeckEditorChanges() {
-  scheduleRunSave();
+  saveRunNow();
   deckEditorBaseline = null;
 }
 
@@ -5431,12 +6459,12 @@ function openDeckMasterPickerModal() {
   bodyEl.querySelectorAll('[data-dm-candidate]').forEach((el) => {
     el.addEventListener('click', () => {
       const targetId = el.getAttribute('data-dm-candidate');
-      modalEl.classList.remove('active');
+      closeModalWithCrt(modalEl, { mode: 'active' });
       applyDeckMasterChange(targetId);
     });
   });
 
-  modalEl.classList.add('active');
+  openModalWithCrt(modalEl, { mode: 'active' });
 }
 
 document.getElementById('btn-change-deckmaster')?.addEventListener('click', () => {
@@ -5446,12 +6474,12 @@ document.getElementById('btn-change-deckmaster')?.addEventListener('click', () =
 
 document.getElementById('btn-close-deckmaster-modal')?.addEventListener('click', () => {
   audio.playLightTap();
-  document.getElementById('modal-deckmaster-select')?.classList.remove('active');
+  closeModalWithCrt(document.getElementById('modal-deckmaster-select'), { mode: 'active' });
 });
 
 document.getElementById('modal-deckmaster-select')?.addEventListener('click', (e) => {
   if (e.target.id === 'modal-deckmaster-select') {
-    e.target.classList.remove('active');
+    closeModalWithCrt(e.target, { mode: 'active' });
   }
 });
 
@@ -5461,6 +6489,12 @@ document.getElementById('modal-deckmaster-select')?.addEventListener('click', (e
 // 허브에서 서브페이지로 이동
 document.getElementById('btn-checkpoint-nav-shop')?.addEventListener('click', () => {
   audio.playCardPickup();
+  clearShopTiredReaction();
+  hidePackOpeningResultBanner();
+  if (engine?.state) {
+    engine.state.shopVisitedRound = engine.state.roundNumber || 1;
+    saveRunNow();
+  }
   switchView('VIEW_CHECKPOINT_SHOP');
   renderCheckpointShopSubpage(engine.getSnapshot());
 });
@@ -5490,12 +6524,14 @@ document.getElementById('btn-checkpoint-nav-deck')?.addEventListener('click', ()
 
 document.getElementById('btn-shop-back-hub')?.addEventListener('click', () => {
   audio.playCardPickup();
+  hidePackOpeningResultBanner();
   switchView('VIEW_CHECKPOINT');
   renderCheckpointView(engine.getSnapshot());
 });
 
 document.getElementById('btn-merchant-back-hub')?.addEventListener('click', () => {
   audio.playCardPickup();
+  hideLogCardHoverPreview();
   switchView('VIEW_CHECKPOINT');
   renderCheckpointView(engine.getSnapshot());
 });
@@ -5527,6 +6563,7 @@ document.getElementById('btn-editor-finish')?.addEventListener('click', async ()
 // 서브페이지 간 빠른 덱 편집실 바로가기
 document.getElementById('btn-shop-to-editor')?.addEventListener('click', () => {
   audio.playCardPickup();
+  hidePackOpeningResultBanner();
   openCheckpointDeckEditor();
 });
 
@@ -5615,6 +6652,7 @@ document.getElementById('btn-confirm-trade')?.addEventListener('click', async ()
   try {
     audio.playCardPlayImpact();
     engine.executeMerchantTrade(activeTradeDeal.dealId, offeredCardIds);
+    saveRunNow();
     audio.playVictoryJingle();
     closeTradeModal();
     renderCheckpointMerchantSubpage(engine.getSnapshot());
@@ -5630,6 +6668,7 @@ document.getElementById('btn-confirm-trade')?.addEventListener('click', async ()
 // ============================================================================
 function renderPackOpening(snap) {
   const container = document.getElementById('pack-cards-container');
+  hideLogCardHoverPreview();
   container.innerHTML = '';
   selectedCardInPack = null;
   const claimBtn = document.getElementById('btn-claim-pack-card');
@@ -5712,12 +6751,25 @@ function renderRunSummary(snap, isVictory) {
       ? '운명의 최종 보스를 물리쳤습니다! (시드 런 · 바인더 및 명예의 전당 기록 제외)'
       : '운명의 최종 보스를 물리치고 모든 시련을 완주했습니다!';
   } else {
-    badgeEl.innerHTML = svgIcon('skull');
+    badgeEl.innerHTML = svgIcon('whiteSkull');
     titleEl.textContent = 'DEFEAT';
     titleEl.style.color = '#f87171';
-    descEl.textContent = isSeeded
-      ? '라이프 포인트가 0이 되어 여정이 종료되었습니다. (시드 런 · 기록 제외)'
-      : '라이프 포인트가 0이 되어 여정이 종료되었습니다.';
+    if (snap.lastDefeatInfo?.wasBoss) {
+      descEl.textContent = isSeeded
+        ? '최종 보스에게 패배하여 여정이 즉시 종료되었습니다. (시드 런 · 기록 제외)'
+        : '최종 보스에게 패배하여 여정이 즉시 종료되었습니다.';
+    } else {
+      descEl.textContent = isSeeded
+        ? '기회 3회를 모두 소진하여 여정이 종료되었습니다. (시드 런 · 기록 제외)'
+        : '기회 3회를 모두 소진하여 여정이 종료되었습니다.';
+    }
+  }
+
+  const summaryChancesEl = document.getElementById('summary-chances-badge');
+  if (summaryChancesEl) {
+    const rem = snap.remainingChances ?? 0;
+    const max = snap.maxChances ?? 3;
+    summaryChancesEl.innerHTML = `<span>남은 기회</span> ${renderChancesHeartsHtml(rem, max)}`;
   }
 
   if (seedBadgeEl) {
@@ -5730,7 +6782,7 @@ function renderRunSummary(snap, isVictory) {
   }
 
   deckListEl.innerHTML = '';
-  snap.playerDeckCardIds.forEach((cardId) => {
+  sortDeckMasterFirst(snap.playerDeckCardIds, snap.playerDeckMasterCardId).forEach((cardId) => {
     const def = lookupCardDef(cardId);
     if (!def) return;
     const isMaster = cardId === snap.playerDeckMasterCardId;
@@ -5755,7 +6807,484 @@ document.getElementById('btn-return-to-lobby')?.addEventListener('click', () => 
   engine.state = engine.createEmptyRunState('RUN_INIT', Date.now());
   resetRunUiTransitionState('IDLE');
   refreshContinueButton();
-  switchView('VIEW_TITLE_LOBBY');
+  switchView('VIEW_TITLE_LOBBY', { direction: 'back' });
+});
+
+// ============================================================================
+// 7-B. 전체 덱 보기 팝업 & 클립보드 이미지 캡처
+// ============================================================================
+let currentDeckOverviewState = {
+  cardIds: [],
+  deckMasterCardId: null,
+  title: '전체 덱 보기',
+};
+
+function loadImageForCanvas(src) {
+  return new Promise((resolve) => {
+    if (!src) {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function drawRoundedRectPath(ctx, x, y, w, h, r) {
+  const rad = Math.min(r, w * 0.5, h * 0.5);
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.lineTo(x + w - rad, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + rad);
+  ctx.lineTo(x + w, y + h - rad);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - rad, y + h);
+  ctx.lineTo(x + rad, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - rad);
+  ctx.lineTo(x, y + rad);
+  ctx.quadraticCurveTo(x, y, x + rad, y);
+  ctx.closePath();
+}
+
+function fitCanvasText(ctx, text, maxW) {
+  const s = String(text || '');
+  if (ctx.measureText(s).width <= maxW) return s;
+  let trimmed = s;
+  while (trimmed.length > 1 && ctx.measureText(`${trimmed}…`).width > maxW) {
+    trimmed = trimmed.slice(0, -1);
+  }
+  return `${trimmed}…`;
+}
+
+function openDeckOverviewModal({ cardIds = [], deckMasterCardId = null, title = getPlayerDeckName() } = {}) {
+  const modal = document.getElementById('modal-deck-overview');
+  const titleEl = document.getElementById('deck-overview-title');
+  const statsEl = document.getElementById('deck-overview-stats');
+  const statusEl = document.getElementById('deck-overview-status');
+  const gridEl = document.getElementById('deck-overview-grid');
+  if (!modal || !gridEl) return;
+
+  const list = sortDeckMasterFirst(cardIds, deckMasterCardId);
+  currentDeckOverviewState = {
+    cardIds: list,
+    deckMasterCardId: deckMasterCardId || null,
+    title: String(title || getPlayerDeckName()),
+  };
+
+  if (titleEl) {
+    titleEl.innerHTML = `${svgIcon('scroll')} ${title}`;
+  }
+  if (statusEl) {
+    statusEl.textContent = '';
+    statusEl.classList.remove('is-warn');
+  }
+
+  let monsterCount = 0;
+  let spellCount = 0;
+  list.forEach((cid) => {
+    const def = lookupCardDef(cid);
+    if (!def) return;
+    if (def.type === 'SPELL') spellCount += 1;
+    else monsterCount += 1;
+  });
+  const masterDef = deckMasterCardId ? lookupCardDef(deckMasterCardId) : null;
+  if (statsEl) {
+    const masterTxt = masterDef ? ` · 덱 마스터: ${masterDef.name}` : '';
+    statsEl.textContent = `총 ${list.length}장 (몬스터 ${monsterCount} / 마법 ${spellCount})${masterTxt}`;
+  }
+
+  gridEl.innerHTML = '';
+  list.forEach((cardId) => {
+    const def = lookupCardDef(cardId);
+    if (!def) return;
+    const isMaster = Boolean(deckMasterCardId && cardId === deckMasterCardId);
+    const slot = document.createElement('div');
+    slot.className = `card-slot ${isMaster ? 'is-deckmaster' : ''}`;
+    slot.title = def.name;
+    slot.innerHTML = generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.44, true);
+    slot.addEventListener('mouseenter', () => updateCardInspector(def, null, null, { isDeckMaster: isMaster }));
+    slot.addEventListener('click', () => {
+      audio.playCardPickup();
+      updateCardInspector(def, null, null, { isDeckMaster: isMaster });
+    });
+    gridEl.appendChild(slot);
+  });
+
+  openModalWithCrt(modal, { mode: 'hidden' });
+}
+
+async function captureDeckOverviewToClipboard() {
+  const statusEl = document.getElementById('deck-overview-status');
+  const btn = document.getElementById('btn-capture-deck-clipboard');
+  const { cardIds = [], deckMasterCardId = null, title = '전체 덱 보기' } = currentDeckOverviewState;
+  if (!cardIds.length) {
+    if (statusEl) {
+      statusEl.textContent = '캡처할 카드가 없습니다.';
+      statusEl.classList.add('is-warn');
+    }
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  if (statusEl) {
+    statusEl.textContent = '덱 이미지 생성 중...';
+    statusEl.classList.remove('is-warn');
+  }
+
+  try {
+    const cols = 5;
+    const rows = Math.max(1, Math.ceil(cardIds.length / cols));
+    const padOuter = 14;
+    const headerH = 38;
+    const toolbarH = 40;
+    const padGrid = 10;
+    const gap = 8;
+    const cardW = 152;
+    const cardH = Math.round(cardW * (560 / 400)); // exact 400:560 aspect (213px)
+    const gridW = cols * cardW + (cols - 1) * gap + padGrid * 2;
+    const gridH = rows * cardH + (rows - 1) * gap + padGrid * 2;
+    const canvasW = padOuter * 2 + gridW;
+    const canvasH = headerH + 10 + toolbarH + 10 + gridH + padOuter;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasW;
+    canvas.height = canvasH;
+    const ctx = canvas.getContext('2d');
+
+    // W2K outer dialog frame (#d4d0c8)
+    ctx.fillStyle = '#d4d0c8';
+    ctx.fillRect(0, 0, canvasW, canvasH);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, canvasW - 2, canvasH - 2);
+    ctx.strokeStyle = '#404040';
+    ctx.beginPath();
+    ctx.moveTo(canvasW - 1, 1);
+    ctx.lineTo(canvasW - 1, canvasH - 1);
+    ctx.lineTo(1, canvasH - 1);
+    ctx.stroke();
+
+    // W2K active caption strip
+    const headerGrad = ctx.createLinearGradient(0, 0, canvasW, 0);
+    headerGrad.addColorStop(0, '#0a246a');
+    headerGrad.addColorStop(0.58, '#2b6ed3');
+    headerGrad.addColorStop(1, '#7ac4fa');
+    ctx.fillStyle = headerGrad;
+    ctx.fillRect(4, 4, canvasW - 8, headerH - 4);
+
+    const uiFontStack = document.body.dataset.uiFont === 'win2k-retro'
+      ? '"DuelRogueFixedsys", "DuelRogueRetroKR", monospace'
+      : '"Tahoma", "Noto Sans KR", sans-serif';
+    const cardNameFont = '"Noto Serif KR", "Cinzel", "Noto Sans KR", serif';
+    const cardStatFont = '"Cinzel", "Noto Serif KR", serif';
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `900 18px ${uiFontStack}`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(title, 16, 4 + (headerH - 4) * 0.5);
+
+    // Toolbar strip matching #modal-deck-overview
+    const tbY = headerH + 10;
+    ctx.fillStyle = '#e6e3dc';
+    ctx.fillRect(padOuter, tbY, gridW, toolbarH);
+    ctx.strokeStyle = '#808080';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(padOuter + 0.5, tbY + 0.5, gridW - 1, toolbarH - 1);
+
+    let monsterCount = 0;
+    let spellCount = 0;
+    cardIds.forEach((cid) => {
+      const def = lookupCardDef(cid);
+      if (!def) return;
+      if (def.type === 'SPELL') spellCount += 1;
+      else monsterCount += 1;
+    });
+    const masterDef = deckMasterCardId ? lookupCardDef(deckMasterCardId) : null;
+    ctx.fillStyle = '#0a246a';
+    ctx.font = `800 15px ${uiFontStack}`;
+    ctx.fillText(
+      `총 ${cardIds.length}장 (몬스터 ${monsterCount} / 마법 ${spellCount})${masterDef ? ` · 덱 마스터: ${masterDef.name}` : ''}`,
+      padOuter + 12,
+      tbY + toolbarH * 0.5
+    );
+    ctx.fillStyle = '#475569';
+    ctx.font = `700 13px ${uiFontStack}`;
+    ctx.textAlign = 'right';
+    ctx.fillText('DUEL ROGUE', padOuter + gridW - 12, tbY + toolbarH * 0.5);
+    ctx.textAlign = 'left';
+
+    // Recessed grid box (#f1efe9)
+    const gridX = padOuter;
+    const gridY = tbY + toolbarH + 10;
+    ctx.fillStyle = '#f1efe9';
+    ctx.fillRect(gridX, gridY, gridW, gridH);
+    ctx.strokeStyle = '#808080';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(gridX, gridY, gridW, gridH);
+
+    // Inline SVG data URLs matching generateClawLevelHtml strokes
+    const clawSingleDataUri = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 44"><g transform="rotate(16, 12, 22)"><path d="M 9,1 C 11,8 15,18 16,30 C 16.5,36 14,41 12,43 C 9,41 7,37 6,32 C 4,24 4,12 7,3 Z" fill="#ffeded" opacity="0.92"/><path d="M 10,3 C 12,9 15,19 15,29 C 15.5,35 13.5,39 12,41 C 9.5,39 8,35 7,30 C 5.5,23 5.5,13 8,5 Z" fill="#b51726"/><path d="M 10,6 C 12.5,16 13,26 11,38" stroke="#1f0205" stroke-width="2.4" stroke-linecap="round" fill="none"/></g></svg>')}`;
+    const clawCrossDataUri = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 74 44"><g><path d="M 2,34 C 16,28 38,18 71,7 C 73,9 71,13 68,14 C 42,23 20,33 4,39 Z" fill="#ffeded" opacity="0.88"/><path d="M 4,33 C 18,27 40,17 69,9 C 69,11 67,13 65,14 C 41,22 21,31 6,37 Z" fill="#cc1e30"/><path d="M 5,34 C 24,25 46,15 67,10" stroke="#1f0205" stroke-width="2.5" stroke-linecap="round" fill="none"/></g></svg>')}`;
+
+    const assetSet = new Set([
+      'assets/frames/card_frame_unit_blank.svg',
+      'assets/frames/card_frame_spell_blank.svg',
+      'assets/placeholders/procedural_fallback.svg',
+      clawSingleDataUri,
+      clawCrossDataUri,
+    ]);
+    cardIds.forEach((cid) => {
+      const def = lookupCardDef(cid);
+      if (def) assetSet.add(getCardArtSrc(def, { compact: true }));
+    });
+    const loadedEntries = await Promise.all(
+      Array.from(assetSet).map(async (src) => [src, await loadImageForCanvas(src)])
+    );
+    const imgCache = new Map(loadedEntries);
+    const clawSingleImg = imgCache.get(clawSingleDataUri);
+    const clawCrossImg = imgCache.get(clawCrossDataUri);
+
+    const RARITY_BORDER = {
+      COMMON: null,
+      RARE: '#38bdf8',
+      EPIC: '#f59e0b',
+      UNIQUE: '#a855f7',
+      LEGEND: '#facc15',
+    };
+
+    cardIds.forEach((cardId, idx) => {
+      const def = lookupCardDef(cardId);
+      if (!def) return;
+      const col = idx % cols;
+      const row = Math.floor(idx / cols);
+      const x = gridX + padGrid + col * (cardW + gap);
+      const y = gridY + padGrid + row * (cardH + gap);
+      const isMonster = def.type === 'MONSTER' || (def.attack > 0 && def.type !== 'SPELL');
+      const isMaster = Boolean(deckMasterCardId && cardId === deckMasterCardId);
+      const rarityKey = normalizeRarityKey(def.rarity);
+      const rCfg = rarityConfig?.[rarityKey];
+      const rarityPreset = rCfg?.preset || 'NONE';
+
+      // Optional deckmaster frame border (카드 외곽 레어도 오오라 제거)
+      if (isMaster) {
+        ctx.save();
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 2.4;
+        drawRoundedRectPath(ctx, x - 1, y - 1, cardW + 2, cardH + 2, 7);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.save();
+      drawRoundedRectPath(ctx, x, y, cardW, cardH, 6);
+      ctx.clip();
+
+      // Layer 1: Art inside SVG window (x:22..378, y:70..420 in 400x560)
+      const artX = x + cardW * (22 / 400);
+      const artY = y + cardH * (70 / 560);
+      const artW = cardW * (356 / 400);
+      const artH = cardH * (350 / 560);
+      ctx.fillStyle = '#090e1a';
+      ctx.fillRect(artX, artY, artW, artH);
+
+      const artSrc = getCardArtSrc(def, { compact: true });
+      const artImg = imgCache.get(artSrc);
+      if (artImg) {
+        ctx.drawImage(artImg, artX, artY, artW, artH);
+      }
+
+      // Procedural archetype pill top-right inside art when not custom hero art
+      if (!artSrc.includes('assets/cards/')) {
+        const factionLabel = def.faction ? t(`faction.${def.faction}`) : (def.archetype || '');
+        if (factionLabel) {
+          ctx.font = `800 9px ${uiFontStack}`;
+          const tw = ctx.measureText(factionLabel).width;
+          const pw = tw + 10;
+          const ph = 15;
+          const px = artX + artW - pw - 5;
+          const py = artY + 5;
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+          drawRoundedRectPath(ctx, px, py, pw, ph, 4);
+          ctx.fill();
+          ctx.strokeStyle = '#334155';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.fillStyle = '#38bdf8';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(factionLabel, px + 5, py + ph * 0.5 + 0.5);
+        }
+      }
+
+      // Layer 2: Unobscured SVG frame (leaves carved cream nameplate & stat boxes clean)
+      const frameSrc = isMonster
+        ? 'assets/frames/card_frame_unit_blank.svg'
+        : 'assets/frames/card_frame_spell_blank.svg';
+      const frameImg = imgCache.get(frameSrc);
+      if (frameImg) {
+        ctx.drawImage(frameImg, x, y, cardW, cardH);
+      }
+
+      // Layer 3: Header Name & Claw Level (inside x:30..374, y:14..64 of 400x560)
+      const lv = Math.max(1, Number(def.level ?? def.cost ?? 1));
+      const barLeft = x + cardW * (28 / 400);
+      const barRight = x + cardW * (372 / 400);
+      const barMidY = y + cardH * (39 / 560);
+      let clawTotalW = 0;
+
+      if (isMonster && clawSingleImg) {
+        const bundles = Math.ceil(lv / 5);
+        const clawH = cardH * (26 / 560);
+        const strokeW = clawH * (24 / 44) * 0.68;
+        const stepX = strokeW * 0.65;
+        const bundleGap = 3;
+        let bundleWidths = [];
+        let rem = lv;
+        for (let b = 0; b < bundles; b++) {
+          const n = Math.min(rem, 5);
+          const v = Math.min(n, 4);
+          bundleWidths.push(Math.max(strokeW, (v - 1) * stepX + strokeW));
+          rem -= n;
+        }
+        clawTotalW = bundleWidths.reduce((a, b) => a + b, 0) + Math.max(0, bundles - 1) * bundleGap + 4;
+        let cursorX = barRight - clawTotalW + 2;
+        rem = lv;
+        for (let b = 0; b < bundles; b++) {
+          const n = Math.min(rem, 5);
+          const v = Math.min(n, 4);
+          const bw = bundleWidths[b];
+          for (let s = 0; s < v; s++) {
+            ctx.drawImage(clawSingleImg, cursorX + s * stepX, barMidY - clawH * 0.5, strokeW, clawH);
+          }
+          if (n === 5 && clawCrossImg) {
+            ctx.drawImage(clawCrossImg, cursorX - 2, barMidY - clawH * 0.48, bw + 6, clawH * 0.96);
+          }
+          cursorX += bw + bundleGap;
+          rem -= n;
+        }
+      }
+
+      const nameAvailW = Math.max(24, (barRight - barLeft) - clawTotalW - 2);
+      ctx.save();
+      ctx.font = `900 ${Math.round(cardW * 0.082)}px ${cardNameFont}`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      const rawNameW = Math.max(1, ctx.measureText(def.name).width);
+      const squeezeX = rawNameW > nameAvailW ? Math.max(0.55, nameAvailW / rawNameW) : 1;
+      ctx.translate(barLeft, barMidY + 0.5);
+      ctx.scale(squeezeX, 1);
+      if (rarityPreset !== 'NONE') {
+        if ((rCfg?.nameGlow ?? 0) > 0) {
+          ctx.shadowColor = rCfg?.accentColor || RARITY_BORDER[rarityKey] || '#facc15';
+          ctx.shadowBlur = Math.max(1, (rCfg?.nameGlow ?? 0) * 3.5);
+        }
+        ctx.fillStyle = rCfg?.nameColor || (isMonster ? '#110903' : '#033d2e');
+      } else {
+        ctx.fillStyle = isMonster ? '#110903' : '#033d2e';
+      }
+      ctx.fillText(def.name, 0, 0);
+      ctx.restore();
+
+      // Layer 3 Bottom: Monster ATK & DEF inside SVG stat slots (x:24..192 & 208..376, y:430..542)
+      if (isMonster) {
+        const atk = def.attack ?? 0;
+        const hp = def.defense ?? def.health ?? 0;
+        const statY = y + cardH * (487 / 560);
+        const atkX = x + cardW * (108 / 400);
+        const defX = x + cardW * (292 / 400);
+        ctx.font = `900 ${Math.round(cardW * 0.195)}px ${cardStatFont}`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 2.6;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeText(String(atk), atkX, statY);
+        ctx.fillStyle = '#8c1d22';
+        ctx.fillText(String(atk), atkX, statY);
+
+        ctx.strokeText(String(hp), defX, statY);
+        ctx.fillStyle = '#0c4a6e';
+        ctx.fillText(String(hp), defX, statY);
+        ctx.textAlign = 'left';
+      }
+
+      ctx.restore();
+    });
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) throw new Error('PNG_ENCODE_FAILED');
+
+    let copiedImage = false;
+    if (navigator.clipboard && typeof window.ClipboardItem === 'function') {
+      try {
+        await navigator.clipboard.write([new window.ClipboardItem({ 'image/png': blob })]);
+        copiedImage = true;
+      } catch {
+        copiedImage = false;
+      }
+    }
+
+    if (copiedImage) {
+      audio.playCardPlayImpact();
+      if (statusEl) {
+        statusEl.textContent = '클립보드에 덱 이미지가 복사되었습니다!';
+        statusEl.classList.remove('is-warn');
+      }
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `duel-rogue-deck-${Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      if (statusEl) {
+        statusEl.textContent = '덱 PNG 이미지로 다운로드되었습니다 (클립보드 미허용 환경)';
+        statusEl.classList.add('is-warn');
+      }
+    }
+  } catch (err) {
+    console.warn('Deck capture failed:', err);
+    if (statusEl) {
+      statusEl.textContent = '덱 이미지 생성에 실패했습니다.';
+      statusEl.classList.add('is-warn');
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+document.getElementById('btn-editor-deck-overview')?.addEventListener('click', () => {
+  audio.playCardPickup();
+  const snap = engine.getSnapshot();
+  openDeckOverviewModal({
+    cardIds: snap.playerDeckCardIds || [],
+    deckMasterCardId: snap.playerDeckMasterCardId,
+    title: getPlayerDeckName(),
+  });
+});
+
+document.getElementById('btn-summary-deck-overview')?.addEventListener('click', () => {
+  audio.playCardPickup();
+  const snap = engine.getSnapshot();
+  openDeckOverviewModal({
+    cardIds: snap.playerDeckCardIds || [],
+    deckMasterCardId: snap.playerDeckMasterCardId,
+    title: getPlayerDeckName(),
+  });
+});
+
+document.getElementById('btn-close-deck-overview')?.addEventListener('click', () => {
+  audio.playLightTap();
+  closeModalWithCrt(document.getElementById('modal-deck-overview'), { mode: 'hidden' });
+});
+
+document.getElementById('deck-overview-backdrop')?.addEventListener('click', () => {
+  closeModalWithCrt(document.getElementById('modal-deck-overview'), { mode: 'hidden' });
+});
+
+document.getElementById('btn-capture-deck-clipboard')?.addEventListener('click', () => {
+  captureDeckOverviewToClipboard();
 });
 
 // ============================================================================
@@ -5764,8 +7293,10 @@ document.getElementById('btn-return-to-lobby')?.addEventListener('click', () => 
 let currentBinderSelectedCardId = null;
 
 function toggleBinderModal() {
-  overlayBinderBook.classList.toggle('active');
   if (overlayBinderBook.classList.contains('active')) {
+    closeModalWithCrt(overlayBinderBook, { mode: 'active' });
+  } else {
+    openModalWithCrt(overlayBinderBook, { mode: 'active' });
     syncBinderMasteryControls();
     renderBinderPage(currentBinderPage);
   }
@@ -5774,7 +7305,7 @@ function toggleBinderModal() {
 // 모달 배경 클릭 시 닫기
 overlayBinderBook?.addEventListener('click', (e) => {
   if (e.target === overlayBinderBook) {
-    overlayBinderBook.classList.remove('active');
+    closeModalWithCrt(overlayBinderBook, { mode: 'active' });
   }
 });
 
@@ -6013,7 +7544,7 @@ function updateBinderDossier(slot, def) {
     }
   }
 
-  // 4. 메타 배지 라인 (진영 한글 통일 · 코스트/카드종류 제거 · 키워드 제외 태그 표기)
+  // 4. 메타 배지 라인 (진영 · 레벨 · 레어도 / 키워드 / 태그 순)
   if (metaEl) {
     if (isUnknown) {
       metaEl.innerHTML = `<span class="meta-pill" style="background:#1e293b; color:#64748b;">정보: 미확인</span>`;
@@ -6021,6 +7552,13 @@ function updateBinderDossier(slot, def) {
       const factionMap = { BLUE: '정의', RED: '열의', PURPLE: '혼돈', NEUTRAL: '중립' };
       const factionStr = factionMap[def.faction] || '중립';
       const levelStr = isMonster ? `Lv.${def.level ?? def.cost ?? 1}` : '';
+      const rarityHtml = def.rarity
+        ? `<span class="badge-rarity rarity-${def.rarity}">${t(`rarity.${def.rarity}`)}</span>`
+        : '';
+      const kwIds = def.kw || [];
+      const kwHtml = (def.keywords || []).map((kw, i) => (
+        `<span class="meta-pill keyword" title="${kwIds[i] ? keywordDesc(kwIds[i]) : '핵심 키워드'}">${keywordIcon(kwIds[i] || kw)}${kw}</span>`
+      )).join('');
       const nonKwTags = (def.tags || []).map((tg) => {
         const formatted = `#${String(tg).replace(/^#+/, '')}`;
         return `<span class="meta-pill tag">${formatted}</span>`;
@@ -6028,6 +7566,8 @@ function updateBinderDossier(slot, def) {
       metaEl.innerHTML = `
         <span class="meta-pill archetype">${factionStr}</span>
         ${levelStr ? `<span class="meta-pill level">${levelStr}</span>` : ''}
+        ${rarityHtml}
+        ${kwHtml}
         ${nonKwTags}
       `;
     }
@@ -6100,6 +7640,9 @@ function updateBinderDossier(slot, def) {
       }
 
       let structuredDescHtml = '';
+      if (def.kw && def.kw.length > 0) {
+        structuredDescHtml += `<div class="dossier-clause-line"><span class="clause-tag cond">[키워드]</span> ${def.kw.map((id) => `${keywordIcon(id)}<strong>${t(`kw.${id}`)}</strong> — ${keywordDesc(id)}`).join(' · ')}</div>`;
+      }
       if (def.condition || def.effect) {
         if (def.condition) {
           structuredDescHtml += `<div class="dossier-clause-line"><span class="clause-tag cond">[조건]</span> ${def.condition}</div>`;
@@ -6630,14 +8173,14 @@ function initSlamPlayground() {
   const btnClose = document.getElementById('btn-close-playground');
 
   const openPlayground = () => {
-    overlay?.classList.add('active');
+    if (overlay) openModalWithCrt(overlay, { mode: 'active' });
     updatePlaygroundAttackerVisuals();
     updatePlaygroundTargetVisuals();
     logPlaygroundTelemetry('💥 내리치기 연출 테스트 룸 활성화됨: 원하는 수치를 조절하거나 프리셋을 클릭하세요.');
   };
 
   const closePlayground = () => {
-    overlay?.classList.remove('active');
+    if (overlay) closeModalWithCrt(overlay, { mode: 'active' });
   };
 
   const togglePlayground = () => {

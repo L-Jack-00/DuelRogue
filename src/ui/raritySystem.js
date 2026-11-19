@@ -22,6 +22,70 @@ export const RARITY_PRESET_INFO = {
   MYTHIC_PRISM: { label: '레전드 프리즘 홀로그램 + 금빛 입자', artFx: 1.4, glow: 1.5, nameGlow: 1.5 },
 };
 
+export const DEFAULT_CARD_NAME_FONT_SETTINGS = {
+  fontPreset: 'NOTO_SANS',
+  fontWeight: '400',
+  customFont: '',
+};
+
+export const CARD_NAME_FONT_PRESETS = {
+  NOTO_SANS: {
+    label: 'Noto Sans / 맑은 고딕 (기본 고딕)',
+    stack: "'Noto Sans KR', 'Malgun Gothic', sans-serif",
+  },
+  DUNGGEUNMO: {
+    label: '둥근모꼴 (내장 레트로 픽셀체)',
+    stack: "'DuelRogueRetroKR', 'DungGeunMo', monospace",
+  },
+  GOWUN_BATANG: {
+    label: '고운 바탕 (부드러운 서적 명조)',
+    stack: "'Gowun Batang', 'HCR Batang', 'Batang', serif",
+  },
+  HAHMLET: {
+    label: '함렛 (단단한 현대 세리프)',
+    stack: "'Hahmlet', 'HCR Batang', 'Batang', serif",
+  },
+  NOTO_SERIF: {
+    label: 'Noto Serif KR (정통 명조)',
+    stack: "'Noto Serif KR', 'Batang', serif",
+  },
+  HCR_BATANG: {
+    label: '함초롬바탕 (깔끔한 로컬 바탕)',
+    stack: "'HCR Batang', 'Batang', serif",
+  },
+  BATANG: {
+    label: '바탕 (Windows 클래식 명조)',
+    stack: "'Batang', serif",
+  },
+  GUNGSUH: {
+    label: '궁서 (고전 붓글씨·판타지)',
+    stack: "'Gungsuh', 'Batang', serif",
+  },
+  GULIM: {
+    label: '굴림 (레트로 둥근 산세리프)',
+    stack: "'Gulim', sans-serif",
+  },
+  HCR_DOTUM: {
+    label: '함초롬돋움 (고전 돋움)',
+    stack: "'HCR Dotum', 'Dotum', sans-serif",
+  },
+  CUSTOM: {
+    label: '직접 입력 (PC 설치 글꼴명)',
+    stack: "'Noto Sans KR', 'Malgun Gothic', sans-serif",
+  },
+};
+
+export function resolveCardNameFontStack(fontSettings = DEFAULT_CARD_NAME_FONT_SETTINGS) {
+  const fs = fontSettings || DEFAULT_CARD_NAME_FONT_SETTINGS;
+  if (fs.fontPreset === 'CUSTOM') {
+    const raw = String(fs.customFont || '').trim().replace(/['";{}]/g, '');
+    if (raw) {
+      return `'${raw}', 'Noto Sans KR', 'Malgun Gothic', sans-serif`;
+    }
+  }
+  return CARD_NAME_FONT_PRESETS[fs.fontPreset]?.stack || CARD_NAME_FONT_PRESETS.NOTO_SANS.stack;
+}
+
 export const DEFAULT_RARITY_CONFIG = {
   COMMON: {
     preset: 'NONE',
@@ -63,6 +127,7 @@ export const DEFAULT_RARITY_CONFIG = {
     nameGlow: 1.4,
     accentColor: '#fbbf24',
   },
+  fontSettings: { ...DEFAULT_CARD_NAME_FONT_SETTINGS },
 };
 
 const STORAGE_KEY = 'duel_rogue_rarity_settings_v1';
@@ -81,6 +146,9 @@ export function loadRarityConfig() {
       if (parsed && parsed[tier] && typeof parsed[tier] === 'object') {
         base[tier] = { ...base[tier], ...parsed[tier] };
       }
+    }
+    if (parsed && parsed.fontSettings && typeof parsed.fontSettings === 'object') {
+      base.fontSettings = { ...DEFAULT_CARD_NAME_FONT_SETTINGS, ...parsed.fontSettings };
     }
   } catch (_e) {
     /* ignore malformed storage */
@@ -115,6 +183,10 @@ export function applyRarityConfigToRoot(cfg, doc = typeof document !== 'undefine
     rootStyle.setProperty(`--rarity-${k}-glow`, String(Number(t.glow ?? 0)));
     rootStyle.setProperty(`--rarity-${k}-name-glow`, String(Number(t.nameGlow ?? 0)));
   }
+
+  const fontCfg = cfg?.fontSettings || DEFAULT_CARD_NAME_FONT_SETTINGS;
+  rootStyle.setProperty('--card-name-font-stack', resolveCardNameFontStack(fontCfg));
+  rootStyle.setProperty('--card-name-font-weight', String(fontCfg.fontWeight || '400'));
 
   // 기존 렌더링된 카드들의 프리셋 속성 즉시 동기화
   if (typeof doc.querySelectorAll === 'function') {

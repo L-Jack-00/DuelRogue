@@ -241,7 +241,8 @@ body {
   padding: 6px 12px;
 }
 
-.btn:disabled {
+.btn:disabled,
+.btn.is-disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -255,12 +256,37 @@ body {
 }
 
 .game-logo {
-  font-size: 4.2rem;
-  letter-spacing: 8px;
-  font-weight: 900;
-  color: #f8fafc;
-  text-shadow: 0 0 35px rgba(56, 189, 248, 0.5);
-  margin-bottom: 10px;
+  margin: 0 auto 14px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-logo-img {
+  display: block;
+  width: min(360px, 76vw);
+  max-height: 250px;
+  object-fit: contain;
+  height: auto;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.55));
+  transform-origin: center center;
+  animation: logoThumpBeat 1.85s cubic-bezier(0.25, 0.85, 0.35, 1) infinite;
+  will-change: transform;
+}
+
+@keyframes logoThumpBeat {
+  0%   { transform: scale(1); }
+  10%  { transform: scale(1.06); }
+  20%  { transform: scale(0.985); }
+  30%  { transform: scale(1.045); }
+  44%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-logo-img {
+    animation: none;
+  }
 }
 
 .subtitle {
@@ -543,13 +569,12 @@ body {
   flex-shrink: 0 !important;
 }
 
-#inspector-card-preview .card-composite-wrapper,
-#editor-inspector-card-preview .card-composite-wrapper {
+:where(#inspector-card-preview, #editor-inspector-card-preview) .card-composite-wrapper {
   width: min(100%, calc(42vh * 400 / 560)) !important;
   max-width: 240px !important;
   height: auto !important;
   aspect-ratio: 400 / 560 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
 }
 
 .inspector-effect-section {
@@ -1180,6 +1205,13 @@ body {
   transform: translateY(-1px);
 }
 
+.btn-save-exit {
+  width: 100%;
+  font-weight: 800;
+  font-size: 0.92rem;
+  padding: 10px 16px;
+}
+
 .options-hint {
   font-size: 0.74rem;
   color: #64748b;
@@ -1370,7 +1402,7 @@ body {
 
 .log-card-hover-preview {
   position: fixed;
-  z-index: 9500;
+  z-index: 25000;
   pointer-events: none;
   display: flex;
   align-items: flex-start;
@@ -1395,14 +1427,45 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  width: 170px;
+  width: 184px;
 }
 
 .log-card-hover-preview .card-composite-wrapper {
-  width: 170px;
+  width: 176px;
   height: auto;
   aspect-ratio: 400 / 560;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.85);
+}
+
+.log-hover-tags {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+.log-hover-tags .badge-god-tier,
+.log-hover-tags .badge-keyword,
+.log-hover-tags .badge-race-tag {
+  padding: 2px 6px !important;
+  font-size: 0.66rem !important;
+  line-height: 1.25 !important;
+  gap: 3px !important;
+}
+
+.log-hover-tags .badge-keyword .vicon,
+.log-hover-tags .badge-god-tier .vicon {
+  width: 11px !important;
+  height: 11px !important;
+}
+
+.log-hover-cond {
+  display: inline-block;
+  color: #7dd3fc;
+  font-weight: 800;
+  margin-right: 3px;
 }
 
 .log-hover-effect {
@@ -2074,13 +2137,30 @@ body {
   padding: 4px 0 6px;
   border: 1px dashed rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  perspective: 1200px;
-  transform-style: preserve-3d;
+  position: relative;
+  overflow: visible;
+  perspective: none;
+  transform-style: flat;
   transition: border-color 0.2s;
 }
 
 .board-zone.cpu-board {
   margin-top: 14px;
+  z-index: 1;
+}
+
+.board-zone.player-board {
+  z-index: 2;
+}
+
+.board-zone.has-dragging-attacker,
+.board-zone:has(.is-dragging-attacker, .slam-windup, .slam-down, .slam-return),
+.duel-arena-field.has-dragging-attacker,
+.duel-arena-field:has(.is-dragging-attacker, .slam-windup, .slam-down, .slam-return) {
+  position: relative;
+  z-index: 800 !important;
+  transform-style: flat !important;
+  perspective: none !important;
 }
 
 .duel-arena-field.drop-target-active .player-board {
@@ -2387,7 +2467,9 @@ body {
 .claw-stroke {
   height: 100%;
   width: auto;
+  aspect-ratio: 24 / 44;
   display: block;
+  flex-shrink: 0;
   margin-left: calc(var(--card-unit, 0.5cqw) * -2);
   filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, 0.88));
 }
@@ -2399,6 +2481,7 @@ body {
   transform: translate(-50%, -50%);
   width: 110%;
   height: auto;
+  aspect-ratio: 74 / 44;
   pointer-events: none;
   filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, 0.95));
 }
@@ -2767,7 +2850,7 @@ body {
 }
 
 /* ============================================================================
- * [세트 카드 사악한 오라 연출: 상·하·좌·우 모든 방향으로 은은하게 퍼지는 미아즈마]
+ * [세트 카드 백색 오라 연출: 상·하·좌·우 모든 방향으로 은은하게 퍼지는 순백빛 오라]
  * ============================================================================ */
 .sinister-dark-aura {
   position: absolute;
@@ -2775,21 +2858,21 @@ body {
   pointer-events: none;
   z-index: 1;
   overflow: visible;
-  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.75)) drop-shadow(0 0 14px rgba(225, 29, 72, 0.45));
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.85)) drop-shadow(0 0 16px rgba(226, 232, 240, 0.55));
 }
 
 .sinister-omni-mist {
   position: absolute;
   inset: -4px;
   border-radius: 12px;
-  background: radial-gradient(ellipse at center, rgba(147, 51, 234, 0.55) 0%, rgba(225, 29, 72, 0.3) 50%, transparent 75%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.65) 0%, rgba(241, 245, 249, 0.34) 50%, transparent 75%);
   animation: sinister-omni-pulse 2.2s infinite alternate ease-in-out;
   mix-blend-mode: screen;
 }
 
 @keyframes sinister-omni-pulse {
-  0% { transform: scale(0.92); opacity: 0.35; filter: blur(3px); }
-  100% { transform: scale(1.12); opacity: 0.85; filter: blur(6px); }
+  0% { transform: scale(0.92); opacity: 0.38; filter: blur(3px); }
+  100% { transform: scale(1.12); opacity: 0.90; filter: blur(6px); }
 }
 
 .sinister-wisp {
@@ -2804,7 +2887,7 @@ body {
   left: 15%;
   width: 70%;
   height: 18px;
-  background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.8), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.88), transparent 70%);
   animation: wisp-float-top 2.2s infinite ease-in-out;
 }
 
@@ -2813,7 +2896,7 @@ body {
   left: 15%;
   width: 70%;
   height: 18px;
-  background: radial-gradient(ellipse at center, rgba(225, 29, 72, 0.8), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.88), transparent 70%);
   animation: wisp-float-bottom 2.4s infinite ease-in-out 0.4s;
 }
 
@@ -2822,7 +2905,7 @@ body {
   top: 15%;
   width: 18px;
   height: 70%;
-  background: radial-gradient(ellipse at center, rgba(147, 51, 234, 0.75), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.84), transparent 70%);
   animation: wisp-float-left 2.3s infinite ease-in-out 0.7s;
 }
 
@@ -2831,7 +2914,7 @@ body {
   top: 15%;
   width: 18px;
   height: 70%;
-  background: radial-gradient(ellipse at center, rgba(192, 38, 211, 0.75), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.84), transparent 70%);
   animation: wisp-float-right 2.5s infinite ease-in-out 1s;
 }
 
@@ -2862,7 +2945,7 @@ body {
   width: 100%;
   height: 100%;
   border-radius: 8px;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.55);
   pointer-events: none;
   z-index: 2;
 }
@@ -2873,12 +2956,12 @@ body {
   left: 50%;
   transform: translateX(-50%);
   background: rgba(15, 23, 42, 0.92);
-  border: 1px solid #a855f7;
+  border: 1px solid rgba(255, 255, 255, 0.85);
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 0.68rem;
   font-weight: 800;
-  color: #f3e8ff;
+  color: #ffffff;
   max-width: 90%;
   white-space: nowrap;
   overflow: hidden;
@@ -2915,14 +2998,10 @@ body {
   position: relative;
   transform-style: flat;
   transform-origin: 50% 90% !important; /* 하단 앵커 (내리치기 모션) */
-  backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* 비조작 기본 상태: 기울기 없는 수직 탑다운 뷰 */
-  transform: translate3d(var(--card-tx, 0px), var(--card-ty, 0px), var(--card-tz, 0px))
-             rotateZ(var(--slam-rot-z, 0deg))
-             rotateX(var(--slam-rot-x, 0deg))
-             scale(var(--slam-scale, 1));
+  /* 비조작 기본 상태: 3D 기울임 없는 순수 2D 정면 뷰 */
+  transform: translate(var(--card-tx, 0px), var(--card-ty, 0px));
   transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.22s;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.65);
 }
@@ -2986,7 +3065,71 @@ body {
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.95), 0 0 25px rgba(250, 204, 21, 0.85) !important;
   z-index: 10000 !important;
   cursor: grabbing !important;
+  pointer-events: none !important;
   transition: none !important;
+}
+
+/* 런 기회 하트(채워진 하트 / 빈 하트) 공통 스타일 */
+.chances-pill {
+  gap: 6px;
+}
+.chances-label {
+  font-size: 0.78rem;
+  font-weight: 800;
+  opacity: 0.9;
+}
+.chances-hearts,
+.duel-chances-inline,
+.defeat-chances-row,
+.summary-chances-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.duel-chances-inline {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.defeat-chances-row {
+  margin-top: 10px;
+  gap: 8px;
+  justify-content: center;
+}
+.summary-meta-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.summary-chances-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.chance-heart-svg {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.duel-chances-inline .chance-heart-svg {
+  width: 14px;
+  height: 14px;
+}
+.defeat-chances-row .chance-heart-svg {
+  width: 24px;
+  height: 24px;
+}
+.chance-heart-svg.is-full {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+.chance-heart-svg.is-empty {
+  opacity: 0.72;
 }
 
 /* 드래그 호버 중인 타겟 하이라이트 */
@@ -3032,7 +3175,7 @@ body {
 }
 
 .player-hand {
-  perspective: 1100px;
+  perspective: none;
   transform-style: flat;
   isolation: isolate;
   display: flex;
@@ -3051,7 +3194,7 @@ body {
 }
 
 /* ============================================================================
- * [3D Hand Card with Fan-Out & Holo Foil]
+ * [Hand Card with 2D Fan-Out & Holo Foil (평소/호버 3D 기울임 비적용)]
  * ============================================================================ */
 .duel-card {
   width: clamp(82px, 13vh, 110px);
@@ -3067,13 +3210,11 @@ body {
   touch-action: none;
   position: relative;
   z-index: var(--card-z, 1);
-  transform-style: preserve-3d;
+  transform-style: flat;
   transform-origin: 50% 120%; /* 손목 앵커에서 부채꼴로 펼쳐짐 */
   will-change: transform, z-index;
-  transform: translate3d(var(--card-tx, 0px), calc(var(--fan-ty, 0px) + var(--card-ty, 0px)), calc(var(--fan-tz, 0px) + var(--card-tz, 0px)))
-             rotateZ(var(--fan-rz, 0deg))
-             rotateX(calc(var(--fan-rx, 0deg) + var(--card-rx, 0deg) + var(--wobble-rx, 0deg)))
-             rotateY(var(--card-ry, 0deg));
+  transform: translate(var(--card-tx, 0px), calc(var(--fan-ty, 0px) + var(--card-ty, 0px)))
+             rotate(var(--fan-rz, 0deg));
   transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.75);
 }
@@ -3102,14 +3243,13 @@ body {
   pointer-events: none;
   border-radius: 7px;
   opacity: 0;
-  transform: translateZ(32px);
   transition: opacity 0.2s;
 }
 
-/* 손패 카드 호버 및 클릭 선택 시 똑바로 일어서며 튀어나옴 (선택된 카드는 줄어들지 않고 팝업 버튼도 흔들림 없이 고정) */
+/* 손패 카드 호버 및 클릭 선택 시 3D 기울임/원근 없이 선명하게 똑바로 올라옴 */
 .duel-card:hover:not(.is-dragging),
 .duel-card.is-selected:not(.is-dragging) {
-  transform: translate3d(var(--card-tx, 0px), -36px, 120px) rotateZ(0deg) rotateX(0deg) rotateY(0deg) scale(1.15) !important;
+  transform: translateY(-36px) scale(1.15) !important;
   border-color: #38bdf8 !important;
   box-shadow: 0 28px 55px rgba(0, 0, 0, 0.95), 0 0 25px rgba(56, 189, 248, 0.7);
   z-index: 600 !important;
@@ -3622,16 +3762,16 @@ body {
   justify-content: center;
   position: relative;
   border-radius: 6px;
-  overflow: hidden;
+  overflow: visible;
   margin: 0 auto;
   transition: filter 0.2s ease;
 }
 
-.binder-slot .card-composite-wrapper {
+:where(.binder-slot) .card-composite-wrapper {
   width: 100% !important;
   height: 100% !important;
   aspect-ratio: 400 / 560 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.75);
   margin: 0 auto !important;
 }
 
@@ -3912,12 +4052,12 @@ body {
   justify-content: center;
 }
 
-#binder-dossier-card-preview .card-composite-wrapper {
+:where(#binder-dossier-card-preview) .card-composite-wrapper {
   width: 100% !important;
   height: 100% !important;
   max-width: none !important;
   aspect-ratio: 400 / 560 !important;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9);
   margin: 0 auto !important;
 }
 
@@ -4884,9 +5024,9 @@ body {
   z-index: 12;
   padding: 2px 6px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #6d28d9, #4c1d95);
-  border: 1px solid #c4b5fd;
-  color: #f5f3ff;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  color: #ffffff;
   font-size: 0.6rem;
   font-weight: 800;
   max-width: 96px;
@@ -4898,8 +5038,9 @@ body {
 }
 
 .monster-stacked-set-card.enemy .front-set-pill {
-  background: linear-gradient(135deg, #be123c, #881337);
-  border-color: #fda4af;
+  background: linear-gradient(135deg, #334155, #1e293b);
+  border-color: rgba(255, 255, 255, 0.85);
+  color: #f8fafc;
 }
 
 /* ============================================================================
@@ -5008,14 +5149,14 @@ body {
   pointer-events: none;
 }
 
-/* 세트 카드가 밑에 부착된 몬스터 카드 본체 외곽선 은은한 보랏빛 글로우 */
+/* 세트 카드가 밑에 부착된 몬스터 카드 본체 외곽선 백색 오라 */
 .unit-field-card.has-attached-spell {
-  box-shadow: 0 0 18px rgba(168, 85, 247, 0.7), 0 8px 24px rgba(0, 0, 0, 0.85) !important;
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.78), 0 8px 24px rgba(0, 0, 0, 0.85) !important;
 }
 
 .unit-field-card.has-attached-spell > .card-composite-wrapper {
-  border: 1.5px solid rgba(192, 132, 252, 0.85) !important;
-  box-shadow: 0 0 14px rgba(168, 85, 247, 0.5) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.65) !important;
 }
 
 .front-set-badge-label.enemy-badge,
@@ -5048,39 +5189,39 @@ body {
 }
 
 .field-central-set-slot.valid-slot-drop {
-  border: 2px dashed #c084fc !important;
-  background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.25) 0%, rgba(15, 23, 42, 0.9) 80%) !important;
-  box-shadow: 0 0 24px rgba(192, 132, 252, 0.7), inset 0 0 14px rgba(168, 85, 247, 0.4) !important;
+  border: 2px dashed #ffffff !important;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.22) 0%, rgba(15, 23, 42, 0.85) 80%) !important;
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.75), inset 0 0 14px rgba(255, 255, 255, 0.4) !important;
   animation: valid-slot-pulse 1.3s infinite ease-in-out alternate;
   transform: scale(1.05);
 }
 
 @keyframes valid-slot-pulse {
   0% {
-    border-color: #c084fc;
-    box-shadow: 0 0 16px rgba(192, 132, 252, 0.5);
+    border-color: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.5);
   }
   100% {
-    border-color: #e879f9;
-    box-shadow: 0 0 28px rgba(232, 121, 249, 0.85);
+    border-color: #ffffff;
+    box-shadow: 0 0 28px rgba(255, 255, 255, 0.92);
   }
 }
 
 .unit-field-card.valid-spell-set-target {
-  outline: 2.5px dashed #a855f7 !important;
+  outline: 2.5px dashed #ffffff !important;
   outline-offset: 4px;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.8), inset 0 0 12px rgba(168, 85, 247, 0.4) !important;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.82), inset 0 0 12px rgba(255, 255, 255, 0.4) !important;
   animation: valid-spell-target-pulse 1.2s infinite ease-in-out alternate;
 }
 
 @keyframes valid-spell-target-pulse {
   0% {
-    outline-color: #a855f7;
-    box-shadow: 0 0 14px rgba(168, 85, 247, 0.6);
+    outline-color: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.6);
   }
   100% {
-    outline-color: #c084fc;
-    box-shadow: 0 0 26px rgba(192, 132, 252, 0.95);
+    outline-color: #ffffff;
+    box-shadow: 0 0 26px rgba(255, 255, 255, 0.95);
   }
 }
 
@@ -5307,7 +5448,7 @@ body {
 .unit-field-card.slam-down,
 .unit-field-card.is-dragging-attacker {
   will-change: transform;
-  transform-style: preserve-3d !important;
+  transform-style: flat !important;
 }
 
 .unit-field-card.slam-windup {
@@ -6209,13 +6350,14 @@ body {
   color: #cbd5e1;
 }
 
-/* 3대 거점 포털 카드 그리드 (카드팩 상점 / 골목길 / 덱 & 가방) */
+/* 3대 거점 포털 카드 그리드 (듀얼 숍 / 도전! / 덱 편집) */
 .hub-portals-grid {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 0.9fr 1.24fr 0.9fr;
   grid-template-rows: 1fr;
+  align-items: center;
   gap: 14px;
 }
 
@@ -6288,6 +6430,41 @@ body {
 .tag-shop { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7; }
 .tag-merchant { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid #ec4899; }
 .tag-deck { background: rgba(6, 182, 212, 0.2); color: #22d3ee; border: 1px solid #06b6d4; }
+.portal-new-badge {
+  background: #fef08a;
+  color: #dc2626;
+  border: 2px solid #dc2626;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+.portal-presence-badge {
+  background: #3b0764;
+  color: #ffffff;
+  border: 1px solid #9333ea;
+  font-weight: 800;
+  width: 100%;
+  text-align: center;
+}
+.wanted-chip[data-card-id],
+.modal-wanted-item[data-card-id],
+.deal-offer-side[data-card-id],
+.shop-single-card-item[data-card-id],
+.merchant-item-card[data-card-id],
+.modal-trade-offer-preview[data-card-id] {
+  cursor: help;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
+}
+.shop-single-card-item[data-card-id] .btn-buy-shop-single {
+  cursor: pointer;
+}
+.wanted-chip[data-card-id]:hover,
+.modal-wanted-item[data-card-id]:hover,
+.deal-offer-side[data-card-id]:hover,
+.modal-trade-offer-preview[data-card-id]:hover {
+  border-color: #a855f7;
+  background: rgba(88, 28, 135, 0.35);
+  border-radius: 8px;
+}
 
 .portal-title {
   font-size: 1.14rem;
@@ -8134,15 +8311,33 @@ body[data-view='VIEW_RUN_SUMMARY'].run-victory #view-run-summary { background: r
     0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
-/* 카드 외곽 오라 글로우 (레어도 프리셋 NONE/NAME_ONLY는 제외) */
-.card-composite-wrapper[data-rarity-preset="METALLIC"],
-.card-composite-wrapper[data-rarity-preset="ARCANE_SHIMMER"],
-.card-composite-wrapper[data-rarity-preset="CRYSTAL_AURORA"],
-.card-composite-wrapper[data-rarity-preset="MYTHIC_PRISM"] {
-  box-shadow:
-    0 6px 18px rgba(0, 0, 0, 0.65),
-    0 0 calc(var(--r-glow, 0.8) * 10px) color-mix(in srgb, var(--r-accent, #38bdf8) 55%, transparent);
+/* 간략화된 모든 카드(.battlefield-view: 전장·패·바인더·덱편집·모달 등) 이름 가독성 통일 (볼드 없는 순수 검정 고딕 21.8배율) */
+.card-composite-wrapper.battlefield-view .overlay-header-bar {
+  top: 2.2%;
+  left: 6.6%;
+  width: 87.2%;
+  height: 9.6%;
+  padding: 0 2.2%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
+
+.card-composite-wrapper.battlefield-view .overlay-name,
+.card-composite-wrapper.battlefield-view .overlay-name.spell,
+.card-composite-wrapper.battlefield-view[data-rarity] .overlay-name,
+.card-composite-wrapper.battlefield-view[data-rarity] .overlay-name.spell {
+  font-family: var(--card-name-font-stack, 'Noto Sans KR', 'Malgun Gothic', sans-serif);
+  font-weight: var(--card-name-font-weight, 400);
+  font-size: calc(var(--card-unit, 0.5cqw) * 21.8);
+  color: #000000;
+  -webkit-text-stroke: 0;
+  paint-order: normal;
+  text-shadow: none;
+  padding-top: 0;
+  overflow: hidden;
+}
+
+/* 평소 카드 외곽 오라 글로우는 제거 (카드 내부 일러스트 이펙트만 유지) */
 
 /* 일러스트 창 내부 이펙트 레이어 (.layer-1-art) */
 .layer-1-art {
@@ -8343,6 +8538,40 @@ body[data-view='VIEW_RUN_SUMMARY'].run-victory #view-run-summary { background: r
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: width 0.16s ease;
+}
+
+.rarity-preview-card-mount.is-compact-preview {
+  width: 90px;
+}
+
+.tuner-font-row-flex {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tuner-font-row-flex #sel-card-name-font {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tuner-font-row-flex .rarity-weight-select {
+  flex: 0 0 112px;
+  width: 112px;
+}
+
+.rarity-font-custom-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 6px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .rarity-preview-caption {
@@ -9007,7 +9236,7 @@ body[data-view='VIEW_RUN_SUMMARY'].run-victory #view-run-summary { background: r
 }
 
 .duel-defeat-overlay {
-  background: radial-gradient(circle at 50% 48%, rgba(127, 29, 29, 0.22) 0%, rgba(9, 9, 11, 0.84) 75%);
+  background: radial-gradient(circle at 50% 48%, rgba(220, 38, 38, 0.24) 0%, rgba(9, 9, 11, 0.86) 75%);
 }
 
 .defeat-emblem-card {
@@ -9017,11 +9246,25 @@ body[data-view='VIEW_RUN_SUMMARY'].run-victory #view-run-summary { background: r
   gap: 8px;
   padding: 28px 56px;
   border-radius: 18px;
-  background: linear-gradient(145deg, rgba(24, 24, 27, 0.94), rgba(15, 15, 18, 0.96));
-  border: 2px solid #991b1b;
-  box-shadow: 0 24px 65px rgba(0, 0, 0, 0.9), 0 0 36px rgba(220, 38, 38, 0.35);
-  transform: scale(0.84);
-  transition: transform 0.42s ease;
+  background: linear-gradient(145deg, rgba(30, 14, 18, 0.96), rgba(15, 12, 16, 0.98));
+  border: 2px solid #ef4444;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.92), 0 0 48px rgba(239, 68, 68, 0.5);
+  transform: scale(0.76);
+  transition: transform 0.34s cubic-bezier(0.18, 1.28, 0.32, 1);
+}
+
+/* 모든 시드 텍스트 영역 마우스 드래그 선택 허용 */
+.run-seed-code,
+#opt-current-run-seed,
+#hub-seeded-run-pill,
+#hub-seeded-run-text,
+#summary-seed-badge,
+#seed-preview-status,
+.seed-draggable {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -webkit-app-region: no-drag;
+  cursor: text;
 }
 
 .duel-defeat-overlay.is-visible .defeat-emblem-card {

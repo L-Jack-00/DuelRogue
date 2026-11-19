@@ -11,23 +11,33 @@ const CUSTOM_ART_MAP = {
   C_PURP_02: 'assets/cards/neon_overload_art.webp',
 };
 
+/** Vector card back artwork matching app_icon.svg. */
+const CARD_BACK_SVG = 'assets/ui/card_back.svg';
+
 let getRarityPreset = () => 'NONE';
 let getMasteryVisual = (cardId) => resolveCardMasteryVisual(cardId);
+let getPlayerSleeveSpec = () => ({ preset: 'DEFAULT', src: CARD_BACK_SVG, isCustom: false });
 
 /**
- * 카드 렌더러가 현재 레어도/숙련도 프리셋을 조회할 수 있도록 설정합니다.
+ * 카드 렌더러가 현재 레어도/숙련도/슬리브 프리셋을 조회할 수 있도록 설정합니다.
  */
-export function configureCardRenderer({ rarityPresetResolver, masteryVisualResolver } = {}) {
+export function configureCardRenderer({ rarityPresetResolver, masteryVisualResolver, sleeveResolver } = {}) {
   if (typeof rarityPresetResolver === 'function') {
     getRarityPreset = rarityPresetResolver;
   }
   if (typeof masteryVisualResolver === 'function') {
     getMasteryVisual = masteryVisualResolver;
   }
+  if (typeof sleeveResolver === 'function') {
+    getPlayerSleeveSpec = sleeveResolver;
+  }
 }
 
+const CLAW_SINGLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 44" class="claw-stroke" aria-hidden="true"><g transform="rotate(16, 12, 22)"><path d="M 9,1 C 11,8 15,18 16,30 C 16.5,36 14,41 12,43 C 9,41 7,37 6,32 C 4,24 4,12 7,3 Z" fill="#ffeded" opacity="0.92"/><path d="M 10,3 C 12,9 15,19 15,29 C 15.5,35 13.5,39 12,41 C 9.5,39 8,35 7,30 C 5.5,23 5.5,13 8,5 Z" fill="#b51726"/><path d="M 10,6 C 12.5,16 13,26 11,38" stroke="#1f0205" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M 10.6,8 C 12.4,17 12.8,26 11.2,36" stroke="#ff8585" stroke-width="0.9" stroke-linecap="round" fill="none" opacity="0.82"/></g></svg>`;
+const CLAW_CROSS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 74 44" class="claw-cross" aria-hidden="true"><g><path d="M 2,34 C 16,28 38,18 71,7 C 73,9 71,13 68,14 C 42,23 20,33 4,39 Z" fill="#ffeded" opacity="0.88"/><path d="M 4,33 C 18,27 40,17 69,9 C 69,11 67,13 65,14 C 41,22 21,31 6,37 Z" fill="#cc1e30"/><path d="M 5,34 C 24,25 46,15 67,10" stroke="#1f0205" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M 6,33 C 24,24 45,15 65,11" stroke="#ff8585" stroke-width="1" stroke-linecap="round" fill="none" opacity="0.85"/></g></svg>`;
+
 /**
- * 5진법 발톱자국(탈리 마크) 레벨 HTML을 생성합니다 (우측 -> 좌측 정렬).
+ * 5진법 발톱자국(탈리 마크) 레벨 HTML을 생성합니다 (우측 -> 좌측 정렬, 인라인 벡터 SVG).
  */
 export function generateClawLevelHtml(level) {
   if (!level || level <= 0) return '';
@@ -39,16 +49,12 @@ export function generateClawLevelHtml(level) {
     const strokesInThisBundle = Math.min(remaining, 5);
     const verticalStrokes = Math.min(strokesInThisBundle, 4);
 
-    const clawSingleSrc = 'assets/badges/level_claw_single.svg';
-    const clawCrossSrc = 'assets/badges/level_claw_cross.svg';
     let strokesHtml = '';
     for (let s = 0; s < verticalStrokes; s++) {
-      strokesHtml += `<img src="${clawSingleSrc}" class="claw-stroke" alt="claw" />`;
+      strokesHtml += CLAW_SINGLE_SVG;
     }
 
-    const crossHtml = strokesInThisBundle === 5
-      ? `<img src="${clawCrossSrc}" class="claw-cross" alt="claw cross" />`
-      : '';
+    const crossHtml = strokesInThisBundle === 5 ? CLAW_CROSS_SVG : '';
 
     html += `<div class="claw-tally-bundle">${strokesHtml}${crossHtml}</div>`;
     remaining -= strokesInThisBundle;
@@ -57,15 +63,18 @@ export function generateClawLevelHtml(level) {
 }
 
 /**
- * 공용 카드 뒷면 HTML을 생성합니다.
+ * 공용 카드 뒷면 HTML을 생성합니다 (순수 벡터 card_back.svg + 선택적 플레이어 슬리브 지원).
  */
-export function generateCardBackHtml(scale = 1.0) {
+export function generateCardBackHtml(scale = 1.0, { usePlayerCosmetic = false } = {}) {
   const compact = Number(scale) <= 0.72;
-  const backSrc = resolveBakedAsset('assets/ui/card_back.svg', { compact });
+  const sleeveSpec = usePlayerCosmetic
+    ? (getPlayerSleeveSpec() || { preset: 'DEFAULT', src: CARD_BACK_SVG, isCustom: false })
+    : { preset: 'DEFAULT', src: CARD_BACK_SVG, isCustom: false };
+  const backSrc = sleeveSpec.src || CARD_BACK_SVG;
   return `
-    <div class="card-composite-wrapper card-back-wrapper">
+    <div class="card-composite-wrapper card-back-wrapper" data-sleeve="${sleeveSpec.preset || 'DEFAULT'}">
       <div class="card-back-inner">
-        <img src="${backSrc}" data-compact="${compact ? '1' : '0'}" class="card-back-svg-img" alt="" draggable="false" />
+        <img src="${backSrc}" data-compact="${compact ? '1' : '0'}" class="card-back-svg-img${sleeveSpec.isCustom ? ' is-custom-sleeve' : ''}" alt="" draggable="false" />
       </div>
     </div>
   `;
@@ -74,6 +83,10 @@ export function generateCardBackHtml(scale = 1.0) {
 /**
  * 카드 원화 Layer 1 HTML을 생성합니다.
  */
+export function getCardArtSrc(def, { compact = false } = {}) {
+  return CUSTOM_ART_MAP[def?.id] || resolveBakedAsset('assets/placeholders/procedural_fallback.svg', { compact });
+}
+
 export function getCardArtHtml(def, { compact = false } = {}) {
   const artSrc = CUSTOM_ART_MAP[def?.id];
   const fallbackSrc = resolveBakedAsset('assets/placeholders/procedural_fallback.svg', { compact });
@@ -92,7 +105,7 @@ export function getCardArtHtml(def, { compact = false } = {}) {
 /**
  * 긴 카드 이름을 상단 양각 박스 가용 너비(레벨 발톱자국 제외 영역)에 맞게 동적 가로 압축(scaleX)하여 렌더링합니다.
  */
-export function formatCardNameHtml(name, isMonster, level = 1) {
+export function formatCardNameHtml(name, isMonster, level = 1, fontScale = 1.0) {
   if (!name) return '';
   const charUnits = Array.from(name).reduce((acc, ch) => {
     if (ch === ' ') return acc + 0.28;
@@ -102,11 +115,11 @@ export function formatCardNameHtml(name, isMonster, level = 1) {
   const lv = Math.max(1, Number(level) || 1);
   const unitsByLevel = { 1: 9.8, 2: 9.1, 3: 8.4, 4: 7.8, 5: 7.7, 6: 6.7 };
   const monsterUnits = unitsByLevel[lv] ?? Math.max(4.5, 6.7 - (lv - 6) * 0.7);
-  const baseUnits = isMonster ? monsterUnits : 10.8;
+  const baseUnits = (isMonster ? monsterUnits : 10.8) / Math.max(0.5, Number(fontScale) || 1.0);
   let scaleX = 1.0;
   let letterSpacing = -0.02; // em 단위 소폭 자간
   if (charUnits > baseUnits) {
-    scaleX = Math.max(0.55, baseUnits / charUnits);
+    scaleX = Math.max(0.30, baseUnits / charUnits);
     letterSpacing = Math.max(-0.06, -0.02 - (charUnits - baseUnits) * 0.012);
   }
 
@@ -117,10 +130,43 @@ export function formatCardNameHtml(name, isMonster, level = 1) {
   const levelClass = isMonster ? `has-level has-lv-${Math.min(6, lv)}` : 'spell';
   const safeTitle = String(name).replace(/"/g, '&quot;');
   return `
-    <div class="overlay-name ${levelClass}" title="${safeTitle}">
+    <div class="overlay-name ${levelClass}" title="${safeTitle}" data-fit-name="1">
       <span class="card-name-text" style="${squeezerStyle}">${name}</span>
     </div>
   `;
+}
+
+/**
+ * 실제 DOM 상의 상단 이름 텍스트박스 가용 너비(.overlay-name clientWidth)를 측정해
+ * 글자가 넘칠 경우 scaleX를 동적으로 압축해 잘림 없이 딱 맞게 맞춥니다.
+ */
+export function fitCardNameTextBoxes(root = null) {
+  if (typeof document === 'undefined') return;
+  const scope = root && typeof root.querySelectorAll === 'function' ? root : document;
+  const spans = scope.querySelectorAll('.overlay-name .card-name-text');
+  if (!spans || spans.length === 0) return;
+
+  const jobs = [];
+  spans.forEach((textEl) => {
+    const nameBox = textEl.parentElement;
+    if (!nameBox || !nameBox.isConnected) return;
+    const availW = nameBox.clientWidth;
+    if (availW <= 4) return;
+    const naturalW = Math.max(textEl.scrollWidth, textEl.offsetWidth);
+    if (naturalW <= 0) return;
+    jobs.push({ textEl, availW, naturalW });
+  });
+
+  const safeGap = 1.5;
+  for (const { textEl, availW, naturalW } of jobs) {
+    const maxW = Math.max(1, availW - safeGap);
+    if (naturalW > maxW) {
+      const ratio = Math.max(0.28, Math.min(1, maxW / naturalW));
+      textEl.style.transform = `scaleX(${ratio.toFixed(3)})`;
+    } else {
+      textEl.style.transform = '';
+    }
+  }
 }
 
 /**
@@ -220,7 +266,7 @@ export function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicD
       </div>
       <div class="layer-3-dynamic-labels">
         <div class="overlay-header-bar ${isMonster ? 'is-monster' : 'is-spell'}">
-          ${formatCardNameHtml(def.name, isMonster, level)}
+          ${formatCardNameHtml(def.name, isMonster, level, isBattlefield ? (21.8 / 15.8) : 1.0)}
           ${isMonster ? generateClawLevelHtml(level) : ''}
         </div>
         ${bottomContentHtml}
@@ -277,14 +323,15 @@ export function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = n
     pillsHtml += `<span class="badge-god-tier">${svgIcon('crown')} 신(神)</span> `;
   }
 
+  // 레어도 -> 키워드 -> 태그 순
+  if (def.rarity) {
+    pillsHtml += `<span class="badge-rarity rarity-${def.rarity}">${t(`rarity.${def.rarity}`)}</span> `;
+  }
   const kwIds = cardOrDef.kw || def.kw || [];
   if (keywords.length > 0) {
     pillsHtml += keywords
       .map((kw, i) => `<span class="badge-keyword" title="${kwIds[i] ? keywordDesc(kwIds[i]) : '핵심 기능 키워드'}">${keywordIcon(kwIds[i] || kw)}${kw}</span>`)
       .join(' ') + ' ';
-  }
-  if (def.rarity) {
-    pillsHtml += `<span class="badge-rarity rarity-${def.rarity}">${t(`rarity.${def.rarity}`)}</span> `;
   }
   if (tags.length > 0) {
     pillsHtml += tags
@@ -344,4 +391,5 @@ export function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = n
   }
 
   effectTargets.forEach((el) => { el.innerHTML = contentHtml; });
+  previewTargets.forEach((el) => fitCardNameTextBoxes(el));
 }

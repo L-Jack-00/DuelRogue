@@ -279,10 +279,17 @@ export class SafeCardPointerController {
       this.maxTilt
     );
 
-    this.element.style.setProperty('--card-tx', `${tilt.translateX}px`);
-    this.element.style.setProperty('--card-ty', `${tilt.translateY}px`);
-    this.element.style.setProperty('--card-rx', `${tilt.rotateXDeg}deg`);
-    this.element.style.setProperty('--card-ry', `${tilt.rotateYDeg}deg`);
+    if (isDragging) {
+      this.element.style.setProperty('--card-tx', `${tilt.translateX}px`);
+      this.element.style.setProperty('--card-ty', `${tilt.translateY}px`);
+      this.element.style.setProperty('--card-rx', '0deg');
+      this.element.style.setProperty('--card-ry', '0deg');
+    } else {
+      this.element.style.setProperty('--card-tx', '0px');
+      this.element.style.setProperty('--card-ty', '0px');
+      this.element.style.setProperty('--card-rx', '0deg');
+      this.element.style.setProperty('--card-ry', '0deg');
+    }
     this.element.style.setProperty('--glare-x', `${tilt.glareXPercent}%`);
     this.element.style.setProperty('--glare-y', `${tilt.glareYPercent}%`);
     this.callbacks.onTiltUpdate?.(this.cardId, tilt, isDragging);

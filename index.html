@@ -4,19 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Duel Rogue</title>
-  <link rel="icon" type="image/svg+xml" href="assets/ui/app_icon.svg">
+  <link rel="icon" type="image/png" href="assets/ui/app_icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Noto+Serif+KR:wght@600;800;900&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Gowun+Batang:wght@400;700&family=Hahmlet:wght@400;600;700&family=Noto+Serif+KR:wght@600;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css?v=20261114_1522">
+  <link rel="stylesheet" href="theme-alley.css?v=20261118_w2k5">
 </head>
-<body>
+<body class="theme-alley">
 
   <div id="game-app">
     <!-- Desktop Native Custom Titlebar -->
     <header id="desktop-titlebar" data-tauri-drag-region>
       <div class="titlebar-brand" data-tauri-drag-region>
-        <img src="assets/ui/app_icon.svg" class="app-icon-img" alt="Duel Rogue" />
+        <img src="assets/ui/app_icon.png" class="app-icon-img" alt="Duel Rogue" />
         <span class="app-title">DUEL ROGUE</span>
       </div>
       <div class="titlebar-controls">
@@ -31,6 +32,11 @@
       </div>
     </header>
 
+    <!-- Scene background: image per view, gradient until the file exists (src/ui/sceneArt.js) -->
+    <div id="scene-backdrop" aria-hidden="true" data-tone="day">
+      <div class="scene-backdrop-img"></div>
+      <div class="scene-backdrop-shade"></div>
+    </div>
     <!-- 전용 캔버스 2D 연출 레이어 -->
     <canvas id="game-fx-canvas" width="1280" height="800"></canvas>
     <!-- 화면 전환 비전 커튼 오버레이 -->
@@ -41,9 +47,10 @@
     <!-- 1. 타이틀 로비 (VIEW_TITLE_LOBBY) -->
     <section id="view-title-lobby" class="screen active">
       <div class="title-container">
-        <h1 class="game-logo">DUEL ROGUE</h1>
-        <p class="subtitle" data-i18n="ui.title.subtitle">운명을 선택하고 나만의 덱으로 정점에 도전하세요</p>
-        
+        <h1 class="game-logo" aria-label="DUEL ROGUE">
+          <img src="assets/ui/game_logo.webp" alt="DUEL ROGUE" class="game-logo-img" />
+        </h1>
+
         <div class="menu-buttons">
           <button id="btn-continue-run" class="btn primary-btn" hidden data-i18n="ui.title.continue">이어하기</button>
           <button id="btn-start-run" class="btn primary-btn" data-i18n="ui.title.newRun">새 게임 시작</button>
@@ -77,7 +84,7 @@
     <section id="view-fortune-teller" class="screen">
       <div class="fortune-container">
         <div class="fortune-dialogue">
-          <div class="npc-avatar" data-art="assets/ui/npc_fortune.svg" data-art-class="npc-portrait-img"><span data-vicon="crystal"></span></div>
+          <div class="npc-avatar" data-art="assets/npc/fortune_teller.webp" data-art-fallback="assets/ui/npc_fortune.svg" data-art-class="npc-portrait-img"><span data-vicon="crystal"></span></div>
           <h2>운명의 점쟁이</h2>
           <p>"당신의 앞길을 시험할 세 장의 운명 카드가 놓여 있소. 어느 길을 걷겠소?"</p>
         </div>
@@ -86,7 +93,7 @@
           <!-- 파란색: 정의 -->
           <div class="tarot-card card-blue" data-destiny="BLUE_JUSTICE">
             <div class="tarot-back">
-              <span class="tarot-art" data-art="assets/ui/tarot_justice.svg" data-art-class="tarot-art-img"></span>
+              <span class="tarot-art" data-art="assets/ui/tarot_justice.webp" data-art-fallback="assets/ui/tarot_justice.svg" data-art-class="tarot-art-img"></span>
               <span class="symbol" data-vicon="balance"></span>
               <h3>정의</h3>
               <span class="sub">BLUE JUSTICE</span>
@@ -97,7 +104,7 @@
           <!-- 빨간색: 열의 -->
           <div class="tarot-card card-red" data-destiny="RED_ZEAL">
             <div class="tarot-back">
-              <span class="tarot-art" data-art="assets/ui/tarot_zeal.svg" data-art-class="tarot-art-img"></span>
+              <span class="tarot-art" data-art="assets/ui/tarot_zeal.webp" data-art-fallback="assets/ui/tarot_zeal.svg" data-art-class="tarot-art-img"></span>
               <span class="symbol" data-vicon="flame"></span>
               <h3>열의</h3>
               <span class="sub">RED ZEAL</span>
@@ -108,7 +115,7 @@
           <!-- 보라색: 혼돈 -->
           <div class="tarot-card card-purple" data-destiny="PURPLE_CHAOS">
             <div class="tarot-back">
-              <span class="tarot-art" data-art="assets/ui/tarot_chaos.svg" data-art-class="tarot-art-img"></span>
+              <span class="tarot-art" data-art="assets/ui/tarot_chaos.webp" data-art-fallback="assets/ui/tarot_chaos.svg" data-art-class="tarot-art-img"></span>
               <span class="symbol" data-vicon="dice"></span>
               <h3>혼돈</h3>
               <span class="sub">PURPLE CHAOS</span>
@@ -139,6 +146,10 @@
             </div>
           </div>
           <div class="hub-topbar-stats">
+            <div class="hub-stat-pill chances-pill" id="checkpoint-chances-pill" title="이번 런 남은 기회 (패배 시 1개 소모)">
+              <span class="chances-label">기회</span>
+              <span class="chances-hearts" id="checkpoint-chances-hearts" aria-label="남은 기회 3 / 3"></span>
+            </div>
             <div class="hub-stat-pill gold-pill">
               <span class="pill-icon" data-vicon="gold"></span>
               <strong id="checkpoint-gold-amount">1,000</strong>
@@ -155,49 +166,49 @@
           </div>
         </header>
 
-        <!-- 메인 3대 거점 포털 카드 그리드 (카드팩 상점 / 골목길 / 덱 & 가방) -->
+        <!-- 메인 3대 거점 포털 카드 그리드 (듀얼 숍 / 도전! / 덱 편집) -->
         <div class="hub-portals-grid">
-          <!-- 거점 1: 카드팩 상점 -->
+          <!-- 거점 1: 듀얼 숍 -->
           <div class="hub-portal-card portal-shop" id="card-nav-shop">
             <div class="portal-badge-row">
-              <span class="portal-tag tag-shop" id="hub-shop-stock-count">3종 · 5팩</span>
+              <span class="portal-tag portal-new-badge" id="hub-shop-new-badge">NEW!</span>
+              <span class="portal-tag tag-shop" id="hub-shop-stock-count" hidden>3종 · 5팩</span>
             </div>
-            <div class="portal-hero-icon" data-art="assets/ui/portal_shop.svg" data-art-class="portal-art-img-lg"><span data-vicon="shop"></span></div>
+            <div class="portal-hero-icon" data-art="assets/ui/portal_shop.webp" data-art-fallback="assets/ui/portal_shop.svg" data-art-class="portal-art-img-lg"><span data-vicon="shop"></span></div>
             <div class="portal-main-info minimal">
-              <h3 class="portal-title">카드팩 상점</h3>
+              <h3 class="portal-title">듀얼 숍</h3>
             </div>
             <button id="btn-checkpoint-nav-shop" class="btn primary-btn portal-enter-btn shop-btn">
               <span data-vicon="shop"></span> 입장
             </button>
           </div>
 
-          <!-- 거점 2: 골목길 (발생한 랜덤 인카운터 확인/출전 + 수상한 상인 암시장) -->
+          <!-- 거점 2: 도전! (발생한 랜덤 인카운터 확인/출전 + 수상한 상인 암시장) -->
           <div class="hub-portal-card portal-merchant" id="card-nav-merchant">
             <div class="portal-badge-row">
-              <span class="portal-tag tag-battle" id="hub-encounter-stars">★☆☆☆☆</span>
+              <span class="portal-tag tag-battle" id="hub-encounter-stars">다음 라운드 난이도: ★☆☆☆☆</span>
               <strong class="portal-reward-chip gold-text" id="hub-encounter-reward">+500원</strong>
-              <span class="portal-tag tag-merchant" id="hub-merchant-status-badge">방문 중</span>
-              <span class="portal-sub-chip" id="hub-merchant-avail-desc">교환 가능</span>
+              <span class="portal-tag portal-presence-badge" id="hub-alley-presence-pill" hidden>누군가의 인기척이 느껴집니다...</span>
             </div>
-            <div class="portal-hero-icon" data-art="assets/ui/portal_alley.svg" data-art-class="portal-art-img-lg"><span data-vicon="merchant"></span></div>
+            <div class="portal-hero-icon" data-art="assets/ui/portal_alley.webp" data-art-fallback="assets/ui/portal_alley.svg" data-art-class="portal-art-img-lg"><span data-vicon="merchant"></span></div>
             <div class="portal-main-info minimal">
-              <h3 class="portal-title">골목길</h3>
+              <h3 class="portal-title">도전!</h3>
             </div>
-            <button id="btn-checkpoint-nav-merchant" class="btn secondary-btn portal-enter-btn merchant-btn">
+            <button id="btn-checkpoint-nav-merchant" class="btn primary-btn portal-enter-btn merchant-btn">
               <span data-vicon="swords"></span> 입장
             </button>
           </div>
 
-          <!-- 거점 3: 가방 & 덱 편집 -->
+          <!-- 거점 3: 덱 편집 -->
           <div class="hub-portal-card portal-deck" id="card-nav-deck">
             <div class="portal-badge-row">
               <span class="portal-tag tag-deck" id="hub-deck-ready-status">30 / 30</span>
               <span class="portal-sub-chip" id="hub-trunk-total-status">가방 0</span>
               <span class="portal-sub-chip" id="hub-deck-validity-text" style="color: #4ade80;">출격 가능</span>
             </div>
-            <div class="portal-hero-icon" data-art="assets/ui/portal_trunk.svg" data-art-class="portal-art-img-lg"><span data-vicon="bag"></span></div>
+            <div class="portal-hero-icon" data-art="assets/ui/portal_trunk.webp" data-art-fallback="assets/ui/portal_trunk.svg" data-art-class="portal-art-img-lg"><span data-vicon="bag"></span></div>
             <div class="portal-main-info minimal">
-              <h3 class="portal-title">덱 & 가방</h3>
+              <h3 class="portal-title">덱 편집</h3>
             </div>
             <button id="btn-checkpoint-nav-deck" class="btn primary-btn portal-enter-btn deck-btn">
               <span data-vicon="bag"></span> 편집
@@ -208,7 +219,7 @@
         <!-- 하단: 최종 보스 결전의 문 -->
         <div class="hub-boss-challenge-banner">
           <div class="boss-banner-info">
-            <span class="boss-skull-icon" data-vicon="skull"></span>
+            <span class="boss-skull-icon" data-vicon="whiteSkull"></span>
             <h4>결전의 문</h4>
           </div>
           <button id="btn-checkpoint-challenge-boss" class="btn btn-danger-boss">
@@ -222,72 +233,87 @@
         <div class="toast-encounter-icon"><span data-vicon="swords"></span></div>
         <div class="toast-encounter-body">
           <strong class="toast-encounter-title">도전자가 나타났습니다!</strong>
-          <span class="toast-encounter-sub" id="checkpoint-toast-sub">골목길에서 도전자를 확인하고 대전을 시작할 수 있습니다.</span>
+          <span class="toast-encounter-sub" id="checkpoint-toast-sub">[도전!]에서 도전자를 확인하고 대전을 시작할 수 있습니다.</span>
         </div>
         <span class="toast-encounter-meta" id="checkpoint-toast-meta">★☆☆☆☆ · +500원</span>
       </div>
     </section>
 
-    <!-- 2.5-B. 카드 상점 전용 페이지 (VIEW_CHECKPOINT_SHOP) -->
+    <!-- 2.5-B. 듀얼 숍 전용 페이지 (VIEW_CHECKPOINT_SHOP) -->
     <section id="view-checkpoint-shop" class="screen">
-      <div class="subpage-container">
+      <div class="subpage-container shop-firstperson-container">
         <header class="subpage-header">
           <button id="btn-shop-back-hub" class="btn secondary-btn back-btn"><span data-vicon="home"></span> 체크포인트로 돌아가기</button>
           <div class="subpage-title-group">
-            <div class="shopkeeper-portrait" id="shopkeeper-portrait"><span class="npc-emoji" data-vicon="shop"></span></div>
-            <h2><span data-vicon="shop"></span> 카드 상점</h2>
+            <h2><span data-vicon="shop"></span> 듀얼 숍</h2>
             <span class="subpage-sub">부스터 팩과 낱장 카드를 구매하여 전력을 보강하세요.</span>
           </div>
           <div class="subpage-stat-badge">
             <span class="gold-icon" data-vicon="gold"></span>
             <strong id="shop-subpage-gold">1,000</strong>
             <span class="gold-unit">원</span>
-            <button id="btn-shop-to-editor" class="btn secondary-btn subpage-quick-btn"><span data-vicon="bag"></span> 덱 &amp; 가방 편집</button>
+            <button id="btn-shop-to-editor" class="btn secondary-btn subpage-quick-btn"><span data-vicon="bag"></span> 덱 편집</button>
           </div>
         </header>
 
-        <!-- 카드팩 개봉 결과 알림 배너 (최근 개봉한 카드) -->
-        <div id="shop-pack-result-banner" class="pack-result-banner is-hidden">
-          <div class="result-banner-header">
-            <h4><span data-vicon="spark"></span> 팩 개봉 결과</h4>
-            <button id="btn-close-pack-result" class="close-icon-btn"><span data-vicon="winClose"></span></button>
-          </div>
-          <div class="result-cards-row" id="shop-pack-result-cards"></div>
-        </div>
+        <!-- 1인칭 상점 카운터 대면 무대: 좌측 점원 + 카운터 / 우측 상품 진열대 -->
+        <div class="shop-firstperson-stage">
+          <aside class="shop-npc-counter-col" aria-label="상점 주인 카운터">
+            <div class="w2k-window shop-npc-window">
+              <div class="w2k-caption-bar"><span data-vicon="shop"></span><span>SHOP_COUNTER.exe</span></div>
+              <div class="shop-counter-scene">
+                <div class="shopkeeper-portrait shopkeeper-stage-portrait" id="shopkeeper-portrait"><span class="npc-emoji" data-vicon="shop"></span></div>
+                <div class="shop-counter-ledge"></div>
+              </div>
+              <div class="w2k-speech-bubble shop-speech-bubble" id="shop-speech-bubble">"어서 오게! 오늘 들어온 따끈따끈한 부스터 팩 좀 둘러보겠나?"</div>
+            </div>
+          </aside>
 
-        <!-- 부스터팩 라인업 섹션 -->
-        <div class="shop-section-wrap">
-          <div class="shop-section-title-line">
-            <span class="sec-icon" data-vicon="pack"></span>
-            <h3>부스터 팩</h3>
-            <span class="sec-badge">팩당 3장</span>
-          </div>
-          <div class="subpage-shelf-grid" id="checkpoint-shop-shelf-container">
-            <!-- 동적으로 부스터팩 목록 렌더링 -->
-          </div>
-        </div>
+          <div class="shop-counter-wares-col">
+            <!-- 카드팩 개봉 결과 알림 배너 (최근 개봉한 카드) -->
+            <div id="shop-pack-result-banner" class="pack-result-banner is-hidden">
+              <div class="result-banner-header">
+                <h4><span data-vicon="spark"></span> 팩 개봉 결과</h4>
+                <button id="btn-close-pack-result" class="close-icon-btn"><span data-vicon="winClose"></span></button>
+              </div>
+              <div class="result-cards-row" id="shop-pack-result-cards"></div>
+            </div>
 
-        <!-- 낱장 카드 진열대 섹션 -->
-        <div class="shop-section-wrap">
-          <div class="shop-section-title-line">
-            <span class="sec-icon" data-vicon="spark"></span>
-            <h3>낱장 카드</h3>
-            <span class="sec-badge badge-singles">즉시 영입</span>
-          </div>
-          <div class="subpage-singles-grid" id="checkpoint-shop-singles-container">
-            <!-- 동적으로 상점 낱장 카드 목록 렌더링 -->
+            <!-- 부스터팩 라인업 섹션 -->
+            <div class="shop-section-wrap">
+              <div class="shop-section-title-line">
+                <span class="sec-icon" data-vicon="pack"></span>
+                <h3>부스터 팩 진열대</h3>
+                <span class="sec-badge">팩당 3장</span>
+              </div>
+              <div class="subpage-shelf-grid" id="checkpoint-shop-shelf-container">
+                <!-- 동적으로 부스터팩 목록 렌더링 -->
+              </div>
+            </div>
+
+            <!-- 낱장 카드 진열대 섹션 -->
+            <div class="shop-section-wrap">
+              <div class="shop-section-title-line">
+                <span class="sec-icon" data-vicon="spark"></span>
+                <h3>낱장 카드 진열대</h3>
+                <span class="sec-badge badge-singles">즉시 영입</span>
+              </div>
+              <div class="subpage-singles-grid" id="checkpoint-shop-singles-container">
+                <!-- 동적으로 상점 낱장 카드 목록 렌더링 -->
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 2.5-C. 골목길 전용 페이지 (VIEW_CHECKPOINT_MERCHANT) -->
+    <!-- 2.5-C. 도전! 전용 페이지 (VIEW_CHECKPOINT_MERCHANT) -->
     <section id="view-checkpoint-merchant" class="screen">
-      <div class="subpage-container">
+      <div class="subpage-container alley-firstperson-container">
         <header class="subpage-header">
           <button id="btn-merchant-back-hub" class="btn secondary-btn back-btn"><span data-vicon="home"></span> 체크포인트로 돌아가기</button>
           <div class="subpage-title-group">
-            <h2><span data-vicon="merchant"></span> 골목길</h2>
+            <h2><span data-vicon="merchant"></span> 도전!</h2>
             <span class="subpage-sub">도전자와 대전을 치르거나 수상한 거래상과 카드를 교환할 수 있습니다.</span>
           </div>
           <div class="subpage-stat-badge">
@@ -295,68 +321,72 @@
             <strong id="merchant-subpage-gold">1,000</strong>
             <span class="gold-unit">원</span>
             <span>덱: <strong id="encounter-subpage-deck-status">30 / 30</strong></span>
-            <button id="btn-merchant-to-editor" class="btn secondary-btn subpage-quick-btn"><span data-vicon="bag"></span> 덱 &amp; 가방 편집</button>
+            <button id="btn-merchant-to-editor" class="btn secondary-btn subpage-quick-btn"><span data-vicon="bag"></span> 덱 편집</button>
           </div>
         </header>
 
-        <!-- 구역 1: 도전자 확인 & 대전 출격 -->
-        <div class="alley-section-block" id="alley-encounter-section">
-          <div class="alley-section-title-row">
-            <h3><span data-vicon="swords"></span> 이번 라운드 도전자</h3>
-            <span class="alley-section-pill">대전 대기</span>
-          </div>
-          <div class="encounter-dossier-card">
-            <div class="dossier-avatar-col">
-              <div class="dossier-avatar-frame mystery-opponent-frame" id="encounter-dossier-avatar"><span class="mystery-mark">?</span></div>
-              <span class="dossier-stars-tag" id="encounter-dossier-stars">★☆☆☆☆ · 위험도: 낮음</span>
+        <div class="alley-firstperson-grid">
+          <!-- 구역 1: 도전자 확인 & 대전 출격 -->
+          <div class="alley-section-block" id="alley-encounter-section">
+            <div class="alley-section-title-row">
+              <h3><span data-vicon="swords"></span> 이번 라운드 도전자</h3>
+              <span class="alley-section-pill">대전 대기</span>
             </div>
-            <div class="dossier-info-col">
-              <div class="dossier-name-row">
-                <span class="dossier-title-sub" id="encounter-dossier-title">미확인 도전자</span>
-                <h3 class="dossier-name" id="encounter-dossier-name">???</h3>
+            <div class="encounter-dossier-card">
+              <div class="dossier-avatar-col">
+                <div class="dossier-avatar-frame mystery-opponent-frame" id="encounter-dossier-avatar"><span class="mystery-mark">?</span></div>
+                <span class="dossier-stars-tag" id="encounter-dossier-stars">★☆☆☆☆ · 위험도: 낮음</span>
               </div>
-              <p class="dossier-desc" id="encounter-dossier-desc">전장에 입장하기 전까지 상대의 정체는 공개되지 않습니다. 대전을 시작하시겠습니까?</p>
+              <div class="dossier-info-col">
+                <div class="dossier-name-row">
+                  <span class="dossier-title-sub" id="encounter-dossier-title">미확인 도전자</span>
+                  <h3 class="dossier-name" id="encounter-dossier-name">???</h3>
+                </div>
+                <p class="dossier-desc" id="encounter-dossier-desc">전장에 입장하기 전까지 상대의 정체는 공개되지 않습니다. 대전을 시작하시겠습니까?</p>
 
-              <div class="dossier-metrics-grid">
-                <div class="metric-box">
-                  <span class="m-label">승리 보상</span>
-                  <strong class="m-val gold-val" id="encounter-dossier-reward">+500원</strong>
+                <div class="dossier-metrics-grid">
+                  <div class="metric-box">
+                    <span class="m-label">승리 보상</span>
+                    <strong class="m-val gold-val" id="encounter-dossier-reward">+500원</strong>
+                  </div>
+                  <div class="metric-box danger-box">
+                    <span class="m-label">패배 시</span>
+                    <strong class="m-val danger-val" id="encounter-defeat-rule-text">기회 1 감소 · 다음 라운드</strong>
+                  </div>
                 </div>
-                <div class="metric-box danger-box">
-                  <span class="m-label">패배 시</span>
-                  <strong class="m-val danger-val"><span data-vicon="warn"></span> 여정 종료</strong>
-                </div>
-              </div>
 
-              <div class="dossier-actions-row">
-                <div class="dossier-deck-hint" id="encounter-dossier-deck-hint">
-                  <span data-vicon="check"></span> 출전 준비 완료 (30 / 30)
-                </div>
-                <div class="dossier-btns">
-                  <button id="btn-encounter-to-editor" class="btn secondary-btn"><span data-vicon="bag"></span> 덱 편집</button>
-                  <button id="btn-start-encounter-from-subpage" class="btn primary-btn btn-duel-launch">
-                    <span data-vicon="swords"></span> 대전 시작
-                  </button>
+                <div class="dossier-actions-row">
+                  <div class="dossier-deck-hint" id="encounter-dossier-deck-hint">
+                    <span data-vicon="check"></span> 출전 준비 완료 (30 / 30)
+                  </div>
+                  <div class="dossier-btns">
+                    <button id="btn-encounter-to-editor" class="btn secondary-btn"><span data-vicon="bag"></span> 덱 편집</button>
+                    <button id="btn-start-encounter-from-subpage" class="btn primary-btn btn-duel-launch">
+                      <span data-vicon="swords"></span> 대전 시작
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 구역 2: 수상한 거래상 -->
-        <div class="alley-section-block" id="alley-merchant-section">
-          <div class="alley-section-title-row">
-            <h3><span data-vicon="merchant"></span> 수상한 거래상</h3>
-          </div>
-          <!-- 상인 대사 배너 -->
-          <div class="merchant-dialogue-banner" id="merchant-dialogue-banner">
-            <div class="merchant-npc-icon" data-vicon="merchant"></div>
-            <p id="merchant-dialogue-text">"골드보다 더 귀한 건 자네 가방 속 카드지. 내가 찾는 카드를 넘겨준다면 내 컬렉션의 진귀한 카드와 바꿔주겠네."</p>
-          </div>
+          <!-- 구역 2: 수상한 거래상 (1인칭 골목 대면 + 교환 매대) -->
+          <div class="alley-section-block" id="alley-merchant-section">
+            <div class="alley-section-title-row">
+              <h3><span data-vicon="merchant"></span> 수상한 거래상</h3>
+            </div>
+            <!-- 상인 대사 & 스탠딩 초상화 배너 -->
+            <div class="merchant-dialogue-banner" id="merchant-dialogue-banner">
+              <div class="merchant-npc-icon merchant-stage-portrait" data-vicon="merchant"></div>
+              <div class="merchant-speech-col">
+                <p id="merchant-dialogue-text">"골드보다 더 귀한 건 자네 가방 속 카드지. 내가 찾는 카드를 넘겨준다면 내 컬렉션의 진귀한 카드와 바꿔주겠네."</p>
+              </div>
+            </div>
 
-          <!-- 물물교환 제안 목록 그리드 -->
-          <div class="merchant-trade-deals-grid" id="checkpoint-merchant-deals-container">
-            <!-- 동적으로 상인 물물교환 제안 카드 렌더링 -->
+            <!-- 물물교환 제안 목록 그리드 -->
+            <div class="merchant-trade-deals-grid" id="checkpoint-merchant-deals-container">
+              <!-- 동적으로 상인 물물교환 제안 카드 렌더링 -->
+            </div>
           </div>
         </div>
       </div>
@@ -369,7 +399,7 @@
         <header class="editor-header-bar">
           <button id="btn-editor-back-hub" class="btn secondary-btn back-btn"><span data-vicon="home"></span> 체크포인트로 돌아가기</button>
           <div class="editor-title-group">
-            <h2><span data-vicon="bag"></span> 덱 &amp; 가방 편집</h2>
+            <h2><span data-vicon="bag"></span> 덱 편집</h2>
             <span class="editor-sub">카드를 클릭하여 덱과 가방 사이로 이동하고, 우클릭으로 덱 마스터를 지정할 수 있습니다.</span>
           </div>
           <div class="editor-deck-meter-box">
@@ -417,9 +447,18 @@
             <div class="pane-header">
               <div class="pane-title-wrap">
                 <span class="pane-icon" data-vicon="pack"></span>
-                <h3>출전 덱 (<span id="editor-deck-title-count">30</span>장)</h3>
+                <h3 class="deck-name-heading">
+                  <button type="button" id="btn-edit-deck-name" class="deck-name-trigger" title="클릭하여 덱 이름 변경">
+                    <span id="editor-deck-name-text">PLAYER</span>
+                  </button>
+                  <input type="text" id="input-edit-deck-name" class="deck-name-input" maxlength="24" value="PLAYER" hidden aria-label="덱 이름 입력" />
+                  <span class="deck-title-count">(<span id="editor-deck-title-count">30</span>장)</span>
+                </h3>
               </div>
               <div class="pane-header-actions">
+                <button id="btn-editor-deck-overview" class="btn secondary-btn btn-deck-overview-open" title="현재 30장 덱을 한눈에 보고 이미지로 캡처합니다">
+                  <span data-vicon="scroll"></span> 전체 덱 보기
+                </button>
                 <button id="btn-change-deckmaster" class="btn btn-deckmaster-pick" title="레벨 1 몬스터를 덱 마스터로 지정">
                   <span data-vicon="crown"></span> 덱 마스터 변경
                 </button>
@@ -445,14 +484,57 @@
           </div>
         </div>
 
-        <!-- 하단 안내 및 인스펙터 바 -->
-        <footer class="editor-footer-bar">
-          <div class="editor-status-notice" id="editor-deck-validation-notice">
-            <span data-vicon="check"></span> 출전 덱(30장) 구성이 완료되었습니다.
+        <!-- 하단 통합 바: 슬리브 & 내 필드 매트 + 상태/편성 완료 -->
+        <footer class="editor-cosmetics-bar editor-unified-bottom-bar" id="editor-cosmetics-bar" aria-label="슬리브·매트 설정 및 편성 완료">
+          <div class="cosmetics-group cosmetics-sleeve-group">
+            <div class="cosmetics-thumb sleeve-thumb" id="editor-sleeve-preview" title="현재 카드 슬리브 미리보기"></div>
+            <div class="cosmetics-controls">
+              <span class="cosmetics-title"><span data-vicon="pack"></span> 슬리브</span>
+              <div class="cosmetics-input-row">
+                <select id="sel-editor-sleeve-preset" class="mastery-fx-select cosmetics-select">
+                  <option value="DEFAULT">아케인 네이비 (기본 벡터)</option>
+                  <option value="ROYAL_BLUE">정의 로열 블루</option>
+                  <option value="CRIMSON_RED">열의 크림슨 레드</option>
+                  <option value="OCCULT_PURPLE">혼돈 오컬트 바이올렛</option>
+                  <option value="MONO_GRAY">Win2k 티타늄 그레이</option>
+                  <option value="CUSTOM">커스텀</option>
+                </select>
+                <button type="button" id="btn-editor-sleeve-custom" class="btn secondary-btn btn-xs cosmetics-custom-btn" hidden>
+                  <span data-vicon="wrench"></span> 커스텀
+                </button>
+              </div>
+            </div>
           </div>
-          <button id="btn-editor-finish" class="btn primary-btn">
-            <span data-vicon="save"></span> 편성 완료
-          </button>
+
+          <div class="cosmetics-divider" aria-hidden="true"></div>
+
+          <div class="cosmetics-group cosmetics-mat-group">
+            <div class="cosmetics-thumb mat-thumb" id="editor-mat-preview" title="내 필드 플레이매트 미리보기"></div>
+            <div class="cosmetics-controls">
+              <span class="cosmetics-title"><span data-vicon="shield"></span> 매트</span>
+              <div class="cosmetics-input-row">
+                <select id="sel-editor-mat-preset" class="mastery-fx-select cosmetics-select">
+                  <option value="GRAY_SOLID">기본 회색 단색</option>
+                  <option value="W2K_SILVER">Win2k 클래식 실버</option>
+                  <option value="NAVY_SLATE">아케인 다크 슬레이트</option>
+                  <option value="JUSTICE_BLUE">정의 스카이 블루</option>
+                  <option value="ZEAL_RED">열의 블러드 틴트</option>
+                  <option value="CHAOS_PURPLE">혼돈 바이올렛 틴트</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="cosmetics-divider" aria-hidden="true"></div>
+
+          <div class="editor-finish-dock">
+            <div class="editor-status-notice" id="editor-deck-validation-notice">
+              <span data-vicon="check"></span> 30/30장 완료
+            </div>
+            <button id="btn-editor-finish" class="btn primary-btn">
+              <span data-vicon="save"></span> 편성 완료
+            </button>
+          </div>
         </footer>
       </div>
     </section>
@@ -595,6 +677,7 @@
               <div class="duelist-info">
                 <div class="name-line">
                   <span class="duelist-name">플레이어</span>
+                  <span class="duel-chances-inline" id="duel-player-chances" title="남은 런 기회"></span>
                 </div>
                 <div class="stat-pills">
                   <div class="lp-container">
@@ -690,10 +773,18 @@
         <div class="trophy-badge" id="summary-badge"><span data-vicon="trophy"></span></div>
         <h1 id="summary-title">VICTORY</h1>
         <p id="summary-desc">운명의 최종 보스를 물리치고 여정을 완주했습니다.</p>
-        <div id="summary-seed-badge" class="summary-seed-badge" hidden></div>
+        <div class="summary-meta-badges">
+          <div id="summary-chances-badge" class="summary-chances-badge"></div>
+          <div id="summary-seed-badge" class="summary-seed-badge" hidden></div>
+        </div>
 
         <div class="hall-of-fame-panel">
-          <h3><span data-vicon="scroll"></span> 사용한 덱</h3>
+          <div class="hall-of-fame-header-row">
+            <h3><span data-vicon="scroll"></span> 사용한 덱</h3>
+            <button id="btn-summary-deck-overview" class="btn secondary-btn btn-deck-overview-open" title="사용한 덱 전체를 팝업으로 열고 클립보드에 캡처합니다">
+              <span data-vicon="spark"></span> 전체 덱 보기 · 캡처
+            </button>
+          </div>
           <div id="summary-deck-list" class="deck-grid-5x6 summary-deck-grid-5x6"></div>
           <div class="hall-payload-box" id="hall-payload-box" hidden></div>
         </div>
@@ -723,10 +814,10 @@
               <button type="button" id="btn-copy-run-seed" class="btn secondary-btn seed-mini-btn">복사</button>
             </div>
             <div class="options-row-action">
-              <button id="btn-abandon-run" class="btn btn-abandon-danger" title="현재 진행을 포기하고 메인 메뉴로 돌아갑니다">
-                <span data-vicon="flag"></span> 이번 게임 포기 (메인 메뉴)
+              <button id="btn-abandon-run" class="btn secondary-btn btn-save-exit" title="현재 진행 상황을 저장하고 메인 메뉴로 돌아갑니다">
+                <span data-vicon="home"></span> 저장하고 나가기 (메인 메뉴)
               </button>
-              <p class="options-hint">현재 진행 중인 여정을 종료하고 메인 메뉴로 돌아갑니다.</p>
+              <p class="options-hint">현재 진행 상황을 저장한 뒤 메인 메뉴로 돌아갑니다. 나중에 이어하기로 계속할 수 있습니다.</p>
             </div>
           </div>
 
@@ -747,6 +838,18 @@
               <label for="opt-sfx-vol">효과음 (SFX)</label>
               <input type="range" id="opt-sfx-vol" min="0" max="100" value="90" class="options-slider">
               <span id="opt-sfx-vol-val">90%</span>
+            </div>
+          </div>
+
+          <!-- 2-B. 시스템 폰트 설정 -->
+          <div class="options-section">
+            <div class="options-section-title"><span data-vicon="book"></span> 시스템 폰트</div>
+            <div class="options-select-row">
+              <label for="opt-ui-font">UI 서체</label>
+              <select id="opt-ui-font" class="options-select">
+                <option value="modern">기본 폰트 (Tahoma / Noto Sans KR)</option>
+                <option value="win2k-retro">클래식 Win2k (Fixedsys / 둥근모·굴림)</option>
+              </select>
             </div>
           </div>
 
@@ -1297,6 +1400,7 @@
             <div class="rarity-preview-mode-row">
               <button id="btn-rarity-preview-monster" class="btn secondary-btn btn-xs active">몬스터</button>
               <button id="btn-rarity-preview-spell" class="btn secondary-btn btn-xs">마법</button>
+              <button id="btn-rarity-preview-compact" class="btn secondary-btn btn-xs" title="전장/패/덱편집 간략화 카드 크기로 보기">간략화(90px)</button>
             </div>
             <div id="rarity-preview-card-mount" class="rarity-preview-card-mount"></div>
             <div id="rarity-preview-caption" class="rarity-preview-caption">효과 없음 (기본 무광)</div>
@@ -1336,7 +1440,7 @@
               </div>
               <input type="range" id="slider-rarity-art-fx" min="0" max="2.0" step="0.1" value="1.0">
             </div>
-            <div class="tuner-row">
+            <div class="tuner-row" hidden>
               <div class="tuner-label-line">
                 <span>프레임 외곽 오라</span>
                 <strong id="val-rarity-glow">1.0x</strong>
@@ -1349,6 +1453,21 @@
                 <strong id="val-rarity-name-glow">0.0x</strong>
               </div>
               <input type="range" id="slider-rarity-name-glow" min="0" max="2.0" step="0.1" value="0.0">
+            </div>
+            <div class="tuner-row tuner-font-test-row">
+              <div class="tuner-label-line">
+                <span>간략화 카드 이름 글꼴 테스트 (실시간 반영)</span>
+              </div>
+              <div class="tuner-font-row-flex">
+                <select id="sel-card-name-font" class="rarity-select" title="간략화(.battlefield-view) 카드 이름 글꼴 선택"></select>
+                <select id="sel-card-name-weight" class="rarity-select rarity-weight-select" title="글꼴 굵기">
+                  <option value="400">보통 (400)</option>
+                  <option value="500">중간 (500)</option>
+                  <option value="700">굵게 (700)</option>
+                  <option value="900">극굵 (900)</option>
+                </select>
+              </div>
+              <input type="text" id="input-card-name-custom" class="rarity-font-custom-input" placeholder="PC 설치 글꼴명 직접 입력 (예: Pretendard, MaruBuri, Gmarket Sans)" hidden />
             </div>
           </div>
         </div>
@@ -1666,9 +1785,87 @@
     <!-- 12.6. 패배 흑백 페이드아웃 연출 오버레이 -->
     <div id="duel-defeat-overlay" class="duel-defeat-overlay" aria-hidden="true">
       <div class="defeat-emblem-card">
-        <div class="defeat-skull-icon"><span data-vicon="skull"></span></div>
-        <h2 class="defeat-headline">DEFEAT</h2>
-        <p class="defeat-subtext">라이프 포인트가 0이 되었습니다</p>
+        <div class="defeat-skull-icon"><span data-vicon="whiteSkull"></span></div>
+        <h2 class="defeat-headline" id="duel-defeat-title">DEFEAT</h2>
+        <p class="defeat-subtext" id="duel-defeat-subtext">라이프 포인트가 0이 되었습니다</p>
+        <div class="defeat-chances-row" id="duel-defeat-chances" hidden></div>
+      </div>
+    </div>
+
+    <!-- 12.8. 커스텀 카드 슬리브 빌더 모달 -->
+    <div id="modal-custom-sleeve" class="in-game-options-modal is-hidden">
+      <div class="options-modal-backdrop" id="custom-sleeve-backdrop"></div>
+      <div class="options-modal-card custom-sleeve-dialog" role="dialog" aria-modal="true" aria-labelledby="custom-sleeve-modal-title">
+        <div class="options-modal-header">
+          <div class="options-modal-title" id="custom-sleeve-modal-title"><span data-vicon="pack"></span> 커스텀 카드 슬리브 제작</div>
+          <button type="button" id="btn-close-custom-sleeve" class="options-modal-close" title="닫기"><span data-vicon="winClose"></span></button>
+        </div>
+        <div class="custom-sleeve-body">
+          <div class="custom-sleeve-preview-col">
+            <div class="custom-sleeve-preview-box" id="custom-sleeve-live-preview"></div>
+            <div class="custom-sleeve-mini-wrap">
+              <span class="custom-sleeve-mini-label">축소 미리보기</span>
+              <div class="custom-sleeve-mini-box" id="custom-sleeve-mini-preview"></div>
+            </div>
+          </div>
+
+          <div class="custom-sleeve-controls-col">
+            <div class="options-section">
+              <div class="options-section-title">문양 &amp; 프레임 구성</div>
+              <div class="custom-sleeve-parts-grid">
+                <label class="cs-part-field">
+                  <span>배경 패턴</span>
+                  <select id="sel-cs-bg-pattern" class="mastery-fx-select"></select>
+                </label>
+                <label class="cs-part-field">
+                  <span>테두리</span>
+                  <select id="sel-cs-border-style" class="mastery-fx-select"></select>
+                </label>
+                <label class="cs-part-field">
+                  <span>문양 1 (외곽)</span>
+                  <select id="sel-cs-emblem1" class="mastery-fx-select"></select>
+                </label>
+                <label class="cs-part-field">
+                  <span>문양 2 (중심)</span>
+                  <select id="sel-cs-emblem2" class="mastery-fx-select"></select>
+                </label>
+              </div>
+            </div>
+
+            <div class="options-section">
+              <div class="options-section-title">색깔 1 ~ 4 색조 다이얼</div>
+              <div class="custom-sleeve-dials-grid" id="custom-sleeve-dials-grid"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tuner-footer custom-sleeve-footer">
+          <button type="button" id="btn-cs-reset" class="btn secondary-btn">기본값 복원</button>
+          <button type="button" id="btn-cs-cancel" class="btn secondary-btn">취소</button>
+          <button type="button" id="btn-cs-apply" class="btn primary-btn"><span data-vicon="save"></span> 적용</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12-B. 전체 덱 보기 · 캡처 모달 -->
+    <div id="modal-deck-overview" class="in-game-options-modal is-hidden">
+      <div class="options-modal-backdrop" id="deck-overview-backdrop"></div>
+      <div class="options-modal-card deck-overview-modal-card">
+        <div class="options-modal-header">
+          <div class="options-modal-title" id="deck-overview-title"><span data-vicon="scroll"></span> 전체 덱 보기</div>
+          <button id="btn-close-deck-overview" class="options-modal-close" title="닫기"><span data-vicon="winClose"></span></button>
+        </div>
+        <div class="options-modal-body deck-overview-modal-body">
+          <div class="deck-overview-toolbar">
+            <div class="deck-overview-stats" id="deck-overview-stats">30장</div>
+            <div class="deck-overview-actions">
+              <span id="deck-overview-status" class="deck-overview-status" aria-live="polite"></span>
+              <button id="btn-capture-deck-clipboard" class="btn primary-btn btn-capture-clipboard">
+                <span data-vicon="spark"></span> 클립보드 캡처
+              </button>
+            </div>
+          </div>
+          <div id="deck-overview-grid" class="deck-overview-grid"></div>
+        </div>
       </div>
     </div>
 

@@ -1,0 +1,133 @@
+{
+  "version": "2.0.0",
+  "profileId": "urban_occult_street_tournament",
+  "description": "Cohesive visual pipeline: gritty blue-sky metropolis plaza & rough street alley backgrounds paired with thick-lined angular occult cel-shaded characters.",
+  "copyrightPolicy": "Do not reference any external franchise, studio, or character names in prompts or comments.",
+  "comfyui": {
+    "checkpoint": "sd_xl_base_1.0.safetensors",
+    "vae": "sdxl_vae.safetensors",
+    "sampler": "dpmpp_2m",
+    "scheduler": "karras",
+    "cfg": 7.5,
+    "steps": 24,
+    "img2imgSteps": 22,
+    "img2imgDenoise": 0.56,
+    "portrait": {
+      "sampler": "dpmpp_2m_sde",
+      "scheduler": "karras",
+      "cfg": 7.3,
+      "steps": 33,
+      "hiresScale": 1.25,
+      "hiresSteps": 16,
+      "hiresDenoise": 0.36,
+      "img2imgSteps": 20,
+      "img2imgDenoise": 0.54
+    }
+  },
+  "styleAnchors": {
+    "background_day_outdoor": {
+      "positive": "authentic early-2000s Japanese TV anime background art, hand-painted animation studio gouache scenery, sprawling coastal metropolis concrete tournament plaza and gritty downtown side alley, wide clear cerulean blue sky with luminous soft painted anime clouds and towering glass-and-concrete city skyscrapers in distance, rough back-alley street details, weathered concrete steps, corrugated rolling metal shutters, rusted chain-link fences, utility poles with tangled power wires, subtle faded wall graffiti tags, retro street vending machines, crisp painted sunlight shadows and airy depth, zero comic ink hatching, original setting",
+      "negative": "heavy thick black comic outlines, comic book hatching, western comic scribble, pop art, night, dark gloomy mud, sunset golden hour, sepia wash, photorealistic, 3d render, glossy cgi, futuristic sci-fi neon, medieval stone castle, readable text, words, letters, logo, watermark, detailed faces in background, detailed crowd clothing, closeup foreground person, vignette border"
+    },
+    "background_day_indoor": {
+      "positive": "authentic early-2000s Japanese TV anime background art, hand-painted animation studio gouache interior, gritty lived-in downtown neighborhood hobby shop and arcade table space, cool crisp daylight through storefront glass, worn wooden floor, wire display racks, stacked cardboard stock boxes, overhead fluorescent tubes, clean painted lighting without thick comic ink borders, calm unobstructed center",
+      "negative": "(photorealistic, photograph, real life photo, 3d render:1.4), heavy thick black comic outlines, comic hatching, cluttered middle foreground, readable text, brand logo, watermark, detailed faces in background, detailed crowd clothing, closeup foreground person, medieval dungeon"
+    },
+    "background_night": {
+      "positive": "2D anime background illustration, early-2000s Japanese TV cel animation studio gouache painting, dark coastal metropolis back-alley plaza and industrial overpass under deep cobalt night sky, simplified stylized flat gouache brush shapes and crisp painted light cones, chain-link fences, painted concrete and twilight violet shadows, moody mysterious street duel mood, zero photo grain",
+      "negative": "(photorealistic, photograph, real life photo, live action, film grain photograph, raw camera, 3d render:1.4), heavy thick black comic outlines, comic scribble, bright midday sun, cheerful pastel rainbow, medieval stone castle, sci-fi spaceship, readable text, logo, watermark, detailed faces in background, detailed crowd clothing, closeup foreground person, vignette border"
+    },
+    "character": {
+      "positive": "(solo:1.3), (one single character isolated on a completely empty plain solid flat #ffffff white studio background:1.45), full color 2D graphic anime character portrait, ultra-thick tapered black ink outlines, sharp angular jawline, flat high-contrast hard-edged cel shadows, warm natural peach human skin tone, realistic modern casual clothes, intense late-1990s anime eyes, looking straight at viewer, upper body waist-up sprite",
+      "negative": "multiple people, two people, crowd, extra heads, split screen, dark background, grey background, pink background, cyan aura, geometric shape behind, colorful backdrop, city, alley, street, building, shelves, store, shop, scenery, room, fantasy armor, shoulder pauldrons, knight armor, medieval clothes, fantasy wizard robe, ornate gold trim, magic runes, monochrome, black and white, greyscale, spot color, uncolored skin, pale chalky skin, monster, demon, skull, zombie, sharp shark fangs, horns, mask helmet on head, soft painterly shading, watercolor bleed, photorealistic, 3d render, border, frame, card border, decorative arch, filigree, watermark, text, letters, signature, bad hands, extra fingers, lowres, blurry"
+    },
+    "icon": {
+      "positive": "anime still life illustration of a single isolated object floating in the exact center of a completely blank pure flat #ffffff white background, crisp bold black ink outlines, clean cel-shaded vibrant colors",
+      "negative": "square button, app icon frame, card box border, sticker border, speckles, dots, splatter, circle background, round badge, red circle behind, colored disk, oval floor shadow, drop shadow on floor, floor, wall, table, text, letters, words, typography, sign lettering, watermark, logo, multiple unrelated items, monochrome, lineart sketch, photorealistic, 3d render"
+    },
+    "product_fantasy": {
+      "positive": "bold graphic occult TCG card illustration artwork, sharp angular dynamic ink linework, dramatic high-contrast cel shadows with rich jewel-tone highlights, dark arcane charisma, intricate crest composition without text, crisp modern collector card illustration",
+      "negative": "readable text, letters, numbers, watermark, logo, card frame, foil wrapper edges, barcode, photorealistic, 3d render, blurry, lowres"
+    },
+    "tarot": {
+      "positive": "vertical symmetrical occult arcade tarot card front illustration, thick crisp black ink outlines, sharp angular gothic-street geometry, flat dramatic cel coloring with tarnished gold and deep ink shadows, single iconic symbolic centerpiece, zero text",
+      "negative": "readable text, roman numerals, letters, watermark, photorealistic, 3d render, blurry"
+    },
+    "card_back": {
+      "positive": "symmetrical occult street-tournament trading card back pattern, thick sharp geometric linework, deep midnight navy surface with warm parchment border and angular eight-pointed star and mystic eye crest in center, clean vector-sharp print finish, zero text",
+      "negative": "readable text, letters, logos, watermark, asymmetric slant, photorealistic lighting glare, 3d bevel"
+    }
+  },
+  "cutout": {
+    "portrait": {
+      "includeBottom": false,
+      "hardTol": 16.0,
+      "softTol": 30.0,
+      "edgeWall": 9.0
+    },
+    "icon": {
+      "includeBottom": true,
+      "hardTol": 18.0,
+      "softTol": 34.0,
+      "edgeWall": 9.0
+    }
+  },
+  "backgrounds": {
+    "nightIds": [
+      "BG_FORTUNE",
+      "BG_MERCHANT",
+      "BG_DECK",
+      "BG_BOSS_RED",
+      "BG_BOSS_BLUE",
+      "BG_BOSS_PURPLE",
+      "BG_DEFEAT"
+    ],
+    "indoorDayIds": [
+      "BG_SHOP",
+      "BG_ENCOUNTER",
+      "BG_DUEL"
+    ],
+    "silhouetteCrowdIds": [
+      "BG_LOBBY",
+      "BG_HUB",
+      "BG_SHOP",
+      "BG_MERCHANT",
+      "BG_ENCOUNTER",
+      "BG_BOSS_RED",
+      "BG_BOSS_BLUE",
+      "BG_BOSS_PURPLE",
+      "BG_VICTORY"
+    ],
+    "silhouettePrompt": "distant small flat featureless single-tone blue-grey shadow silhouettes of pedestrians standing or walking in the far background for lively atmosphere, faceless dark paper-cutout style crowd figures with zero facial features or clothing detail",
+    "promptOverrides": {
+      "BG_LOBBY": "wide cityscape vantage overlooking a sunlit concrete tournament plaza surrounded by towering coastal metropolis skyscrapers, wide vivid blue sky with bold clouds, worn skate ramps and chain-link duel railings along the plaza edge, stickers and stenciled street art on concrete pillars, vibrant rough downtown competition district, wide 16:9",
+      "BG_HUB": "bustling downtown alleyway opening into a grand sunlit concrete tournament square under towering city skyscrapers and elevated monorail tracks, crisp clear blue sky overhead, shop shutters, retro card vending machines, metal trash bins, power cables overhead, gritty playful street energy, wide 16:9",
+      "BG_MERCHANT": "narrow dark brick back-alley shortcut under an elevated subway overpass at midnight, flickering streetlamp beam, rusted steel barrel, graffiti tags on damp concrete wall, chain-link fence gate leading to the main street, moody occult card-dealer atmosphere, empty foreground floor, wide 16:9",
+      "BG_DUEL": "2D flat top-down bird's-eye anime background art filling the entire 16:9 frame edge-to-edge with a clean smooth warm oak wooden tabletop, simple flat wood planks stretching across the whole canvas with zero horizon and zero room walls, soft anime window light slant, tiny pocket calculator tucked at far top-left corner edge, calm uncluttered empty wooden board surface",
+      "BG_DECK": "compact moody second-floor loft hideout overlooking midnight metropolis skyscraper lights and rooftops through a steel-framed window, low metal desk, dark stacked deck cases and binder spines neatly against concrete wall, cool cobalt night light, wide 16:9"
+    },
+    "perItemNegative": {
+      "BG_DUEL": "ping pong table, table tennis, net, room walls, window frame, horizon, chairs, playing cards, poker cards, spades, hearts, cards on table, sewing buttons, coins pile, cluttered middle, perspective vanishing point",
+      "BG_DECK": "computer, monitor, tv, laptop, screen, keyboard, mouse, office desk",
+      "UI_PORTAL_SHOP": "fox, cat, animal, creature, face, eyes, hand, fingers, letters, typography, silhouette"
+    }
+  },
+  "characters": {
+    "NPC_FORTUNE": "mysterious anonymous figure wearing an oversized realistic modern matte beige hooded wool trench coat pulled far forward over head, simple black knit scarf and dark turtleneck collar underneath, heavy plain fabric hood casting deep pitch-black shadow concealing face with zero visible facial features, hands in coat pockets",
+    "NPC_SHOP_1": "friendly wiry middle-aged man wearing thick angular round black glasses, neat bushy mustache, crisp green work shirt with suspender apron, pencil behind ear, confident warm smirk, holding foil packet",
+    "NPC_SHOP_2": "spunky athletic young woman wearing sharp spiky blonde high ponytail, dark teal zip tracksuit jacket over black work apron, small bandage on cheek, cocky wink smile",
+    "NPC_SHOP_3": "imposing muscular bald adult man, clean shaven shiny bald head with zero hair tuft, sharp angular jawline, neat dark goatee, dark forearm tattoo, dark green work jacket over charcoal tee, confident warm grin",
+    "NPC_SHOP_4": "calm scholarly middle-aged woman with neat swept-back lavender-grey hair with clear dark ink outline, thick round-angular black glasses, deep plum knit cardigan over warm amber collared shirt, holding wooden abacus, sharp calculating smirk, plain solid pure white background",
+    "NPC_SHOP_5": "slouching sharp-eyed young man with spiky ink-black hair, wearing dark navy oversized pullover hoodie and silver-blue over-ear headphones around neck, cool wry smirk",
+    "NPC_MERCHANT_1": "crafty teen boy wearing a black flat-brim baseball cap pulling visor shadow across brows, dark navy long coat over bright crimson hoodie, sneaky crooked smirk, holding fanned cards",
+    "NPC_MERCHANT_2": "slick adult man wearing tall swept black pompadour hair, angular dark purple sunglasses, tailored deep violet blazer over dark collar shirt and gold chain necklace, sly confident smirk",
+    "NPC_MERCHANT_3": "rebellious punk young man with jagged spiky crimson red hair, black leather biker jacket with silver safety pins and studs over dark shirt, cocky confident smirk, silver ear piercings",
+    "NPC_MERCHANT_4": "crafty hunched elderly man with angular facial wrinkles, round dark sunglasses, dark flat cap, oversized tan trench coat over navy sweater and orange tie, hands in coat pockets, knowing shrewd grin",
+    "NPC_MERCHANT_5": "cool stoic young woman with sharp angular teal bob haircut, olive green bomber jacket over black turtleneck top pulled up smoothly, gold hoop earrings, calm confident smirk"
+  },
+  "moodBoosts": {
+    "EXCITED": "big energetic triumphant open-mouth grin, sharp sparkling intense eyes, raised brows, pumping excitement",
+    "TIRED": "heavy half-lidded exhausted eyes, deep sighing wry frown, dark comedic sweatdrop symbol by temple, slouched posture",
+    "DEAL": "sharp scheming sideways smirk, narrowed gleaming eyes, leaning slightly forward presenting a prized card"
+  }
+}

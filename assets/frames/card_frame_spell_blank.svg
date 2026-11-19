@@ -1,173 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560" width="100%" height="100%" xmlns:c2pa="http://c2pa.org/manifest">
   <defs>
-    <filter id="shadow-drop" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#000000" flood-opacity="0.85" />
-    </filter>
-
-    <!-- [유희왕 광폭 3D 양각 필터 - 연두빛 텍스트박스 전용] -->
-    <filter id="yugioh-emboss-green-wide" x="-15%" y="-15%" width="130%" height="130%">
-      <feDropShadow dx="2" dy="3.5" stdDeviation="3.5" flood-color="#064e3b" flood-opacity="0.65" result="box-shadow" />
-      <feDropShadow dx="-1.5" dy="-1.5" stdDeviation="2" flood-color="#ffffff" flood-opacity="0.95" result="light-glow" />
-      <feMerge>
-        <feMergeNode in="box-shadow" />
-        <feMergeNode in="SourceGraphic" />
-        <feMergeNode in="light-glow" />
-      </feMerge>
-    </filter>
-
-    <filter id="rivet-shadow-green" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0.6" dy="0.8" stdDeviation="0.8" flood-color="#022c22" flood-opacity="0.8" />
-    </filter>
-
-    <!-- 선명한 에메랄드-골드 금속 외곽선 그라디언트 -->
-    <linearGradient id="metal-vivid-green-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#f0fdf4" />
-      <stop offset="22%" stop-color="#5eead4" />
-      <stop offset="48%" stop-color="#16a34a" />
-      <stop offset="75%" stop-color="#15803d" />
-      <stop offset="100%" stop-color="#052e16" />
+    <linearGradient id="band" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6fd6c9"/><stop offset="0.45" stop-color="#2bb3a7"/><stop offset="1" stop-color="#167a7e"/>
     </linearGradient>
-
-    <linearGradient id="filigree-emerald-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#d1fae5" />
-      <stop offset="45%" stop-color="#eab308" />
-      <stop offset="100%" stop-color="#064e3b" />
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf6ea"/><stop offset="1" stop-color="#efe5cf"/>
     </linearGradient>
-
-    <!-- 연두빛 마법 양피지 바탕 -->
-    <linearGradient id="paper-vivid-green-parchment" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#dcfce7" />
-      <stop offset="35%" stop-color="#bbf7d0" />
-      <stop offset="70%" stop-color="#86efac" />
-      <stop offset="100%" stop-color="#4ade80" />
-    </linearGradient>
-
-    <!-- 마법 룬 격자 패턴 -->
-    <pattern id="spell-filigree-grid" width="28" height="28" patternUnits="userSpaceOnUse">
-      <circle cx="14" cy="14" r="10" fill="none" stroke="#065f46" stroke-width="0.45" opacity="0.1" />
-      <path d="M 14 4 L 24 14 L 14 24 L 4 14 Z" fill="none" stroke="#065f46" stroke-width="0.35" opacity="0.08" />
+    <pattern id="halftone" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+      <circle cx="3.5" cy="3.5" r="1.25" fill="#0d5558" opacity="0.28"/>
     </pattern>
-
-    <!-- 유희왕 스타일 볼록 솟아오른 양각 플레이트 -->
-    <linearGradient id="paper-green-embossed-box" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="30%" stop-color="#f0fdf4" />
-      <stop offset="70%" stop-color="#dcfce7" />
-      <stop offset="100%" stop-color="#bbf7d0" />
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/><stop offset="0.35" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
-
-    <linearGradient id="bevel-green-light-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="1.0" />
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.3" />
-    </linearGradient>
-
-    <linearGradient id="bevel-green-shadow-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#065f46" stop-opacity="0.3" />
-      <stop offset="100%" stop-color="#064e3b" stop-opacity="0.9" />
-    </linearGradient>
-
-    <radialGradient id="rivet-emerald" cx="35%" cy="35%" r="65%">
-      <stop offset="0%" stop-color="#ecfdf5" />
-      <stop offset="55%" stop-color="#10b981" />
-      <stop offset="100%" stop-color="#022c22" />
-    </radialGradient>
+    <mask id="window">
+      <rect width="400" height="560" fill="#fff"/>
+      <rect x="22" y="70" width="356" height="350" rx="3" fill="#000"/>
+    </mask>
   </defs>
-
-  <!-- ======================================================== -->
-  <!-- LAYER 2: 고밀도 마법 블랭크 바디 (정밀 마법 필리그리 보강) -->
-  <!-- ======================================================== -->
-  <g id="layer2-spell-frame">
-    <!-- 외곽 마법 양피지 바디 (중앙 윈도우 투명 컷아웃) -->
-    <path fill-rule="evenodd" fill="url(#paper-vivid-green-parchment)" stroke="url(#metal-vivid-green-gold)" stroke-width="8"
-          filter="url(#shadow-drop)"
-          d="M 22,8
-             L 378,8
-             A 14,14 0 0 1 392,22
-             L 392,538
-             A 14,14 0 0 1 378,552
-             L 22,552
-             A 14,14 0 0 1 8,538
-             L 8,22
-             A 14,14 0 0 1 22,8 Z
-             M 22,70
-             L 378,70
-             L 378,420
-             L 22,420 Z" />
-
-    <!-- 미세 룬 원형 패턴 오버레이 -->
-    <path fill-rule="evenodd" fill="url(#spell-filigree-grid)"
-          d="M 22,12 L 378,12 A 10,10 0 0 1 388,22 L 388,538 A 10,10 0 0 1 378,548 L 22,548 A 10,10 0 0 1 12,538 L 12,22 A 10,10 0 0 1 22,12 Z M 22,70 L 378,70 L 378,420 L 22,420 Z" />
-
-    <!-- 묵직한 이중 금속 인셋 림 -->
-    <rect x="13" y="13" width="374" height="534" rx="11" ry="11"
-          fill="none" stroke="#052e16" stroke-width="2.6" opacity="0.88" />
-    <rect x="16.5" y="16.5" width="367" height="527" rx="8.5" ry="8.5"
-          fill="none" stroke="#6ee7b7" stroke-width="1.0" opacity="0.55" />
-
-    <!-- [사각 코너 아케인 브래킷 & 에메랄드 보석 리벳] -->
-    <g id="spell-corner-ornaments" opacity="0.92">
-      <!-- 좌상단 -->
-      <path d="M 10,32 L 10,16 Q 10,10 16,10 L 32,10 L 26,15 L 15,15 L 15,26 Z" fill="url(#filigree-emerald-gold)" stroke="#052e16" stroke-width="0.8" />
-      <circle cx="15.5" cy="15.5" r="2.7" fill="url(#rivet-emerald)" filter="url(#rivet-shadow-green)" />
-      <!-- 우상단 -->
-      <path d="M 390,32 L 390,16 Q 390,10 384,10 L 368,10 L 374,15 L 385,15 L 385,26 Z" fill="url(#filigree-emerald-gold)" stroke="#052e16" stroke-width="0.8" />
-      <circle cx="384.5" cy="15.5" r="2.7" fill="url(#rivet-emerald)" filter="url(#rivet-shadow-green)" />
-      <!-- 좌하단 -->
-      <path d="M 10,528 L 10,544 Q 10,550 16,550 L 32,550 L 26,545 L 15,545 L 15,534 Z" fill="url(#filigree-emerald-gold)" stroke="#052e16" stroke-width="0.8" />
-      <circle cx="15.5" cy="544.5" r="2.7" fill="url(#rivet-emerald)" filter="url(#rivet-shadow-green)" />
-      <!-- 우하단 -->
-      <path d="M 390,528 L 390,544 Q 390,550 384,550 L 368,550 L 374,545 L 385,545 L 385,534 Z" fill="url(#filigree-emerald-gold)" stroke="#052e16" stroke-width="0.8" />
-      <circle cx="384.5" cy="544.5" r="2.7" fill="url(#rivet-emerald)" filter="url(#rivet-shadow-green)" />
-      <!-- 중단 좌우 마법 노드 -->
-      <circle cx="13.5" cy="245" r="2.3" fill="url(#rivet-emerald)" filter="url(#rivet-shadow-green)" />
-      <circle cx="386.5" cy="245" r="2.3" fill="url(#rivet-emerald)" filter="url(#rivet-shadow-green)" />
-    </g>
-
-    <!-- [최상단 이름 바 - 순수 광폭 양각 뼈대] -->
-    <g id="top-name-emboss-box" filter="url(#yugioh-emboss-green-wide)">
-      <rect x="22" y="14" width="356" height="50" rx="8" ry="8"
-            fill="url(#paper-green-embossed-box)" />
-      <path d="M 30,15 L 370,15 A 7,7 0 0 1 377,22 L 377,25 L 23,25 L 23,22 A 7,7 0 0 1 30,15 Z" fill="#ffffff" opacity="0.95" />
-      <path d="M 23,22 L 23,56 L 26,56 L 26,22 Z" fill="#ffffff" opacity="0.85" />
-      <path d="M 24,25 L 376,25 L 370,30 L 30,30 L 30,56 L 24,56 Z" fill="url(#bevel-green-light-grad)" opacity="0.5" />
-      <path d="M 23,62 L 370,62 A 7,7 0 0 0 377,55 L 377,63 L 30,63 A 7,7 0 0 1 23,62 Z" fill="#064e3b" opacity="0.75" />
-      <path d="M 375,22 L 375,56 L 378,56 L 378,22 Z" fill="#064e3b" opacity="0.75" />
-      <path d="M 30,58 L 370,58 L 376,53 L 376,25 L 371,30 L 371,53 L 30,53 Z" fill="url(#bevel-green-shadow-grad)" opacity="0.45" />
-      <rect x="27" y="19" width="346" height="40" rx="5" ry="5" fill="none" stroke="#6ee7b7" stroke-width="0.8" opacity="0.55" />
-    </g>
-
-    <!-- [중단: 일러스트 윈도우 고밀도 금속 테두리 & 코너 아케인 컷아웃] -->
-    <rect x="20" y="68" width="360" height="354" rx="5" ry="5"
-          fill="none" stroke="url(#metal-vivid-green-gold)" stroke-width="3.6" />
-    <rect x="22.5" y="70.5" width="355" height="349" rx="2.5" ry="2.5"
-          fill="none" stroke="#052e16" stroke-width="1.6" opacity="0.82" />
-    <g fill="url(#filigree-emerald-gold)" stroke="#052e16" stroke-width="0.6" opacity="0.9">
-      <polygon points="18,66 32,66 18,80" />
-      <polygon points="382,66 368,66 382,80" />
-      <polygon points="18,424 32,424 18,410" />
-      <polygon points="382,424 368,424 382,410" />
-    </g>
-
-    <!-- [하단: 유희왕 광폭 양각 마법 효과 박스 + 은은한 마법진 워터마크] -->
-    <g id="bottom-spell-effect-emboss-box" filter="url(#yugioh-emboss-green-wide)">
-      <rect x="22" y="428" width="356" height="116" rx="8" ry="8"
-            fill="url(#paper-green-embossed-box)" />
-      <!-- 중앙 은은한 마법진/육망성 워터마크 -->
-      <g opacity="0.14" stroke="#047857" fill="none" stroke-width="1.1">
-        <circle cx="200" cy="486" r="36" />
-        <circle cx="200" cy="486" r="28" stroke-dasharray="3 2" />
-        <polygon points="200,452 229,503 171,503" />
-        <polygon points="200,520 229,469 171,469" />
-      </g>
-      <!-- 상/좌 광폭 베벨 -->
-      <path d="M 30,429 L 370,429 A 7,7 0 0 1 377,436 L 377,439 L 23,439 L 23,436 A 7,7 0 0 1 30,429 Z" fill="#ffffff" opacity="0.95" />
-      <path d="M 23,436 L 23,536 L 26,536 L 26,436 Z" fill="#ffffff" opacity="0.85" />
-      <path d="M 24,439 L 376,439 L 370,444 L 30,444 L 30,536 L 24,536 Z" fill="url(#bevel-green-light-grad)" opacity="0.5" />
-      <!-- 하/우 광폭 베벨 -->
-      <path d="M 23,542 L 370,542 A 7,7 0 0 0 377,535 L 377,543 L 30,543 A 7,7 0 0 1 23,542 Z" fill="#064e3b" opacity="0.75" />
-      <path d="M 375,436 L 375,536 L 378,536 L 378,436 Z" fill="#064e3b" opacity="0.75" />
-      <path d="M 30,538 L 370,538 L 376,533 L 376,439 L 371,444 L 371,533 L 30,533 Z" fill="url(#bevel-green-shadow-grad)" opacity="0.45" />
-      <rect x="27" y="433" width="346" height="106" rx="5" ry="5" fill="none" stroke="#6ee7b7" stroke-width="0.7" opacity="0.55" />
-    </g>
+  <g mask="url(#window)">
+    <!-- card stock edge -->
+    <rect x="2" y="2" width="396" height="556" rx="20" fill="#fdfaf2" stroke="#d8ccb2" stroke-width="2"/>
+    <!-- type colour band with print dots -->
+    <rect x="9" y="9" width="382" height="542" rx="15" fill="url(#band)" stroke="#0f3d40" stroke-width="2.5"/>
+    <rect x="9" y="9" width="382" height="542" rx="15" fill="url(#halftone)"/>
+    <rect x="9" y="9" width="382" height="270" rx="15" fill="url(#gloss)"/>
   </g>
-</svg>
+  <!-- name bar -->
+  <rect x="20" y="14" width="360" height="50" rx="8" fill="url(#paper)" stroke="#0f3d40" stroke-width="3"/>
+  <rect x="25" y="18" width="350" height="4" rx="2" fill="#ffffff" opacity="0.7"/>
+  <!-- art window ink line -->
+  <rect x="20.5" y="68.5" width="359" height="353" rx="4" fill="none" stroke="#0f3d40" stroke-width="3.5"/>
+  <rect x="17" y="65" width="366" height="360" rx="6" fill="none" stroke="#fdfaf2" stroke-width="2" opacity="0.85"/>
+  <!-- text boxes -->
+  <rect x="24" y="430" width="352" height="112" rx="7" fill="url(#paper)" stroke="#0f3d40" stroke-width="3"/>
+  <!-- corner stickers -->
+  <circle cx="20" cy="548" r="3" fill="#0f3d40" opacity="0.55"/><circle cx="380" cy="548" r="3" fill="#0f3d40" opacity="0.55"/>
+<metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTphMGUxNTY4MC01NGZmLTRjOGItODk4Mi1iNDk3MmFjMmE0MmMAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaNyuDZLg04G3FrxKIaHCj0sAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDo5ZWY1NmFhNy1mZjdiLTQzZjUtOGQ4MS1mZWVkZmQxNjA2MDJscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNoCl1pTzfN4uNhzD5GusPnKAAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggpjh0wkkxm522ZK0E7sYHkjuFqr0ExqkUHBty7eXXqUmkZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaI3vbl+COCqDph/00oGcS/QAAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRMAAAAAAAAAAAAAAAAZGhhc2hYIEVZOi1sN7S7hEdPd0lWCBTRBouLAjVAEx5ai0Tq4G+8ZG5hbWVuanVtYmYgbWFuaWZlc3RqZXhjbHVzaW9uc4GiZXN0YXJ0GQknZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOmEwZTE1NjgwLTU0ZmYtNGM4Yi04OTgyLWI0OTcyYWMyYTQyYy9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOmU5NDM3ZDRjLWM1YWQtNGExMC1iY2E4LWNhNzVhYzU4YzFhNnJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCCmOHTCSTGbnbZkrQTuxgeSO4WqvQTGqRQcG3Lt5depSaJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFgghKIXUZLUmvPSiH+A+ZE6qfctXFVpzd/oFC4T18kaZ2WiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggj+o8Ne3fx4avQsehqYDuaGoqZcbHrkyho2D1xz2rV3B0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQI1Uyc2KO9RqufyiFJh6SwQk4Jmz/iXpZBE/z4aTuURoJ8MKwtQ73WaLFff9dcAD5JCtjl9Vuj2880mD5fGjNkM=</c2pa:manifest></metadata></svg>

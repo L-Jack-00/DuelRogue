@@ -1,123 +1,647 @@
 {
-  "description": "Duel Rogue 그래픽·사운드 자산 목록. 파일이 아직 없으면 게임은 기존 그라디언트·이모지·합성음으로 대체해 그대로 동작한다. 카드 일러스트는 별도 작업으로 제외.",
-  "styleGuide": "Original dark-fantasy card-duel world in the mood of early-2000s console card games: painterly, rich jewel tones (sapphire, crimson, amethyst, antique gold) on deep charcoal, candle and torch glow, ornate gothic metalwork, subtle film grain. Do NOT copy any existing game's logos, card frames or characters.",
+  "description": "Duel Rogue 그래픽·사운드 자산 목록. 스타일은 A안 '골목 토너먼트'로 확정(2026-11-18): 현실의 소도시가 배경이고 판타지는 카드 안에만 있다. 파일이 아직 없으면 게임은 기존 그라디언트·이모지·합성음으로 대체해 그대로 동작한다. 카드 일러스트는 별도 작업으로 제외. 프롬프트 조립법: assets/STYLE_PROMPTS.md",
+  "styleGuide": "early-2000s anime TV series background art, hand-painted cel-animation backgrounds, soft painterly gouache texture with clean readable shapes, clear sky-blue color palette, wide visible blue sky with soft white clouds, crisp bright daylight and cool airy tones, subtle film grain, lived-in and slightly messy, rough-and-tumble downtown with playful rebellious energy, lively and upbeat rather than dangerous, street card-game tournament culture, original setting and original designs",
   "images": [
-    { "id": "BG_LOBBY", "type": "background", "path": "assets/ui/bg_lobby.webp", "size": "1920x1080",
-      "aiPromptHint": "Grand gothic card-duel hall at night, enormous carved stone archway, glowing floating playing cards spiraling in the air, rows of candles, deep charcoal and antique gold palette, volumetric light, painterly dark fantasy concept art, empty center area for a title logo, no text" },
-    { "id": "BG_FORTUNE", "type": "background", "path": "assets/ui/bg_fortune.webp", "size": "1920x1080",
-      "aiPromptHint": "Interior of a mystic fortune teller's tent, crystal ball glowing violet on a round table draped in velvet, scattered tarot cards, hanging brass lanterns, incense smoke, deep purple and gold palette, painterly dark fantasy, center kept clear for UI, no text" },
-    { "id": "BG_HUB", "type": "background", "path": "assets/ui/bg_hub.webp", "size": "1920x1080",
-      "aiPromptHint": "Medieval waypoint plaza at dusk where duelists gather, wooden signposts, a lit card shop window, a shadowy alley, distant coliseum arena, warm lanterns against blue twilight, painterly dark fantasy, soft and low contrast for UI overlay, no text" },
-    { "id": "BG_SHOP", "type": "background", "path": "assets/ui/bg_shop.webp", "size": "1920x1080",
-      "aiPromptHint": "Cozy old card shop interior, tall wooden shelves stacked with colorful booster packs, glass display counter with rare cards under a warm brass lamp, dust motes in light beams, nostalgic early-2000s hobby shop meets fantasy apothecary, painterly, no text" },
-    { "id": "BG_MERCHANT", "type": "background", "path": "assets/ui/bg_merchant.webp", "size": "1920x1080",
-      "aiPromptHint": "Narrow foggy back alley at night, a makeshift black-market stall with velvet cloth and locked card cases, green and amber lantern light, puddles reflecting light, mysterious and slightly dangerous mood, painterly dark fantasy, no text" },
-    { "id": "BG_DECK", "type": "background", "path": "assets/ui/bg_deck.webp", "size": "1920x1080",
-      "aiPromptHint": "Duelist's study room, an open iron-bound travel trunk full of cards, leather card binders, wooden desk with candle and magnifying glass, maps on the wall, warm amber light, painterly, low contrast for UI overlay, no text" },
-    { "id": "BG_ENCOUNTER", "type": "background", "path": "assets/ui/bg_encounter.webp", "size": "1920x1080",
-      "aiPromptHint": "Stone corridor leading into a duel coliseum, tall banners, torches on the walls, bright arena light at the far end, dramatic perspective, painterly dark fantasy, no text" },
-    { "id": "BG_DUEL", "type": "background", "path": "assets/ui/bg_duel.webp", "size": "1920x1080",
-      "aiPromptHint": "Top-down view of an ancient stone duel table, faint engraved magic circle and rune lines, worn slate texture, very dark and low contrast so cards on top stay readable, subtle blue rim light at the edges, no text, no cards" },
-    { "id": "BG_BOSS_RED", "type": "background", "path": "assets/ui/bg_boss_red.webp", "size": "1920x1080",
-      "aiPromptHint": "Volcanic throne arena, rivers of lava, obsidian pillars, crimson sky with embers, ominous final-boss mood, dark and low contrast in the center for UI, painterly, no text" },
-    { "id": "BG_BOSS_BLUE", "type": "background", "path": "assets/ui/bg_boss_blue.webp", "size": "1920x1080",
-      "aiPromptHint": "Colossal white marble fortress hall, towering shields and sealed gates, cold sapphire light, solemn and impregnable final-boss mood, low contrast center for UI, painterly, no text" },
-    { "id": "BG_BOSS_PURPLE", "type": "background", "path": "assets/ui/bg_boss_purple.webp", "size": "1920x1080",
-      "aiPromptHint": "Surreal rigged casino floating in a violet void, giant roulette wheel and dice drifting, glowing amethyst chandeliers, unsettling luxurious final-boss mood, low contrast center for UI, painterly, no text" },
-    { "id": "BG_VICTORY", "type": "background", "path": "assets/ui/bg_victory.webp", "size": "1920x1080",
-      "aiPromptHint": "Hall of fame with golden light pouring through stained glass, confetti of glowing cards, triumphant mood, painterly dark fantasy, no text" },
-    { "id": "BG_DEFEAT", "type": "background", "path": "assets/ui/bg_defeat.webp", "size": "1920x1080",
-      "aiPromptHint": "Abandoned duel table in the rain, scattered cards, a single guttering candle, melancholic blue-grey mood, painterly, no text" },
-
-    { "id": "NPC_FORTUNE", "type": "portrait", "path": "assets/npc/fortune_teller.webp", "size": "768x1024",
-      "aiPromptHint": "Waist-up portrait of an elderly mysterious fortune teller woman, violet hooded shawl with gold embroidery, holding three glowing tarot cards, kind but unsettling smile, painterly dark fantasy character art, transparent background" },
-    { "id": "NPC_SHOP_1", "type": "portrait", "path": "assets/npc/shopkeeper_1.webp", "size": "768x1024",
-      "aiPromptHint": "Waist-up portrait of a jolly middle-aged card shop owner, round spectacles, green apron over a vest, holding a booster pack and smiling warmly in greeting, painterly dark fantasy character art, transparent background" },
-    { "id": "NPC_SHOP_2", "type": "portrait", "path": "assets/npc/shopkeeper_2.webp", "size": "768x1024",
-      "aiPromptHint": "Same card shop owner character, leaning in with a sly salesman wink, one finger raised as if recommending a rare card, painterly character art, transparent background", "reference": "NPC_SHOP_1" },
-    { "id": "NPC_SHOP_3", "type": "portrait", "path": "assets/npc/shopkeeper_3.webp", "size": "768x1024",
-      "aiPromptHint": "Same card shop owner character, amazed wide-eyed expression holding up a glowing legendary card, painterly character art, transparent background", "reference": "NPC_SHOP_1" },
-    { "id": "NPC_SHOP_4", "type": "portrait", "path": "assets/npc/shopkeeper_4.webp", "size": "768x1024",
-      "aiPromptHint": "Same card shop owner character, tired and sleepy, chin on hand, empty shelves feeling, painterly character art, transparent background", "reference": "NPC_SHOP_1" },
-    { "id": "NPC_MERCHANT_1", "type": "portrait", "path": "assets/npc/merchant_1.webp", "size": "768x1024",
-      "aiPromptHint": "Waist-up portrait of a suspicious hooded black-market merchant, face half in shadow, glinting eyes, gold rings, fanning out rare cards with a crooked smirk, painterly dark fantasy character art, transparent background" },
-    { "id": "NPC_MERCHANT_2", "type": "portrait", "path": "assets/npc/merchant_2.webp", "size": "768x1024",
-      "aiPromptHint": "Same hooded merchant character, holding a finger to his lips whispering a secret deal, painterly character art, transparent background", "reference": "NPC_MERCHANT_1" },
-    { "id": "NPC_MERCHANT_3", "type": "portrait", "path": "assets/npc/merchant_3.webp", "size": "768x1024",
-      "aiPromptHint": "Same hooded merchant character, greedily counting a stack of cards and coins, painterly character art, transparent background", "reference": "NPC_MERCHANT_1" },
-    { "id": "NPC_MERCHANT_4", "type": "portrait", "path": "assets/npc/merchant_4.webp", "size": "768x1024",
-      "aiPromptHint": "Same hooded merchant character, laughing triumphantly after closing a deal, painterly character art, transparent background", "reference": "NPC_MERCHANT_1" },
-
-    { "id": "UI_TAROT_BLUE", "type": "illustration", "path": "assets/ui/tarot_justice.svg", "size": "640x1024",
-      "aiPromptHint": "Original tarot-style card illustration titled by imagery only: a radiant knight holding scales and a tower shield under a sapphire sky, ornate gold border, painterly, no text" },
-    { "id": "UI_TAROT_RED", "type": "illustration", "path": "assets/ui/tarot_zeal.svg", "size": "640x1024",
-      "aiPromptHint": "Original tarot-style card illustration: a roaring crimson dragon coiled around a burning sword, embers, ornate gold border, painterly, no text" },
-    { "id": "UI_TAROT_PURPLE", "type": "illustration", "path": "assets/ui/tarot_chaos.svg", "size": "640x1024",
-      "aiPromptHint": "Original tarot-style card illustration: a masked jester juggling glowing dice over a violet abyss, ornate gold border, painterly, no text" },
-
-    { "id": "UI_PACK_BLUE", "type": "icon", "path": "assets/ui/pack_blue.svg", "size": "512x768",
-      "aiPromptHint": "Foil booster pack product shot, sapphire and silver design with a shield-and-wings emblem, crimped top and bottom, front view, isolated on transparent background, no readable text" },
-    { "id": "UI_PACK_RED", "type": "icon", "path": "assets/ui/pack_red.svg", "size": "512x768",
-      "aiPromptHint": "Foil booster pack product shot, crimson and gold design with a dragon-head emblem, crimped top and bottom, front view, isolated on transparent background, no readable text" },
-    { "id": "UI_PACK_PURPLE", "type": "icon", "path": "assets/ui/pack_purple.svg", "size": "512x768",
-      "aiPromptHint": "Foil booster pack product shot, amethyst and black design with a dice-and-eye emblem, crimped top and bottom, front view, isolated on transparent background, no readable text" },
-    { "id": "UI_PACK_NEUTRAL", "type": "icon", "path": "assets/ui/pack_neutral.svg", "size": "512x768",
-      "aiPromptHint": "Foil booster pack product shot, olive green and bronze design with a wolf-and-gear emblem, crimped top and bottom, front view, isolated on transparent background, no readable text" },
-    { "id": "UI_PACK_LEGEND", "type": "icon", "path": "assets/ui/pack_legend.svg", "size": "512x768",
-      "aiPromptHint": "Premium foil booster pack product shot, radiant gold and black design with three divine sigils, holographic shine, crimped top and bottom, front view, isolated on transparent background, no readable text" },
-
-    { "id": "UI_PORTAL_ARENA", "type": "icon", "path": "assets/ui/portal_arena.svg", "size": "512x512",
-      "aiPromptHint": "Game UI icon of crossed swords over a coliseum gate, antique gold and steel, dark fantasy, isolated on transparent background" },
-    { "id": "UI_PORTAL_SHOP", "type": "icon", "path": "assets/ui/portal_shop.svg", "size": "512x512",
-      "aiPromptHint": "Game UI icon of a hanging shop sign shaped like a booster pack, warm brass, dark fantasy, isolated on transparent background" },
-    { "id": "UI_PORTAL_ALLEY", "type": "icon", "path": "assets/ui/portal_alley.svg", "size": "512x512",
-      "aiPromptHint": "Game UI icon of a hooded lantern and a sealed envelope of cards, green and amber glow, dark fantasy, isolated on transparent background" },
-    { "id": "UI_PORTAL_TRUNK", "type": "icon", "path": "assets/ui/portal_trunk.svg", "size": "512x512",
-      "aiPromptHint": "Game UI icon of an iron-bound travel trunk overflowing with cards, dark fantasy, isolated on transparent background" },
-    { "id": "UI_CARD_BACK", "type": "illustration", "path": "assets/ui/card_back.svg", "size": "640x896",
-      "aiPromptHint": "Original trading card back design, symmetrical, deep navy and charcoal with an antique gold rune circle and a stylized eye-and-star emblem in the center, ornate border, no text" }
+    {
+      "id": "BG_LOBBY",
+      "type": "background",
+      "path": "assets/ui/bg_lobby.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Title screen: wide high-angle view over the main street of a Korean and Japanese style city back-alley neighborhood (narrow lanes between low 2-4 story buildings, tangled overhead power lines, exterior stairs and AC units, small shop awnings and pull-down shutters, potted plants by doorways) on a bright clear day during a citywide street card tournament, tournament banners and paper flags strung between 3-4 story buildings, glowing shop signs without readable text, utility poles and overhead wires, a big open blue sky with soft white clouds in the upper half kept empty for the game logo, graffiti murals made of abstract shapes with no readable letters, delinquent teens and punks loitering as small background silhouettes, playful rebellious downtown energy, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_FORTUNE",
+      "type": "background",
+      "path": "assets/ui/bg_fortune.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "A tiny fortune-telling booth in a corner of a second-floor shopping arcade: beaded curtain, a violet shade floor lamp, a small round table with a cloth and a tarot spread, incense smoke, cheap star stickers on the wall, cozy and slightly eerie, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_HUB",
+      "type": "background",
+      "path": "assets/ui/bg_hub.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Hub: a three-way alley intersection in a Korean and Japanese style city back-alley neighborhood (narrow lanes between low 2-4 story buildings, tangled overhead power lines, exterior stairs and AC units, small shop awnings and pull-down shutters, potted plants by doorways); on the left the glowing entrance of a tiny card shop with hand-made posters, on the right a dim narrow back alley with a single bare bulb, in the middle distance concrete stairs leading down to an underground tournament hall, vending machines, rolled shutters, bicycles, paper tournament flags, bright daytime with a wide blue sky visible above the alley, graffiti murals made of abstract shapes with no readable letters, a group of tough-looking delinquents in tracksuits squatting by the vending machine and a punk with a mohawk leaning on the graffiti wall at the sides of the frame, a subway entrance sign glow and construction scaffolding in the distance, playful rebellious downtown energy, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_SHOP",
+      "type": "background",
+      "path": "assets/ui/bg_shop.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Interior of a narrow cramped small-town card shop: glass showcase counter with rare cards under a small display lamp, walls packed floor-to-ceiling with colorful booster pack displays (no readable text), an old cash register and a pocket calculator on the counter, fluorescent tube light mixed with cool daylight and a glimpse of blue sky through the front window, cardboard boxes and tournament posters, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_MERCHANT",
+      "type": "background",
+      "path": "assets/ui/bg_merchant.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "A narrow back alley at night: a folding-table street stall in front of a rusty rolled shutter, a single bare incandescent bulb hanging from a wire, velvet cloth with card binders and small locked cases, rain-wet pavement reflecting a nearby vending machine glow, steam from a vent, mysterious but cozy, deep blue night with warm amber light, graffiti murals made of abstract shapes with no readable letters, delinquent teens and punks loitering as small background silhouettes, playful rebellious downtown energy, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_DECK",
+      "type": "background",
+      "path": "assets/ui/bg_deck.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "A small attic-like studio room at night where a young duelist builds decks: cards spread on the floor and a low table, stacked binders, a tower of plastic deck boxes, a desk lamp, posters without readable text, window showing the night city lights, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_ENCOUNTER",
+      "type": "background",
+      "path": "assets/ui/bg_encounter.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Entrance of a basement tournament hall under a shopping arcade: a whiteboard bracket with abstract marks instead of text, a registration folding table, silhouettes of waiting participants in line, fluorescent lights and a bright doorway into the hall, graffiti murals made of abstract shapes with no readable letters, delinquent teens and punks loitering as small background silhouettes, playful rebellious downtown energy, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_DUEL",
+      "type": "background",
+      "path": "assets/ui/bg_duel.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "A worn but well-loved wooden table seen from a slightly elevated three-quarter top-down view, scratches, coffee-ring stains and old sticker residue, scattered six-sided dice, a chunky pocket calculator, a small pile of coins, translucent plastic deck boxes and rubber bands at the edges only, the lower edge framed by a retro arcade cabinet control panel with a ball-top joystick and colorful round buttons, bright cool daylight from a nearby window, large clear empty play area in the center, low contrast in the center so cards stay readable, wide 16:9, no cards in the center"
+    },
+    {
+      "id": "BG_BOSS_RED",
+      "type": "background",
+      "path": "assets/ui/bg_boss_red.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Final boss of Zeal: an abandoned factory floor at night lit by red warning lamps and a burning oil drum, rusty machinery, broken skylights, embers drifting, a faint crimson aura of card power warping the air, ferocious mood, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_BOSS_BLUE",
+      "type": "background",
+      "path": "assets/ui/bg_boss_blue.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Final boss of Justice: a rooftop helipad of an office building at night, cold sapphire floodlights, chain-link fence, rooftop water tanks, wind and city lights below, a faint blue aura of card power seeping into the air, solemn and impregnable mood, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_BOSS_PURPLE",
+      "type": "background",
+      "path": "assets/ui/bg_boss_purple.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Final boss of Chaos: an illegal back-room game arcade, rows of old cabinets glowing violet, a rigged roulette table, dice and coins scattered, smoky air, a faint purple aura of card power bending the space, unsettling luxurious mood, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_VICTORY",
+      "type": "background",
+      "path": "assets/ui/bg_victory.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Victory: a small community tournament podium on a street stage in a Korean and Japanese style alley neighborhood under a clear blue sky, confetti and paper streamers in the air, tournament flags, bright triumphant daylight, graffiti murals made of abstract shapes with no readable letters, delinquent teens and punks loitering as small background silhouettes, playful rebellious downtown energy, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "BG_DEFEAT",
+      "type": "background",
+      "path": "assets/ui/bg_defeat.webp",
+      "size": "1920x1200",
+      "aiPromptHint": "Defeat: an empty bus stop bench in the rain at dusk, a few cards scattered on the wet bench and pavement, flickering street light, melancholic blue-grey mood, wide 16:9 game background, no characters in focus, soft gradual darkening toward the edges with no drawn border or frame, the central third of the image kept open and uncluttered for UI overlay"
+    },
+    {
+      "id": "NPC_FORTUNE",
+      "type": "portrait",
+      "path": "assets/npc/fortune_teller.webp",
+      "size": "768x1024",
+      "aiPromptHint": "A mysterious anonymous fortune teller shrouded in a deep violet-and-white hooded robe with gold chain clasp, upper face concealed in shadow beneath the deep hood with faint glowing golden eyes gleaming out of darkness, waist-up character portrait, plain transparent background, early-2000s anime cel-shaded character"
+    },
+    {
+      "id": "UI_TAROT_BLUE",
+      "type": "illustration",
+      "path": "assets/ui/tarot_justice.webp",
+      "size": "640x1024",
+      "aiPromptHint": "An original printed tarot card from the fortune teller's well-used deck, slightly worn paper edges: a radiant knight holding scales and a tower shield under a sapphire sky, simple decorative border, gouache illustration, no text, vertical 5:8",
+      "fallback": "assets/ui/tarot_justice.svg"
+    },
+    {
+      "id": "UI_TAROT_RED",
+      "type": "illustration",
+      "path": "assets/ui/tarot_zeal.webp",
+      "size": "640x1024",
+      "aiPromptHint": "An original printed tarot card from the fortune teller's well-used deck, slightly worn paper edges: a roaring crimson dragon coiled around a burning sword, simple decorative border, gouache illustration, no text, vertical 5:8",
+      "fallback": "assets/ui/tarot_zeal.svg"
+    },
+    {
+      "id": "UI_TAROT_PURPLE",
+      "type": "illustration",
+      "path": "assets/ui/tarot_chaos.webp",
+      "size": "640x1024",
+      "aiPromptHint": "An original printed tarot card from the fortune teller's well-used deck, slightly worn paper edges: a masked jester juggling glowing dice over a violet abyss, simple decorative border, gouache illustration, no text, vertical 5:8",
+      "fallback": "assets/ui/tarot_chaos.svg"
+    },
+    {
+      "id": "UI_PACK_BLUE",
+      "type": "icon",
+      "path": "assets/ui/pack_blue.svg",
+      "size": "512x768",
+      "aiPromptHint": "Foil booster pack product shot, sapphire and silver design with a shield-and-wings emblem, crimped top and bottom, front view, isolated on transparent background, no readable text",
+      "note": "포장 틀이 없을 때 쓰는 대체 그림이다. 실제 상품 그림은 products 항목을 쓴다."
+    },
+    {
+      "id": "UI_PACK_RED",
+      "type": "icon",
+      "path": "assets/ui/pack_red.svg",
+      "size": "512x768",
+      "aiPromptHint": "Foil booster pack product shot, crimson and gold design with a dragon-head emblem, crimped top and bottom, front view, isolated on transparent background, no readable text",
+      "note": "포장 틀이 없을 때 쓰는 대체 그림이다. 실제 상품 그림은 products 항목을 쓴다."
+    },
+    {
+      "id": "UI_PACK_PURPLE",
+      "type": "icon",
+      "path": "assets/ui/pack_purple.svg",
+      "size": "512x768",
+      "aiPromptHint": "Foil booster pack product shot, amethyst and black design with a dice-and-eye emblem, crimped top and bottom, front view, isolated on transparent background, no readable text",
+      "note": "포장 틀이 없을 때 쓰는 대체 그림이다. 실제 상품 그림은 products 항목을 쓴다."
+    },
+    {
+      "id": "UI_PACK_NEUTRAL",
+      "type": "icon",
+      "path": "assets/ui/pack_neutral.svg",
+      "size": "512x768",
+      "aiPromptHint": "Foil booster pack product shot, olive green and bronze design with a wolf-and-gear emblem, crimped top and bottom, front view, isolated on transparent background, no readable text",
+      "note": "포장 틀이 없을 때 쓰는 대체 그림이다. 실제 상품 그림은 products 항목을 쓴다."
+    },
+    {
+      "id": "UI_PACK_LEGEND",
+      "type": "icon",
+      "path": "assets/ui/pack_legend.svg",
+      "size": "512x768",
+      "aiPromptHint": "Premium foil booster pack product shot, radiant gold and black design with three divine sigils, holographic shine, crimped top and bottom, front view, isolated on transparent background, no readable text",
+      "note": "포장 틀이 없을 때 쓰는 대체 그림이다. 실제 상품 그림은 products 항목을 쓴다."
+    },
+    {
+      "id": "UI_PORTAL_SHOP",
+      "type": "icon",
+      "path": "assets/ui/portal_shop.webp",
+      "size": "512x512",
+      "aiPromptHint": "A small hanging card-shop signboard with a booster pack silhouette, warm painted wood and light bulbs, single game UI icon, centered, bold silhouette, isolated on transparent background",
+      "fallback": "assets/ui/portal_shop.svg"
+    },
+    {
+      "id": "UI_PORTAL_ALLEY",
+      "type": "icon",
+      "path": "assets/ui/portal_alley.webp",
+      "size": "512x512",
+      "aiPromptHint": "A bare light bulb hanging from a wire above a sealed brown envelope of cards, amber glow, single game UI icon, centered, bold silhouette, isolated on transparent background",
+      "fallback": "assets/ui/portal_alley.svg"
+    },
+    {
+      "id": "UI_PORTAL_TRUNK",
+      "type": "icon",
+      "path": "assets/ui/portal_trunk.webp",
+      "size": "512x512",
+      "aiPromptHint": "A translucent plastic deck box stuffed with sleeved cards and a rubber band, single game UI icon, centered, bold silhouette, isolated on transparent background",
+      "fallback": "assets/ui/portal_trunk.svg"
+    },
+    {
+      "id": "UI_CARD_BACK",
+      "type": "illustration",
+      "path": "assets/ui/card_back.webp",
+      "size": "640x896",
+      "aiPromptHint": "Original trading card back design, symmetrical, deep navy with a warm cream border and a simple star-and-eye emblem in the center, printed card stock feel, subtle halftone print texture, no text, vertical 5:7",
+      "fallback": "assets/ui/card_back.svg"
+    },
+    {
+      "id": "NPC_SHOP_1_BASE",
+      "type": "portrait",
+      "path": "assets/npc/shop_1_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a jolly middle-aged man with round glasses, a green shop apron over a striped shirt and a pencil behind his ear, greeting customers warmly while holding up a booster pack, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_SHOP_1_EXCITED",
+      "type": "portrait",
+      "path": "assets/npc/shop_1_excited.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a jolly middle-aged man with round glasses, a green shop apron over a striped shirt and a pencil behind his ear, wide-eyed and thrilled, holding up a shining rare card in a top-loader, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_1_BASE"
+    },
+    {
+      "id": "NPC_SHOP_1_TIRED",
+      "type": "portrait",
+      "path": "assets/npc/shop_1_tired.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a jolly middle-aged man with round glasses, a green shop apron over a striped shirt and a pencil behind his ear, tired and sleepy, chin resting on hand, empty shelves feeling, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_1_BASE"
+    },
+    {
+      "id": "NPC_SHOP_2_BASE",
+      "type": "portrait",
+      "path": "assets/npc/shop_2_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a young woman in her twenties with a bleached blonde high ponytail, an open tracksuit jacket over a shop apron, a bandage on her cheek, chewing gum, former delinquent energy, greeting customers warmly while holding up a booster pack, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_SHOP_2_EXCITED",
+      "type": "portrait",
+      "path": "assets/npc/shop_2_excited.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a young woman in her twenties with a bleached blonde high ponytail, an open tracksuit jacket over a shop apron, a bandage on her cheek, chewing gum, former delinquent energy, wide-eyed and thrilled, holding up a shining rare card in a top-loader, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_2_BASE"
+    },
+    {
+      "id": "NPC_SHOP_2_TIRED",
+      "type": "portrait",
+      "path": "assets/npc/shop_2_tired.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a young woman in her twenties with a bleached blonde high ponytail, an open tracksuit jacket over a shop apron, a bandage on her cheek, chewing gum, former delinquent energy, tired and sleepy, chin resting on hand, empty shelves feeling, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_2_BASE"
+    },
+    {
+      "id": "NPC_SHOP_3_BASE",
+      "type": "portrait",
+      "path": "assets/npc/shop_3_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a tall bald muscular man with tattooed forearms, a black tank top under a tiny shop apron, scary-looking but with a gentle smile, greeting customers warmly while holding up a booster pack, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_SHOP_3_EXCITED",
+      "type": "portrait",
+      "path": "assets/npc/shop_3_excited.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a tall bald muscular man with tattooed forearms, a black tank top under a tiny shop apron, scary-looking but with a gentle smile, wide-eyed and thrilled, holding up a shining rare card in a top-loader, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_3_BASE"
+    },
+    {
+      "id": "NPC_SHOP_3_TIRED",
+      "type": "portrait",
+      "path": "assets/npc/shop_3_tired.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a tall bald muscular man with tattooed forearms, a black tank top under a tiny shop apron, scary-looking but with a gentle smile, tired and sleepy, chin resting on hand, empty shelves feeling, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_3_BASE"
+    },
+    {
+      "id": "NPC_SHOP_4_BASE",
+      "type": "portrait",
+      "path": "assets/npc/shop_4_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a sharp-eyed elderly grandmother with permed grey hair, a knitted cardigan and an abacus, a tough haggler, greeting customers warmly while holding up a booster pack, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_SHOP_4_EXCITED",
+      "type": "portrait",
+      "path": "assets/npc/shop_4_excited.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a sharp-eyed elderly grandmother with permed grey hair, a knitted cardigan and an abacus, a tough haggler, wide-eyed and thrilled, holding up a shining rare card in a top-loader, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_4_BASE"
+    },
+    {
+      "id": "NPC_SHOP_4_TIRED",
+      "type": "portrait",
+      "path": "assets/npc/shop_4_tired.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a sharp-eyed elderly grandmother with permed grey hair, a knitted cardigan and an abacus, a tough haggler, tired and sleepy, chin resting on hand, empty shelves feeling, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_4_BASE"
+    },
+    {
+      "id": "NPC_SHOP_5_BASE",
+      "type": "portrait",
+      "path": "assets/npc/shop_5_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a nerdy man in his twenties with messy hair, an oversized hoodie and headphones around his neck, greeting customers warmly while holding up a booster pack, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_SHOP_5_EXCITED",
+      "type": "portrait",
+      "path": "assets/npc/shop_5_excited.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a nerdy man in his twenties with messy hair, an oversized hoodie and headphones around his neck, wide-eyed and thrilled, holding up a shining rare card in a top-loader, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_5_BASE"
+    },
+    {
+      "id": "NPC_SHOP_5_TIRED",
+      "type": "portrait",
+      "path": "assets/npc/shop_5_tired.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Card shop owner: a nerdy man in his twenties with messy hair, an oversized hoodie and headphones around his neck, tired and sleepy, chin resting on hand, empty shelves feeling, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_SHOP_5_BASE"
+    },
+    {
+      "id": "NPC_MERCHANT_1_BASE",
+      "type": "portrait",
+      "path": "assets/npc/merchant_1_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a shady street dealer in a hoodie under a long worn coat, cap pulled low, face half in shadow, several rings, fanning out rare sleeved cards with a crooked smirk, inviting a secret deal, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_MERCHANT_1_DEAL",
+      "type": "portrait",
+      "path": "assets/npc/merchant_1_deal.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a shady street dealer in a hoodie under a long worn coat, cap pulled low, face half in shadow, several rings, laughing triumphantly after closing a deal, counting coins, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_MERCHANT_1_BASE"
+    },
+    {
+      "id": "NPC_MERCHANT_2_BASE",
+      "type": "portrait",
+      "path": "assets/npc/merchant_2_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a slick hustler in a shiny purple suit with sunglasses, a gold chain and a tall pompadour, fanning out rare sleeved cards with a crooked smirk, inviting a secret deal, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_MERCHANT_2_DEAL",
+      "type": "portrait",
+      "path": "assets/npc/merchant_2_deal.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a slick hustler in a shiny purple suit with sunglasses, a gold chain and a tall pompadour, laughing triumphantly after closing a deal, counting coins, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_MERCHANT_2_BASE"
+    },
+    {
+      "id": "NPC_MERCHANT_3_BASE",
+      "type": "portrait",
+      "path": "assets/npc/merchant_3_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a grinning punk with a red mohawk, a studded leather jacket covered in safety pins and patches, fanning out rare sleeved cards with a crooked smirk, inviting a secret deal, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_MERCHANT_3_DEAL",
+      "type": "portrait",
+      "path": "assets/npc/merchant_3_deal.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a grinning punk with a red mohawk, a studded leather jacket covered in safety pins and patches, laughing triumphantly after closing a deal, counting coins, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_MERCHANT_3_BASE"
+    },
+    {
+      "id": "NPC_MERCHANT_4_BASE",
+      "type": "portrait",
+      "path": "assets/npc/merchant_4_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a hunched old man in a long trench coat whose inner lining is full of card pockets, one eye squinting, fanning out rare sleeved cards with a crooked smirk, inviting a secret deal, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_MERCHANT_4_DEAL",
+      "type": "portrait",
+      "path": "assets/npc/merchant_4_deal.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a hunched old man in a long trench coat whose inner lining is full of card pockets, one eye squinting, laughing triumphantly after closing a deal, counting coins, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_MERCHANT_4_BASE"
+    },
+    {
+      "id": "NPC_MERCHANT_5_BASE",
+      "type": "portrait",
+      "path": "assets/npc/merchant_5_base.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a mysterious young woman with dyed teal hair, an oversized bomber jacket and a face mask pulled down to her chin, fanning out rare sleeved cards with a crooked smirk, inviting a secret deal, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout"
+    },
+    {
+      "id": "NPC_MERCHANT_5_DEAL",
+      "type": "portrait",
+      "path": "assets/npc/merchant_5_deal.webp",
+      "size": "768x1024",
+      "aiPromptHint": "Back-alley card dealer: a mysterious young woman with dyed teal hair, an oversized bomber jacket and a face mask pulled down to her chin, laughing triumphantly after closing a deal, counting coins, waist-up character portrait, anime cel-shaded character over painted gouache texture, early-2000s anime TV style, plain flat light-grey background for easy cutout",
+      "reference": "NPC_MERCHANT_5_BASE"
+    }
   ],
   "audio": [
-    { "id": "BGM_TITLE", "type": "audio_bgm", "path": "assets/audio/bgm_title.mp3", "audioMeta": { "loop": true, "volume": 0.55 },
-      "aiPromptHint": "Dark fantasy orchestral main theme, mysterious harpsichord arpeggio, choir pad, slow build, 90 BPM, seamless loopable game background music, instrumental only" },
-    { "id": "BGM_HUB", "type": "audio_bgm", "path": "assets/audio/bgm_hub.mp3", "audioMeta": { "loop": true, "volume": 0.5 },
-      "aiPromptHint": "Calm adventurer camp at dusk, acoustic lute and soft strings, gentle woodwinds, 80 BPM, seamless loopable game background music, instrumental only" },
-    { "id": "BGM_SHOP", "type": "audio_bgm", "path": "assets/audio/bgm_shop.mp3", "audioMeta": { "loop": true, "volume": 0.5 },
-      "aiPromptHint": "Cheerful cozy shop music, music-box melody with pizzicato strings and light percussion, 100 BPM, seamless loopable game background music, instrumental only" },
-    { "id": "BGM_MERCHANT", "type": "audio_bgm", "path": "assets/audio/bgm_merchant.mp3", "audioMeta": { "loop": true, "volume": 0.5 },
-      "aiPromptHint": "Sneaky black-market alley music, plucked upright bass, muted trumpet, tambourine, minor key, 95 BPM, seamless loopable game background music, instrumental only" },
-    { "id": "BGM_DUEL", "type": "audio_bgm", "path": "assets/audio/bgm_duel.mp3", "audioMeta": { "loop": true, "volume": 0.5 },
-      "aiPromptHint": "Tense card duel battle music, driving strings ostinato, taiko drums, electric guitar accents, 140 BPM, seamless loopable game background music, instrumental only" },
-    { "id": "BGM_BOSS", "type": "audio_bgm", "path": "assets/audio/bgm_boss.mp3", "audioMeta": { "loop": true, "volume": 0.55 },
-      "aiPromptHint": "Epic final boss battle, full orchestra and choir, pipe organ, heavy percussion, 150 BPM, seamless loopable game background music, instrumental only" },
-    { "id": "BGM_VICTORY", "type": "audio_bgm", "path": "assets/audio/bgm_victory.mp3", "audioMeta": { "loop": false, "volume": 0.6 },
-      "aiPromptHint": "Triumphant victory fanfare, brass and timpani, 20 seconds, instrumental only" },
-    { "id": "BGM_DEFEAT", "type": "audio_bgm", "path": "assets/audio/bgm_defeat.mp3", "audioMeta": { "loop": false, "volume": 0.6 },
-      "aiPromptHint": "Somber defeat theme, solo cello and soft piano, 20 seconds, instrumental only" },
-
-    { "id": "SFX_CARD_PICK", "type": "audio_sfx", "path": "assets/audio/sfx_card_pick.mp3", "cue": "playCardPickup", "audioMeta": { "pitchVariance": 0.08 },
-      "aiPromptHint": "Single playing card being picked up from a table, crisp paper swish, 0.3s, zero reverb" },
-    { "id": "SFX_CARD_PLAY", "type": "audio_sfx", "path": "assets/audio/sfx_card_play.mp3", "cue": "playCardPlayImpact", "audioMeta": { "pitchVariance": 0.06 },
-      "aiPromptHint": "Card slammed onto a wooden duel table with a soft magical shimmer, 0.5s, crisp impact" },
-    { "id": "SFX_HIT", "type": "audio_sfx", "path": "assets/audio/sfx_hit.mp3", "cue": "playDamageHit", "audioMeta": { "pitchVariance": 0.08 },
-      "aiPromptHint": "Fantasy melee hit, sword slash into armor, 0.4s, crisp impact, zero reverb" },
-    { "id": "SFX_HEAVY", "type": "audio_sfx", "path": "assets/audio/sfx_heavy.mp3", "cue": "playHeavyImpact", "audioMeta": { "pitchVariance": 0.05 },
-      "aiPromptHint": "Massive monster attack impact, deep thud with rumble, 0.8s, crisp impact" },
-    { "id": "SFX_TAP", "type": "audio_sfx", "path": "assets/audio/sfx_tap.mp3", "cue": "playLightTap", "audioMeta": { "pitchVariance": 0.1 },
-      "aiPromptHint": "Light UI tap on a wooden button, 0.15s, zero reverb" },
-    { "id": "SFX_SHATTER", "type": "audio_sfx", "path": "assets/audio/sfx_shatter.mp3", "cue": "playCardShatter", "audioMeta": { "pitchVariance": 0.06 },
-      "aiPromptHint": "Magical card shattering into glass shards as a monster is destroyed, 0.7s" },
-    { "id": "SFX_SOUL", "type": "audio_sfx", "path": "assets/audio/sfx_soul.mp3", "cue": "playSoulWisp", "audioMeta": { "pitchVariance": 0.08 },
-      "aiPromptHint": "Ghostly soul wisp rising, airy whoosh with faint chime, 0.8s" },
-    { "id": "SFX_PIERCE", "type": "audio_sfx", "path": "assets/audio/sfx_pierce.mp3", "cue": "playPiercingBolt", "audioMeta": { "pitchVariance": 0.05 },
-      "aiPromptHint": "Piercing magic bolt shooting through armor, sharp zap and crack, 0.5s" },
-    { "id": "SFX_PLAYER_HIT", "type": "audio_sfx", "path": "assets/audio/sfx_player_hit.mp3", "cue": "playPlayerImpact", "audioMeta": { "pitchVariance": 0.05 },
-      "aiPromptHint": "Hero takes a heavy blow, body impact with low boom, 0.6s" },
-    { "id": "SFX_TURN", "type": "audio_sfx", "path": "assets/audio/sfx_turn.mp3", "cue": "playTurnBell", "audioMeta": { "pitchVariance": 0.0 },
-      "aiPromptHint": "Turn start bell, single bright fantasy chime, 0.6s" },
-    { "id": "SFX_VICTORY", "type": "audio_sfx", "path": "assets/audio/sfx_victory.mp3", "cue": "playVictoryJingle", "audioMeta": { "pitchVariance": 0.0 },
-      "aiPromptHint": "Short victory jingle, sparkling arpeggio with brass stab, 1.5s" },
-    { "id": "SFX_MOOD", "type": "audio_sfx", "path": "assets/audio/sfx_mood.mp3", "cue": "playMoodShift", "audioMeta": { "pitchVariance": 0.04 },
-      "aiPromptHint": "Dramatic sting when the opponent changes attitude, low string swell with a cymbal hit, 1s" }
-  ]
+    {
+      "id": "BGM_TITLE",
+      "type": "audio_bgm",
+      "path": "assets/audio/bgm_title.mp3",
+      "audioMeta": {
+        "loop": true,
+        "volume": 0.55
+      },
+      "aiPromptHint": "Nostalgic early-2000s anime opening-style instrumental, bright electric guitar and synth brass, hopeful and energetic, 128 BPM, seamless loopable, instrumental only"
+    },
+    {
+      "id": "BGM_HUB",
+      "type": "audio_bgm",
+      "path": "assets/audio/bgm_hub.mp3",
+      "audioMeta": {
+        "loop": true,
+        "volume": 0.5
+      },
+      "aiPromptHint": "Laid-back small-town afternoon, acoustic guitar, electric piano and soft drums, early-2000s anime slice-of-life soundtrack, 88 BPM, seamless loopable, instrumental only"
+    },
+    {
+      "id": "BGM_SHOP",
+      "type": "audio_bgm",
+      "path": "assets/audio/bgm_shop.mp3",
+      "audioMeta": {
+        "loop": true,
+        "volume": 0.5
+      },
+      "aiPromptHint": "Cheerful cozy hobby shop music, glockenspiel melody, light funk bass and handclaps, 105 BPM, seamless loopable, instrumental only"
+    },
+    {
+      "id": "BGM_MERCHANT",
+      "type": "audio_bgm",
+      "path": "assets/audio/bgm_merchant.mp3",
+      "audioMeta": {
+        "loop": true,
+        "volume": 0.5
+      },
+      "aiPromptHint": "Sneaky night back-alley music, plucked upright bass, muted trumpet, brushed drums, minor key jazz, 92 BPM, seamless loopable, instrumental only"
+    },
+    {
+      "id": "BGM_DUEL",
+      "type": "audio_bgm",
+      "path": "assets/audio/bgm_duel.mp3",
+      "audioMeta": {
+        "loop": true,
+        "volume": 0.5
+      },
+      "aiPromptHint": "Tense card duel battle theme in early-2000s anime style, driving rock drums, distorted guitar riff, synth strings, 145 BPM, seamless loopable, instrumental only"
+    },
+    {
+      "id": "BGM_BOSS",
+      "type": "audio_bgm",
+      "path": "assets/audio/bgm_boss.mp3",
+      "audioMeta": {
+        "loop": true,
+        "volume": 0.55
+      },
+      "aiPromptHint": "Final boss card duel, heavy rock guitars with dramatic orchestral strings and choir pad, 155 BPM, seamless loopable, instrumental only"
+    },
+    {
+      "id": "BGM_VICTORY",
+      "type": "audio_bgm",
+      "path": "assets/audio/bgm_victory.mp3",
+      "audioMeta": {
+        "loop": false,
+        "volume": 0.6
+      },
+      "aiPromptHint": "Triumphant anime-style victory jingle, rock band with brass hits, 20 seconds, instrumental only"
+    },
+    {
+      "id": "BGM_DEFEAT",
+      "type": "audio_bgm",
+      "path": "assets/audio/bgm_defeat.mp3",
+      "audioMeta": {
+        "loop": false,
+        "volume": 0.6
+      },
+      "aiPromptHint": "Melancholic rainy-day theme, solo piano with soft strings, 20 seconds, instrumental only"
+    },
+    {
+      "id": "SFX_CARD_PICK",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_card_pick.mp3",
+      "cue": "playCardPickup",
+      "audioMeta": {
+        "pitchVariance": 0.08
+      },
+      "aiPromptHint": "Single playing card being picked up from a table, crisp paper swish, 0.3s, zero reverb"
+    },
+    {
+      "id": "SFX_CARD_PLAY",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_card_play.mp3",
+      "cue": "playCardPlayImpact",
+      "audioMeta": {
+        "pitchVariance": 0.06
+      },
+      "aiPromptHint": "Card slapped down onto a wooden table, crisp paper and wood impact, 0.4s, zero reverb"
+    },
+    {
+      "id": "SFX_HIT",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_hit.mp3",
+      "cue": "playDamageHit",
+      "audioMeta": {
+        "pitchVariance": 0.08
+      },
+      "aiPromptHint": "Fantasy melee hit, sword slash into armor, 0.4s, crisp impact, zero reverb"
+    },
+    {
+      "id": "SFX_HEAVY",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_heavy.mp3",
+      "cue": "playHeavyImpact",
+      "audioMeta": {
+        "pitchVariance": 0.05
+      },
+      "aiPromptHint": "Massive monster attack impact, deep thud with rumble, 0.8s, crisp impact"
+    },
+    {
+      "id": "SFX_TAP",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_tap.mp3",
+      "cue": "playLightTap",
+      "audioMeta": {
+        "pitchVariance": 0.1
+      },
+      "aiPromptHint": "Click of a round plastic arcade push button, 0.15s, zero reverb"
+    },
+    {
+      "id": "SFX_SHATTER",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_shatter.mp3",
+      "cue": "playCardShatter",
+      "audioMeta": {
+        "pitchVariance": 0.06
+      },
+      "aiPromptHint": "Magical card shattering into glass shards as a monster is destroyed, 0.7s"
+    },
+    {
+      "id": "SFX_SOUL",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_soul.mp3",
+      "cue": "playSoulWisp",
+      "audioMeta": {
+        "pitchVariance": 0.08
+      },
+      "aiPromptHint": "Ghostly soul wisp rising, airy whoosh with faint chime, 0.8s"
+    },
+    {
+      "id": "SFX_PIERCE",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_pierce.mp3",
+      "cue": "playPiercingBolt",
+      "audioMeta": {
+        "pitchVariance": 0.05
+      },
+      "aiPromptHint": "Piercing magic bolt shooting through armor, sharp zap and crack, 0.5s"
+    },
+    {
+      "id": "SFX_PLAYER_HIT",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_player_hit.mp3",
+      "cue": "playPlayerImpact",
+      "audioMeta": {
+        "pitchVariance": 0.05
+      },
+      "aiPromptHint": "Hero takes a heavy blow, body impact with low boom, 0.6s"
+    },
+    {
+      "id": "SFX_TURN",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_turn.mp3",
+      "cue": "playTurnBell",
+      "audioMeta": {
+        "pitchVariance": 0.0
+      },
+      "aiPromptHint": "Short bright chime like a small desk bell, 0.6s"
+    },
+    {
+      "id": "SFX_VICTORY",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_victory.mp3",
+      "cue": "playVictoryJingle",
+      "audioMeta": {
+        "pitchVariance": 0.0
+      },
+      "aiPromptHint": "Short victory jingle, sparkling arpeggio with brass stab, 1.5s"
+    },
+    {
+      "id": "SFX_MOOD",
+      "type": "audio_sfx",
+      "path": "assets/audio/sfx_mood.mp3",
+      "cue": "playMoodShift",
+      "audioMeta": {
+        "pitchVariance": 0.04
+      },
+      "aiPromptHint": "Dramatic sting when the opponent changes attitude, low string swell with a cymbal hit, 1s"
+    }
+  ],
+  "negative": "no logos, no brand names, no readable text, no watermark, no existing franchise characters, no copyrighted card frames, no photorealism, no 3D render look, no gore, no oversaturated neon cyberpunk, no medieval fantasy castle",
+  "products": {
+    "description": "상품 키 아트. 세로 2:3 그림 한 장만 넣으면 코드가 부스터팩·스페셜·스트럭처 덱 포장을 씌운다. 글자·로고·테두리·포장 모양은 넣지 않는다.",
+    "pathPattern": "assets/products/<상품ID>.webp",
+    "size": "1024x1536",
+    "promptSuffix": "key art only, vertical 2:3, centered subject inside the middle 60 percent, no text, no logo, no border, no packaging shape",
+    "styleNote": "상품 그림은 카드 속 판타지 세계를 보여 준다. 배경 그림(현실 소도시)과 달리 판타지 일러스트 화풍을 쓰되, 색은 진영 색에 맞춘다.",
+    "items": [
+      {
+        "id": "PACK_BLUE",
+        "path": "assets/products/PACK_BLUE.webp",
+        "wrap": "booster",
+        "aiPromptHint": "a radiant armored guardian raising a glowing tower shield, sapphire light rays, calm and noble"
+      },
+      {
+        "id": "PACK_RED",
+        "path": "assets/products/PACK_RED.webp",
+        "wrap": "booster",
+        "aiPromptHint": "a crimson dragon bursting out of flames with a charging knight silhouette, embers and heat haze"
+      },
+      {
+        "id": "PACK_PURPLE",
+        "path": "assets/products/PACK_PURPLE.webp",
+        "wrap": "booster",
+        "aiPromptHint": "a masked jester rolling glowing dice above a giant roulette wheel in a violet void"
+      },
+      {
+        "id": "PACK_WILD",
+        "path": "assets/products/PACK_WILD.webp",
+        "wrap": "booster",
+        "aiPromptHint": "a wandering mercenary with a wolf companion and a small clockwork machine, olive and bronze tones, open road"
+      },
+      {
+        "id": "PACK_LEGEND",
+        "path": "assets/products/PACK_LEGEND.webp",
+        "wrap": "booster",
+        "aiPromptHint": "three colossal divine silhouettes (an archangel, a titan, a primordial creator) facing each other in golden light"
+      }
+    ]
+  },
+  "npcCast": {
+    "description": "상점 주인 5명, 수상한 상인 5명. 인카운터마다 시드로 한 명을 뽑는다. 표정: 상점 주인 base/excited(전설 팩 입고)/tired(매진), 상인 base/deal(거래 성사). 배경은 생성 후 remove_background로 투명하게 만든다.",
+    "shopkeepers": 5,
+    "merchants": 5
+  },
+  "slots": {
+    "description": "그림을 넣는 자리와 규격. 파일이 없으면 fallback(기존 벡터 그림이나 그라디언트)이 보인다.",
+    "background": "1920x1200 webp (창 1280x800 = 16:10). 16:9로 생성한 뒤 가운데 기준으로 16:10으로 자른다. 화면별 배정은 src/ui/sceneArt.js SCENE_BY_VIEW.",
+    "portrait": "768x1024 webp, 투명 배경, 허리 위. 게임은 88x100~112x134 칸에 아래 가운데 정렬로 넣고 그림자를 코드가 넣는다.",
+    "icon": "512x512 webp, 투명 배경.",
+    "tarot": "640x1024 webp.",
+    "cardBack": "640x896 webp (5:7).",
+    "product": "1024x1536 webp (2:3), assets/products/<상품ID>.webp. 포장(부스터 톱니·스페셜 금박·스트럭처 상자·진영 띠·이름)은 theme-alley.css가 그린다. 상품 종류는 PACK_DEFS의 wrap 필드, 없으면 type/faction으로 정한다.",
+    "cardFrame": "assets/frames/card_frame_{unit,spell,token}_blank.svg. 몬스터/마법/토큰만 구분하고 진영 색은 쓰지 않는다."
+  }
 }
