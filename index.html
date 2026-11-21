@@ -32,20 +32,19 @@
       </div>
     </header>
 
-    <!-- Scene background: image per view, gradient until the file exists (src/ui/sceneArt.js) -->
+    <!-- Scene background: image per view (src/ui/sceneArt.js) -->
     <div id="scene-backdrop" aria-hidden="true" data-tone="day">
       <div class="scene-backdrop-img"></div>
-      <div class="scene-backdrop-shade"></div>
     </div>
     <!-- 전용 캔버스 2D 연출 레이어 -->
     <canvas id="game-fx-canvas" width="1280" height="800"></canvas>
-    <!-- 화면 전환 비전 커튼 오버레이 -->
-    <div id="view-transition-veil" class="view-transition-veil" aria-hidden="true"></div>
+    <!-- 리소스 로딩 전용 빈 CRT 대기 화면 (아무 요소도 출력하지 않음) -->
+    <div id="loading-blank-screen" class="loading-blank-screen is-active" aria-hidden="true"></div>
     <!-- 카드 사용/발동 상세 그래픽 팝업 쇼케이스 -->
     <div id="card-play-showcase" class="card-play-showcase" aria-live="polite"></div>
 
     <!-- 1. 타이틀 로비 (VIEW_TITLE_LOBBY) -->
-    <section id="view-title-lobby" class="screen active">
+    <section id="view-title-lobby" class="screen">
       <div class="title-container">
         <h1 class="game-logo" aria-label="DUEL ROGUE">
           <img src="assets/ui/game_logo.webp" alt="DUEL ROGUE" class="game-logo-img" />
@@ -56,11 +55,6 @@
           <button id="btn-start-run" class="btn primary-btn" data-i18n="ui.title.newRun">새 게임 시작</button>
           <button id="btn-open-binder-menu" class="btn secondary-btn" data-i18n="ui.title.binder">카드 바인더</button>
         </div>
-        
-        <div class="game-info-badge" hidden>
-          <span data-i18n="ui.title.badges"></span>
-        </div>
-        <div id="vector-bake-badge" class="vector-bake-badge" hidden></div>
       </div>
 
       <!-- 메인 화면 좌측 하단: 인게임 옵션 버튼 차용 + 오른쪽 시드 설정 버튼 -->
@@ -400,7 +394,7 @@
           <button id="btn-editor-back-hub" class="btn secondary-btn back-btn"><span data-vicon="home"></span> 체크포인트로 돌아가기</button>
           <div class="editor-title-group">
             <h2><span data-vicon="bag"></span> 덱 편집</h2>
-            <span class="editor-sub">카드를 클릭하여 덱과 가방 사이로 이동하고, 우클릭으로 덱 마스터를 지정할 수 있습니다.</span>
+            <span class="editor-sub">좌클릭으로 카드를 선택(상세·숙련도 설정)하고, 우클릭으로 덱과 가방 사이를 이동할 수 있습니다.</span>
           </div>
           <div class="editor-deck-meter-box">
             <span class="meter-label">출전 덱:</span>
@@ -430,13 +424,14 @@
                   <span><span data-vicon="spark"></span> 카드 이펙트 설정</span>
                   <strong id="editor-mastery-card-label">-</strong>
                 </div>
+                <div class="editor-mastery-progress-info" id="editor-mastery-progress-info">카드를 좌클릭해 선택하세요</div>
                 <select id="sel-editor-card-mastery-fx" class="mastery-fx-select" disabled>
                   <option value="DEFAULT">바인더 기본 설정 사용</option>
                   <option value="NONE">효과 없음</option>
-                  <option value="SUBTLE_EDGE">스틸 글로우</option>
-                  <option value="ARCANE_SPARK">비전 펄스</option>
-                  <option value="HOLO_FOIL">마스터 홀로그램</option>
-                  <option value="GOLDEN_CROWN">황금 오라</option>
+                  <option value="SUBTLE_EDGE">스틸 글로우 (30pt)</option>
+                  <option value="ARCANE_SPARK">비전 펄스 (60pt)</option>
+                  <option value="HOLO_FOIL">마스터 홀로그램 (100pt)</option>
+                  <option value="GOLDEN_CROWN">황금 오라 (100pt)</option>
                 </select>
               </div>
             </div>
@@ -476,7 +471,21 @@
                 <span class="pane-icon" data-vicon="bag"></span>
                 <h3>가방 (<span id="editor-bag-title-count">0</span>장)</h3>
               </div>
-              <span class="pane-hint">클릭: 덱 편성</span>
+              <span class="pane-hint">좌클릭: 선택 · 우클릭: 덱 편성</span>
+            </div>
+            <div class="bag-filter-toolbar" id="editor-bag-filter-toolbar">
+              <div class="bag-search-wrap">
+                <input type="text" id="input-editor-bag-search" class="bag-search-input" placeholder="이름 · #태그 · 키워드 · 효과 검색 (Ctrl+F)" aria-label="가방 카드 검색" />
+                <button type="button" id="btn-editor-bag-search-clear" class="bag-search-clear" title="검색 초기화" hidden>&times;</button>
+              </div>
+              <select id="sel-editor-bag-sort" class="bag-sort-select" aria-label="가방 카드 정렬">
+                <option value="DEFAULT">기본순</option>
+                <option value="LEVEL">레벨순</option>
+                <option value="ATTACK">공격력순</option>
+                <option value="DEFENSE">수비력순</option>
+                <option value="RARITY">레어도순</option>
+                <option value="NAME">이름순</option>
+              </select>
             </div>
             <div class="trunk-cards-grid bag-cards-grid" id="editor-bag-cards-grid">
               <!-- 가방 카드 동적 렌더링 (순수 카드 그래픽) -->
@@ -1227,15 +1236,16 @@
                     <div id="binder-dossier-mastery-sub" class="mastery-sub-hint"></div>
                   </div>
 
-                  <!-- 숙련도 티어별 전역 비주얼 커스텀 (바인더 전역 설정) -->
+                  <!-- 숙련도 티어별 전역 + 선택 카드 개별 비주얼 커스텀 -->
                   <div class="binder-mastery-custom-panel" id="binder-mastery-custom-panel">
                     <div class="mastery-custom-head">
                       <span><span data-vicon="spark"></span> 숙련도 등급별 이펙트</span>
                     </div>
                     <div class="mastery-custom-row">
                       <select id="sel-binder-mastery-tier" class="mastery-fx-select">
-                        <option value="UNMASTERED">미숙련 (0~49pt)</option>
-                        <option value="ADEPT">숙련 (50~99pt)</option>
+                        <option value="UNMASTERED">미숙련 (0~29pt)</option>
+                        <option value="ADEPT">숙련 1단계 (30~59pt)</option>
+                        <option value="VETERAN">숙련 2단계 (60~99pt)</option>
                         <option value="MASTERED">마스터 (100+pt)</option>
                       </select>
                       <select id="sel-binder-mastery-preset" class="mastery-fx-select">
@@ -1245,6 +1255,21 @@
                         <option value="HOLO_FOIL">마스터 홀로그램</option>
                         <option value="GOLDEN_CROWN">황금 오라</option>
                       </select>
+                    </div>
+                    <div class="mastery-custom-card-sub">
+                      <div class="mastery-override-head">
+                        <span><span data-vicon="spark"></span> 선택 카드 개별 이펙트</span>
+                        <span id="binder-mastery-card-label">-</span>
+                      </div>
+                      <select id="sel-binder-card-mastery-preset" class="mastery-fx-select" disabled>
+                        <option value="DEFAULT">등급 기본값 적용 (개별 해제)</option>
+                        <option value="NONE">효과 없음</option>
+                        <option value="SUBTLE_EDGE">스틸 글로우</option>
+                        <option value="ARCANE_SPARK">비전 펄스</option>
+                        <option value="HOLO_FOIL">마스터 홀로그램</option>
+                        <option value="GOLDEN_CROWN">황금 오라</option>
+                      </select>
+                      <div id="binder-mastery-progress-info" class="editor-mastery-progress-info"></div>
                     </div>
                   </div>
 
@@ -1328,13 +1353,6 @@
               <strong id="val-transition-ms">260ms</strong>
             </div>
             <input type="range" id="slider-transition-ms" min="0" max="600" step="20" value="260">
-          </div>
-          <div class="tuner-row">
-            <div class="tuner-label-line">
-              <span>배경 파티클 강도</span>
-              <strong id="val-ambient-fx">1.0x</strong>
-            </div>
-            <input type="range" id="slider-ambient-fx" min="0" max="2.0" step="0.1" value="1.0">
           </div>
           <div class="tuner-row">
             <div class="tuner-label-line">

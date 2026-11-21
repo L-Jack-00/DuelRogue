@@ -67,12 +67,14 @@ export function generateClawLevelHtml(level) {
  */
 export function generateCardBackHtml(scale = 1.0, { usePlayerCosmetic = false } = {}) {
   const compact = Number(scale) <= 0.72;
+  const defaultBackSrc = resolveBakedAsset(CARD_BACK_SVG, { compact });
   const sleeveSpec = usePlayerCosmetic
-    ? (getPlayerSleeveSpec() || { preset: 'DEFAULT', src: CARD_BACK_SVG, isCustom: false })
-    : { preset: 'DEFAULT', src: CARD_BACK_SVG, isCustom: false };
-  const backSrc = sleeveSpec.src || CARD_BACK_SVG;
+    ? (getPlayerSleeveSpec({ compact }) || { preset: 'DEFAULT', src: defaultBackSrc, isCustom: false })
+    : { preset: 'DEFAULT', src: defaultBackSrc, isCustom: false };
+  const rawBackSrc = sleeveSpec.src || defaultBackSrc;
+  const backSrc = rawBackSrc.endsWith('.svg') ? resolveBakedAsset(rawBackSrc, { compact }) : rawBackSrc;
   return `
-    <div class="card-composite-wrapper card-back-wrapper" data-sleeve="${sleeveSpec.preset || 'DEFAULT'}">
+    <div class="card-composite-wrapper card-back-wrapper" data-sleeve="${sleeveSpec.preset || 'DEFAULT'}" data-player-sleeve="${usePlayerCosmetic ? '1' : '0'}" data-baked-sleeve="${sleeveSpec.isBaked ? '1' : '0'}">
       <div class="card-back-inner">
         <img src="${backSrc}" data-compact="${compact ? '1' : '0'}" class="card-back-svg-img${sleeveSpec.isCustom ? ' is-custom-sleeve' : ''}" alt="" draggable="false" />
       </div>
@@ -184,7 +186,7 @@ export function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicD
   const level = cardOrDef.level ?? def.level ?? def.cost ?? 1;
   const rarityKey = normalizeRarityKey(def.rarity);
   const rarityPreset = getRarityPreset(rarityKey) || 'NONE';
-  const masteryResolved = typeof getMasteryVisual === 'function' ? getMasteryVisual(def.id) : null;
+  const masteryResolved = typeof getMasteryVisual === 'function' ? getMasteryVisual(def.id, cardOrDef) : null;
   const { attrs: masteryAttrs, style: masteryStyle } = getMasteryAttrAndStyle(masteryResolved);
 
   const compact = Boolean(isBattlefield || Number(_scaleFont) <= 0.72);
@@ -256,10 +258,10 @@ export function generateCompositeCardHtml(cardOrDef, dynamicAtk = null, dynamicD
 
   return `
     <div class="${wrapperClass}" data-card-id="${def.id || ''}" data-rarity="${rarityKey}" data-rarity-preset="${rarityPreset}" ${masteryAttrs} ${masteryStyle ? `style="${masteryStyle}"` : ''}>
-      <div class="mastery-fx-overlay"></div>
       <div class="layer-1-art">
         ${getCardArtHtml(def, { compact })}
         <div class="rarity-art-fx-layer"></div>
+        <div class="mastery-fx-overlay"></div>
       </div>
       <div class="layer-2-frame">
         <img src="${frameSvg}" data-compact="${compact ? '1' : '0'}" alt="${isMonster ? 'Monster Frame' : 'Spell Frame'}" />

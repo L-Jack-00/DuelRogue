@@ -12,31 +12,21 @@ export const VECTOR_BAKE_SPECS = [
   { path: 'assets/ui/card_back.svg', width: 640, height: 896, thumbWidth: 240, thumbHeight: 336 },
   { path: 'assets/placeholders/procedural_fallback.svg', width: 640, height: 480, thumbWidth: 240, thumbHeight: 180 },
 
-  // 상점 부스터 팩
+  // 상점 부스터 팩 & 전용 벡터 아레나 포털 & 앱 아이콘 (실화 .webp가 존재하는 타로/포털/NPC SVG 폴백은 제외)
   { path: 'assets/ui/pack_blue.svg', width: 480, height: 720 },
   { path: 'assets/ui/pack_red.svg', width: 480, height: 720 },
   { path: 'assets/ui/pack_purple.svg', width: 480, height: 720 },
   { path: 'assets/ui/pack_neutral.svg', width: 480, height: 720 },
   { path: 'assets/ui/pack_legend.svg', width: 480, height: 720 },
-
-  // 운명 타로 카드
-  { path: 'assets/ui/tarot_justice.svg', width: 512, height: 592 },
-  { path: 'assets/ui/tarot_zeal.svg', width: 512, height: 592 },
-  { path: 'assets/ui/tarot_chaos.svg', width: 512, height: 592 },
-
-  // 체크포인트 거점 포털 & NPC 초상화 & 앱 아이콘
-  { path: 'assets/ui/portal_shop.svg', width: 512, height: 512 },
-  { path: 'assets/ui/portal_alley.svg', width: 512, height: 512 },
-  { path: 'assets/ui/portal_trunk.svg', width: 512, height: 512 },
   { path: 'assets/ui/portal_arena.svg', width: 512, height: 512 },
-  { path: 'assets/ui/npc_fortune.svg', width: 360, height: 440 },
-  { path: 'assets/ui/npc_shopkeeper.svg', width: 280, height: 320 },
-  { path: 'assets/ui/npc_merchant.svg', width: 280, height: 320 },
   { path: 'assets/ui/app_icon.svg', width: 256, height: 256 },
 ];
 
 const bakedUrlMap = new Map();
 const bakedThumbUrlMap = new Map();
+const bakedDynamicUrlMap = new Map();
+const bakedDynamicThumbUrlMap = new Map();
+const bakedDynamicPendingMap = new Map();
 let bakeStats = {
   ready: false,
   bakedCount: 0,
@@ -44,6 +34,141 @@ let bakeStats = {
   durationMs: 0,
 };
 let activeBakePromise = null;
+
+export function hasBakedDynamicAsset(cacheKey) {
+  return Boolean(cacheKey && bakedDynamicUrlMap.has(cacheKey));
+}
+
+export function resolveBakedDynamicAsset(cacheKey, { compact = false } = {}) {
+  if (!cacheKey) return null;
+  if (compact) {
+    return bakedDynamicThumbUrlMap.get(cacheKey) || bakedDynamicUrlMap.get(cacheKey) || null;
+  }
+  return bakedDynamicUrlMap.get(cacheKey) || null;
+}
+
+function decodeSvgMarkup(svgDataUriOrXml) {
+  if (!svgDataUriOrXml || typeof svgDataUriOrXml !== 'string') return '';
+  const trimmed = svgDataUriOrXml.trim();
+  if (trimmed.startsWith('<svg')) return trimmed;
+  if (trimmed.startsWith('data:image/svg+xml')) {
+    const commaIdx = trimmed.indexOf(',');
+    if (commaIdx === -1) return '';
+    const header = trimmed.slice(0, commaIdx).toLowerCase();
+    const body = trimmed.slice(commaIdx + 1);
+    try {
+      if (header.includes(';base64')) {
+        return typeof atob === 'function' ? atob(body) : '';
+      }
+      return decodeURIComponent(body);
+    } catch {
+      return '';
+    }
+  }
+  return '';
+}
+
+/**
+ * 동적 벡터 SVG(유저 커스텀 슬리브/프리셋 슬리브 등)를 일반 래스터 PNG Blob(풀사이즈 + 축소 밉맵)으로 굽습니다.
+ * 헤드리스 환경에서는 안전하게 null을 반환합니다.
+ */
+export async function bakeDynamicSvgAsset(
+  cacheKey,
+  svgDataUriOrXml,
+  { width = 640, height = 896, thumbWidth = 240, thumbHeight = 336, revokePrefix = null } = {}
+) {
+  if (!cacheKey || !svgDataUriOrXml) return null;
+  if (bakedDynamicUrlMap.has(cacheKey)) {
+    return bakedDynamicUrlMap.get(cacheKey);
+  }
+  if (bakedDynamicPendingMap.has(cacheKey)) {
+    return bakedDynamicPendingMap.get(cacheKey);
+  }
+  if (
+    typeof document === 'undefined' ||
+    typeof Image === 'undefined' ||
+    typeof URL === 'undefined' ||
+    typeof URL.createObjectURL !== 'function'
+  ) {
+    return null;
+  }
+
+  const job = (async () => {
+    let tempSvgUrl = null;
+    try {
+      const rawSvg = decodeSvgMarkup(svgDataUriOrXml);
+      let sourceForImg = svgDataUriOrXml;
+      if (rawSvg) {
+        const sizedSvg = injectSvgPixelDimensions(rawSvg, width, height);
+        const svgBlob = new Blob([sizedSvg], { type: 'image/svg+xml;charset=utf-8' });
+        tempSvgUrl = URL.createObjectURL(svgBlob);
+        sourceForImg = tempSvgUrl;
+      }
+
+      const img = await loadHtmlImage(sourceForImg);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const pngBlob = await new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), 'image/png');
+      });
+      if (!pngBlob) return null;
+
+      const pngUrl = URL.createObjectURL(pngBlob);
+      let thumbUrl = null;
+      if (thumbWidth && thumbHeight && (thumbWidth < width || thumbHeight < height)) {
+        const thumbCanvas = stepDownMipmapCanvas(canvas, thumbWidth, thumbHeight);
+        const thumbBlob = await new Promise((resolve) => {
+          thumbCanvas.toBlob((blob) => resolve(blob), 'image/png');
+        });
+        if (thumbBlob) {
+          thumbUrl = URL.createObjectURL(thumbBlob);
+        }
+      }
+
+      if (revokePrefix) {
+        for (const [oldKey, oldUrl] of Array.from(bakedDynamicUrlMap.entries())) {
+          if (oldKey.startsWith(revokePrefix) && oldKey !== cacheKey) {
+            try { URL.revokeObjectURL(oldUrl); } catch { /* ignore */ }
+            bakedDynamicUrlMap.delete(oldKey);
+          }
+        }
+        for (const [oldKey, oldThumbUrl] of Array.from(bakedDynamicThumbUrlMap.entries())) {
+          if (oldKey.startsWith(revokePrefix) && oldKey !== cacheKey) {
+            try { URL.revokeObjectURL(oldThumbUrl); } catch { /* ignore */ }
+            bakedDynamicThumbUrlMap.delete(oldKey);
+          }
+        }
+      }
+
+      bakedDynamicUrlMap.set(cacheKey, pngUrl);
+      if (thumbUrl) bakedDynamicThumbUrlMap.set(cacheKey, thumbUrl);
+      return pngUrl;
+    } catch {
+      return null;
+    } finally {
+      bakedDynamicPendingMap.delete(cacheKey);
+      if (tempSvgUrl) {
+        try {
+          URL.revokeObjectURL(tempSvgUrl);
+        } catch {
+          // 무시
+        }
+      }
+    }
+  })();
+
+  bakedDynamicPendingMap.set(cacheKey, job);
+  return job;
+}
 
 /** 경로 문자열을 일관된 키 형태로 정규화한다 */
 export function normalizeVectorAssetKey(src) {

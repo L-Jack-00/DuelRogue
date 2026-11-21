@@ -519,20 +519,56 @@ export function buildCustomSleeveSvgDataUri(rawSpec) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
-export function resolvePlayerSleeveSpec(config) {
+export function getSleeveBakeKey(config) {
   const cfg = config || DEFAULT_COSMETICS_CONFIG;
+  if (cfg.sleevePreset === 'CUSTOM') {
+    const s = normalizeCustomSleeve(cfg.customSleeve);
+    return `sleeve:CUSTOM:${s.bgPattern}|${s.borderStyle}|${s.emblem1}|${s.emblem2}|${s.c1.h},${s.c1.s},${s.c1.l}|${s.c2.h},${s.c2.s},${s.c2.l}|${s.c3.h},${s.c3.s},${s.c3.l}|${s.c4.h},${s.c4.s},${s.c4.l}`;
+  }
+  const preset = SLEEVE_PRESETS[cfg.sleevePreset] ? cfg.sleevePreset : 'DEFAULT';
+  return `sleeve:PRESET:${preset}`;
+}
+
+export function getSleeveBakeSource(config) {
+  const cfg = config || DEFAULT_COSMETICS_CONFIG;
+  const bakeKey = getSleeveBakeKey(cfg);
   if (cfg.sleevePreset === 'CUSTOM') {
     return {
       preset: 'CUSTOM',
-      src: buildCustomSleeveSvgDataUri(cfg.customSleeve),
+      bakeKey,
+      svgDataUri: buildCustomSleeveSvgDataUri(cfg.customSleeve),
       isCustom: true,
     };
   }
   const preset = SLEEVE_PRESETS[cfg.sleevePreset] ? cfg.sleevePreset : 'DEFAULT';
   return {
     preset,
-    src: buildVectorSleeveSvgDataUri(preset),
+    bakeKey,
+    svgDataUri: buildVectorSleeveSvgDataUri(preset),
     isCustom: false,
+  };
+}
+
+export function resolvePlayerSleeveSpec(config, { compact = false, bakedUrlResolver = null } = {}) {
+  const cfg = config || DEFAULT_COSMETICS_CONFIG;
+  const bakeKey = getSleeveBakeKey(cfg);
+  const bakedSrc = typeof bakedUrlResolver === 'function' ? bakedUrlResolver(bakeKey, compact) : null;
+  if (cfg.sleevePreset === 'CUSTOM') {
+    return {
+      preset: 'CUSTOM',
+      bakeKey,
+      src: bakedSrc || buildCustomSleeveSvgDataUri(cfg.customSleeve),
+      isCustom: true,
+      isBaked: Boolean(bakedSrc),
+    };
+  }
+  const preset = SLEEVE_PRESETS[cfg.sleevePreset] ? cfg.sleevePreset : 'DEFAULT';
+  return {
+    preset,
+    bakeKey,
+    src: bakedSrc || buildVectorSleeveSvgDataUri(preset),
+    isCustom: false,
+    isBaked: Boolean(bakedSrc),
   };
 }
 

@@ -163,7 +163,7 @@ body.theme-alley:has(#scene-backdrop[data-tone='night']) .w2k-caption-bar {
 /* ------------------------------------------------------------------ Frame & Titlebar */
 
 body.theme-alley #game-app {
-  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-low) 100%);
+  background: #070a12;
   border: 2px solid;
   border-color: var(--w2k-hi) var(--w2k-dark) var(--w2k-dark) var(--w2k-hi);
 }
@@ -376,10 +376,7 @@ body.theme-alley #scene-backdrop {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-low) 100%);
-}
-body.theme-alley #scene-backdrop[data-tone='night'] {
-  background: linear-gradient(180deg, #16213c 0%, #24355c 55%, #11182c 100%);
+  background: #070a12;
 }
 body.theme-alley .scene-backdrop-img {
   position: absolute;
@@ -387,20 +384,9 @@ body.theme-alley .scene-backdrop-img {
   background-size: cover;
   background-position: center;
   opacity: 0;
-  transform: scale(1.02);
-  transition: opacity 380ms ease, transform 800ms ease;
+  transition: opacity 260ms ease;
 }
-body.theme-alley #scene-backdrop.has-image .scene-backdrop-img { opacity: 1; transform: scale(1); }
-body.theme-alley .scene-backdrop-shade {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 80% 75% at 50% 50%, rgba(12, 34, 68, 0) 45%, rgba(10, 24, 52, 0.24) 100%);
-}
-body.theme-alley #scene-backdrop[data-view='VIEW_CHECKPOINT_SHOP'] .scene-backdrop-shade,
-body.theme-alley #scene-backdrop[data-view='VIEW_CHECKPOINT_DECK_EDITOR'] .scene-backdrop-shade,
-body.theme-alley #scene-backdrop[data-view='VIEW_CHECKPOINT_MERCHANT'] .scene-backdrop-shade {
-  background: linear-gradient(180deg, rgba(10, 28, 56, 0.14) 0%, rgba(10, 28, 56, 0.30) 100%);
-}
+body.theme-alley #scene-backdrop.has-image .scene-backdrop-img { opacity: 1; }
 
 body.theme-alley .screen { z-index: 1; }
 body.theme-alley #game-fx-canvas { z-index: 25000 !important; }
@@ -409,7 +395,6 @@ body.theme-alley .fx-layer { z-index: 24000 !important; }
 body.theme-alley #view-title-lobby,
 body.theme-alley #view-fortune-teller,
 body.theme-alley #view-checkpoint,
-body.theme-alley #view-checkpoint-encounter,
 body.theme-alley #view-checkpoint-shop,
 body.theme-alley #view-checkpoint-merchant,
 body.theme-alley #view-checkpoint-deck-editor,
@@ -471,33 +456,6 @@ body.theme-alley[data-view='VIEW_RUN_SUMMARY'] #view-run-summary {
 
 body.theme-alley #game-app {
   background: transparent;
-}
-
-body.theme-alley .view-transition-veil {
-  background: transparent !important;
-  transform: none !important;
-  opacity: 0;
-  transition: opacity calc(var(--view-transition-ms, 260ms) * 0.35) ease !important;
-}
-body.theme-alley .view-transition-veil::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 68%;
-  height: 2px;
-  transform: translate(-50%, -50%) scaleX(0.02);
-  background: linear-gradient(90deg, transparent 0%, #93c5fd 20%, #ffffff 50%, #93c5fd 80%, transparent 100%);
-  box-shadow: 0 0 12px 2px rgba(147, 197, 253, 0.72);
-  opacity: 0;
-  transition: transform calc(var(--view-transition-ms, 260ms) * 0.35) ease, opacity 100ms ease;
-}
-body.theme-alley .view-transition-veil.is-active {
-  opacity: 1;
-}
-body.theme-alley .view-transition-veil.is-active::after {
-  opacity: 0.92;
-  transform: translate(-50%, -50%) scaleX(1);
 }
 
 body.theme-alley .screen.screen-entering {
@@ -1430,7 +1388,8 @@ body.theme-alley .mastery-override-head .vicon,
 body.theme-alley .mastery-custom-head .vicon {
   color: #b45309 !important;
 }
-body.theme-alley #editor-mastery-card-label {
+body.theme-alley #editor-mastery-card-label,
+body.theme-alley #binder-mastery-card-label {
   background: var(--w2k-well) !important;
   color: var(--w2k-ink) !important;
   border: 1px solid var(--w2k-mid);
@@ -1440,6 +1399,8 @@ body.theme-alley #editor-mastery-card-label {
 body.theme-alley .mastery-fx-select,
 body.theme-alley .rarity-select,
 body.theme-alley .rarity-font-custom-input,
+body.theme-alley .bag-search-input,
+body.theme-alley .bag-sort-select,
 body.theme-alley .seed-config-input {
   background: var(--w2k-well) !important;
   color: var(--w2k-ink) !important;
@@ -1451,6 +1412,14 @@ body.theme-alley .seed-config-input {
 body.theme-alley .mastery-fx-select:disabled {
   background: #e5e2db !important;
   color: #475569 !important;
+}
+body.theme-alley .bag-search-clear {
+  background: var(--w2k-face) !important;
+  color: var(--w2k-ink) !important;
+  border: 1px solid var(--w2k-mid) !important;
+}
+body.theme-alley .editor-mastery-progress-info {
+  color: #0a246a !important;
 }
 
 /* ----------------------------------------------------------- Duel Arena (W2K Classic Gray HUD + Oak Board) */
@@ -3091,4 +3060,25 @@ body.theme-alley .deck-overview-grid .card-slot {
   width: 100%;
   aspect-ratio: 3 / 4.18;
   min-height: 0;
+}
+
+body.theme-alley .tribute-select-popover {
+  background: var(--w2k-face) !important;
+  color: var(--w2k-ink) !important;
+  border-radius: 1px !important;
+  border: 2px solid !important;
+  border-color: var(--w2k-hi) var(--w2k-dark) var(--w2k-dark) var(--w2k-hi) !important;
+  box-shadow: inset 1px 1px 0 var(--w2k-light), inset -1px -1px 0 var(--w2k-mid), 0 12px 30px rgba(10, 24, 52, 0.45) !important;
+}
+body.theme-alley .tribute-select-header {
+  color: var(--w2k-select) !important;
+  border-bottom-color: var(--w2k-mid) !important;
+}
+body.theme-alley .tribute-select-body {
+  color: #334155 !important;
+}
+body.theme-alley .tribute-select-status {
+  background: var(--w2k-well) !important;
+  border-color: var(--w2k-mid) !important;
+  color: var(--w2k-ink) !important;
 }

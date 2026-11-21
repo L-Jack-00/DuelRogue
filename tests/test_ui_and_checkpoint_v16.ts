@@ -10,14 +10,28 @@ import {
   loadMasteryFxConfig,
   saveMasteryFxConfig,
   resolveCardMasteryVisual,
+  getMasteryTierFromPoints,
+  isMasteryPresetUnlocked,
+  getNextMasteryUnlockInfo,
 } from '../src/ui/masterySystem.js';
+import {
+  matchesBagSearchQuery,
+  filterAndSortBagCardIds,
+} from '../src/ui/deckEditorFilter.js';
 import {
   VECTOR_BAKE_SPECS,
   normalizeVectorAssetKey,
   injectSvgPixelDimensions,
   resolveBakedAsset,
   bakeAllVectorAssets,
+  bakeDynamicSvgAsset,
+  resolveBakedDynamicAsset,
 } from '../src/ui/vectorBaker.js';
+import {
+  getSleeveBakeKey,
+  getSleeveBakeSource,
+  resolvePlayerSleeveSpec,
+} from '../src/ui/cosmeticsSystem.js';
 import { npcDialogue, npcPortraitChain } from '../src/ui/sceneArt.js';
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -60,7 +74,7 @@ Deno.test('체크포인트 랜덤성 & 돌발 이벤트: 시드별 상점/이벤
   assert(signatures.size >= 6, `여러 시드에서 상점/이벤트/인카운터 조합이 다양해야 합니다 (실제: ${signatures.size})`);
 });
 
-Deno.test('숙련도 비주얼 커스텀: 전역 티어 기본값 + 카드별 개별 오버라이드 영속성', () => {
+Deno.test('숙련도 비주얼 커스텀: 4단계 티어(0/30/60/100) 해금 게이트 + 전역/개별 영속성', () => {
   const mem = new Map<string, string>();
   const fakeStorage = {
     getItem: (k: string) => mem.get(k) ?? null,
@@ -68,17 +82,25 @@ Deno.test('숙련도 비주얼 커스텀: 전역 티어 기본값 + 카드별 �
   };
 
   const cfg = loadMasteryFxConfig(fakeStorage);
-  cfg.tierDefaults.ADEPT.preset = 'ARCANE_SPARK';
+  cfg.tierDefaults.VETERAN.preset = 'ARCANE_SPARK';
+  cfg.tierDefaults.ADEPT.preset = 'SUBTLE_EDGE';
   cfg.cardOverrides['C_BLUE_01'] = { preset: 'GOLDEN_CROWN', glow: 1.5, foil: 1.4, tint: '#fbbf24' };
   saveMasteryFxConfig(cfg, fakeStorage);
 
   const reloaded = loadMasteryFxConfig(fakeStorage);
-  const normalAdept = resolveCardMasteryVisual('C_RED_01', 60, 2, reloaded);
-  assert(normalAdept.tier === 'ADEPT', '60pt는 ADEPT 티어여야 합니다.');
-  assert(normalAdept.preset === 'ARCANE_SPARK' && !normalAdept.isOverridden, '전역 티어 커스텀이 적용되어야 합니다.');
+  assert(getMasteryTierFromPoints(0, 2) === 'UNMASTERED', '0pt는 UNMASTERED 티어여야 합니다.');
+  assert(getMasteryTierFromPoints(30, 2) === 'ADEPT', '30pt는 ADEPT 티어여야 합니다.');
 
-  const overridden = resolveCardMasteryVisual('C_BLUE_01', 10, 2, reloaded);
-  assert(overridden.preset === 'GOLDEN_CROWN' && overridden.isOverridden, '카드별 개별 오버라이드가 전역 설정보다 우선해야 합니다.');
+  const normalVeteran = resolveCardMasteryVisual('C_RED_01', 60, 2, reloaded);
+  assert(normalVeteran.tier === 'VETERAN', '60pt는 VETERAN 티어여야 합니다.');
+  assert(normalVeteran.preset === 'ARCANE_SPARK' && !normalVeteran.isOverridden, '60pt에서 ARCANE_SPARK 해금 및 전역 티어 커스텀이 적용되어야 합니다.');
+
+  const lockedOverride = resolveCardMasteryVisual('C_BLUE_01', 10, 2, reloaded);
+  assert(lockedOverride.preset === 'NONE', '10pt 미해금 상태에서는 GOLDEN_CROWN 오버라이드가 차단되어 NONE이어야 합니다.');
+
+  const unlockedMaster = resolveCardMasteryVisual('C_BLUE_01', 100, 3, reloaded);
+  assert(unlockedMaster.tier === 'MASTERED', '100pt는 MASTERED 티어여야 합니다.');
+  assert(unlockedMaster.preset === 'GOLDEN_CROWN' && unlockedMaster.isOverridden, '100pt 달성 시 GOLDEN_CROWN 개별 오버라이드가 우선 적용되어야 합니다.');
 });
 
 Deno.test('벡터 그래픽 베이킹 시스템: 주요 SVG 스펙, 크기 주입, 헤드리스 안전 폴백', async () => {
@@ -302,5 +324,164 @@ Deno.test('모든 뷰(전장·패·인스펙터·바인더·덱요약 캔버스)
     styleCss.includes('.sinister-dark-aura') &&
     styleCss.includes('rgba(255, 255, 255, 0.65)'),
     '세트 시 백색 오오라(.sinister-dark-aura)는 그대로 유지되어야 합니다.'
+  );
+});
+
+Deno.test('덱 편집 검색/정렬: 통합 검색(이름+태그+키워드+효과 AND) 및 6종 정렬', () => {
+  const defs: Record<string, any> = {
+    C1: { id: 'C1', name: '불꽃 기사', type: 'MONSTER', tags: ['화염', '기사'], keywords: ['관통'], effect: '적 1체에 200 피해', level: 4, attack: 1600, defense: 1200, rarity: 'RARE' },
+    C2: { id: 'C2', name: '강철 방패병', type: 'MONSTER', tags: ['수비', '병사'], keywords: ['도발'], effect: '수비 표시로 소환된다', level: 3, attack: 900, defense: 2100, rarity: 'COMMON' },
+    C3: { id: 'C3', name: '마력 폭발', type: 'SPELL', tags: ['화염', '주문'], keywords: [], effect: '상대 필드에 관통 데미지', rarity: 'EPIC' },
+  };
+  const lookup = (id: string) => defs[id];
+  const bag = ['C1', 'C2', 'C3'];
+
+  assert(matchesBagSearchQuery(defs.C1, '#화염 기사'), '#화염 태그와 이름 공백 AND 검색이 매칭되어야 합니다.');
+  assert(!matchesBagSearchQuery(defs.C3, '#화염 기사'), '공백 구분 AND 조건에서 모든 토큰을 만족하지 않으면 제외되어야 합니다.');
+  assert(matchesBagSearchQuery(defs.C2, '도발 수비'), '키워드와 효과 텍스트 공백 AND 검색이 매칭되어야 합니다.');
+
+  const fireFiltered = filterAndSortBagCardIds(bag, { query: '#화염', sortBy: 'DEFAULT' }, lookup);
+  assert(fireFiltered.length === 2 && fireFiltered.includes('C1') && fireFiltered.includes('C3'), '#화염 검색 시 일치하는 카드만 가방에서 압축 표시되어야 합니다.');
+
+  const byAtk = filterAndSortBagCardIds(bag, { query: '', sortBy: 'ATTACK' }, lookup);
+  assert(byAtk[0] === 'C1' && byAtk[1] === 'C2' && byAtk[2] === 'C3', '공격력순 정렬이 내림차순으로 동작해야 합니다.');
+
+  const byDef = filterAndSortBagCardIds(bag, { query: '', sortBy: 'DEFENSE' }, lookup);
+  assert(byDef[0] === 'C2' && byDef[1] === 'C1', '수비력순 정렬이 내림차순으로 동작해야 합니다.');
+
+  const byLv = filterAndSortBagCardIds(bag, { query: '', sortBy: 'LEVEL' }, lookup);
+  assert(byLv[0] === 'C3' && byLv[1] === 'C2' && byLv[2] === 'C1', '레벨순 정렬이 낮은 레벨(마법/Lv1 → 고레벨) 커브 순으로 동작해야 합니다.');
+
+  const byRarity = filterAndSortBagCardIds(bag, { query: '', sortBy: 'RARITY' }, lookup);
+  assert(byRarity[0] === 'C3' && byRarity[2] === 'C2', '레어도순 정렬이 상위 등급 우선이어야 합니다.');
+
+  const byName = filterAndSortBagCardIds(bag, { query: '', sortBy: 'NAME' }, lookup);
+  assert(byName[0] === 'C2' && byName[1] === 'C3' && byName[2] === 'C1', '이름순 정렬이 가나다순으로 동작해야 합니다.');
+});
+
+Deno.test('숙련도 해금 카운트다운 및 덱 편집 조작/오버레이/전투 VFX 회귀 검증', async () => {
+  assert(!isMasteryPresetUnlocked('SUBTLE_EDGE', 29, 2), '29pt에서는 SUBTLE_EDGE가 잠겨 있어야 합니다.');
+  assert(isMasteryPresetUnlocked('SUBTLE_EDGE', 30, 2), '30pt에서 SUBTLE_EDGE가 해금되어야 합니다.');
+  assert(!isMasteryPresetUnlocked('ARCANE_SPARK', 59, 2), '59pt에서는 ARCANE_SPARK가 잠겨 있어야 합니다.');
+  assert(isMasteryPresetUnlocked('ARCANE_SPARK', 60, 2), '60pt에서 ARCANE_SPARK가 해금되어야 합니다.');
+  assert(!isMasteryPresetUnlocked('HOLO_FOIL', 99, 2), '99pt에서는 HOLO_FOIL이 잠겨 있어야 합니다.');
+  assert(isMasteryPresetUnlocked('GOLDEN_CROWN', 100, 3), '100pt에서 GOLDEN_CROWN이 해금되어야 합니다.');
+
+  const nextFrom0 = getNextMasteryUnlockInfo(10, 2);
+  assert(nextFrom0.remainingPoints === 20 && nextFrom0.nextMilestone === 30, '10pt 기준 다음 해금은 30pt(20pt 남음)여야 합니다.');
+  const nextFromMaster = getNextMasteryUnlockInfo(100, 3);
+  assert(nextFromMaster.nextMilestone === null && nextFromMaster.remainingPoints === 0, '100pt 이상 마스터 상태에서는 다음 마일스톤이 null이어야 합니다.');
+
+  const mainJs = await Deno.readTextFile('./main.js');
+  const html = await Deno.readTextFile('./index.html');
+  const styleCss = await Deno.readTextFile('./style.css');
+  const cardRenderer = await Deno.readTextFile('./src/ui/cardRenderer.js');
+
+  assert(
+    html.includes('id="input-editor-bag-search"') &&
+    html.includes('id="sel-editor-bag-sort"') &&
+    html.includes('id="editor-mastery-progress-info"'),
+    '덱 편집 화면에 가방 검색/정렬 툴바와 숙련도 해금 안내 요소가 존재해야 합니다.'
+  );
+  assert(
+    mainJs.includes("selectEditorTile(tileEl, tileKey, def, isDeckMaster)") &&
+    mainJs.includes("tileEl.addEventListener('contextmenu', (e) => {") &&
+    mainJs.includes("selectEditorTile(tileEl, tileKey, def, false)") &&
+    mainJs.includes('openDeckMasterPickerModal()'),
+    '덱 편집 화면에서 좌클릭=선택, 우클릭=이동/덱마스터 교체 모달 조작이 바인딩되어야 합니다.'
+  );
+  assert(
+    !cardRenderer.includes('mastery-crown-seal') &&
+    styleCss.includes('.layer-1-art .mastery-fx-overlay'),
+    '숙련도 뱃지(.mastery-crown-seal)는 제거되고 일러스트 오버레이(.layer-1-art .mastery-fx-overlay)만 유지되어야 합니다.'
+  );
+  assert(
+    mainJs.includes('function getCardMasteryVisualFx(cardId, ownerSeat = 0)') &&
+    mainJs.includes('function spawnCardMasteryEntranceVfx(x, y, mFx') &&
+    mainJs.includes('triggerUnitSummonEntrance('),
+    '전투 등장/공격 VFX가 설정된 숙련도 이펙트 프리셋에 맞춰 동적으로 출력되어야 합니다.'
+  );
+  assert(
+    html.includes('id="sel-binder-card-mastery-preset"') &&
+    html.includes('id="loading-blank-screen"') &&
+    mainJs.includes('populateMasteryPresetSelect(') &&
+    mainJs.includes('bakePlayerAndPresetSleeves(') &&
+    mainJs.includes('needsViewResourceLoad('),
+    '바인더 개별/등급 이펙트 해금 제어, 슬리브 PNG 베이킹, 빈 CRT 로딩 창 전환 파이프라인이 연동되어야 합니다.'
+  );
+
+  // 슬리브 베이킹 키 생성 · 소스 생성 · 구워진 URL 우선 반환 및 헤드리스 안전 폴백 검증
+  const customCfg = {
+    sleevePreset: 'CUSTOM',
+    customSleeve: {
+      bgPattern: 'DIAMOND',
+      borderStyle: 'W2K_BEVEL',
+      emblem1: 'COMPASS_8',
+      emblem2: 'CROWN_SEAL',
+      c1: { h: 210, s: 50, l: 25 },
+      c2: { h: 45, s: 80, l: 55 },
+      c3: { h: 180, s: 70, l: 60 },
+      c4: { h: 0, s: 75, l: 55 },
+    },
+  };
+  const srcInfo = getSleeveBakeSource(customCfg);
+  assert(srcInfo.isCustom && srcInfo.bakeKey === getSleeveBakeKey(customCfg), '커스텀 슬리브의 베이킹 키와 소스가 일치해야 합니다.');
+  assert(srcInfo.svgDataUri.startsWith('data:image/svg+xml'), '커스텀 슬리브 소스는 SVG data URI여야 합니다.');
+  assert((await bakeDynamicSvgAsset(srcInfo.bakeKey, srcInfo.svgDataUri)) === null, '헤드리스 환경 동적 SVG 베이킹은 예외 없이 null로 안전 폴백해야 합니다.');
+  assert(resolveBakedDynamicAsset(srcInfo.bakeKey) === null, '미베이킹 상태의 동적 에셋 조회는 null이어야 합니다.');
+
+  const unbakedSpec = resolvePlayerSleeveSpec(customCfg, { compact: true, bakedUrlResolver: () => null });
+  assert(!unbakedSpec.isBaked && unbakedSpec.src.startsWith('data:image/svg+xml'), '베이킹 전에는 커스텀 SVG data URI로 즉시 미리보기가 가능해야 합니다.');
+  const bakedSpec = resolvePlayerSleeveSpec(customCfg, {
+    compact: true,
+    bakedUrlResolver: (k, isCompact) => (k === srcInfo.bakeKey && isCompact ? 'blob:baked-custom-thumb' : null),
+  });
+  assert(bakedSpec.isBaked && bakedSpec.src === 'blob:baked-custom-thumb', '베이킹 완료 후에는 구워진 래스터 이미지 URL을 우선 반환해야 합니다.');
+
+  const canvasEngine = await Deno.readTextFile('./src/canvasJuiceEngine.js');
+  const alleyCss = await Deno.readTextFile('./theme-alley.css');
+  assert(
+    !canvasEngine.includes('ambientMotes') &&
+    canvasEngine.includes('hasActiveVisuals()') &&
+    canvasEngine.includes('this.wake()'),
+    '전 화면 60fps 대기 입자(ambientMotes)는 제거되고 유휴 캔버스 슬립 최적화가 적용되어야 합니다.'
+  );
+  assert(
+    !html.includes('scene-backdrop-shade') &&
+    !html.includes('vector-bake-badge') &&
+    !html.includes('slider-ambient-fx') &&
+    !html.includes('view-transition-veil') &&
+    !styleCss.includes('view-checkpoint-encounter') &&
+    !styleCss.includes('backdrop-filter: blur') &&
+    !alleyCss.includes('scene-backdrop-shade') &&
+    !alleyCss.includes('view-transition-veil'),
+    '배경 도입 이전 비네팅·전환 플래시·숨김 배지·불필요한 blur 필터 레거시가 모두 제거되어야 합니다.'
+  );
+  assert(
+    mainJs.includes("modal.className = 'tribute-select-popover'") &&
+    mainJs.includes('window.__activeTributeModalCleanup || activeFieldTargetCleanup') &&
+    mainJs.includes("!e.target.closest('#player-board .unit-field-card')") &&
+    /function handlePlayCard\([^)]*\) \{\s*try \{\s*closeTributeModal\(\);\s*closeFieldTargetMode\(\);/.test(mainJs),
+    '제물 선택이 클래식 팝업(.tribute-select-popover)으로 열리고 필드 클릭/드래그 소환 시 즉시 닫혀야 합니다.'
+  );
+  assert(
+    mainJs.includes('function getCardMasteryVisualFx(cardId, ownerSeat = 0)') &&
+    mainJs.includes('ownerSeat === 1') &&
+    mainJs.includes('function triggerUnitSummonEntrance(unitEl, mFx)') &&
+    cardRenderer.includes('getMasteryVisual(def.id, cardOrDef)'),
+    '소환 등장 이펙트가 카드 소유자(ownerSeat) 설정을 따르고 배열 배치 확정(rAF) 후 카드 위치에 맞춰 출력되어야 합니다.'
+  );
+  assert(
+    canvasEngine.includes('spawnGuardBlockEffect(') &&
+    canvasEngine.includes('spawnCardCrackEffect(') &&
+    mainJs.includes('function triggerUnitCrackThenShatter(') &&
+    mainJs.includes('function animateRollingDigits(') &&
+    mainJs.includes('function applyUnitStatRolling(') &&
+    styleCss.includes('slam-blocked-guard') &&
+    styleCss.includes('card-cracking') &&
+    styleCss.includes('lp-rolling-up') &&
+    styleCss.includes('stat-rolling-down') &&
+    /const revealTargetView[\s\S]*?refreshSceneBackdrop\(viewKey\);/.test(mainJs),
+    '공격 실패 방어 막힘, 파괴 전 균열(금) 이펙트, 마스터 듀얼식 LP/수비력 순차 롤링 숫자 및 진입 시점 배경 교체가 연동되어야 합니다.'
   );
 });

@@ -1,6 +1,6 @@
 [package]
 name = "duel-rogue"
-version = "0.1.0"
+version = "0.1.1"
 description = "Duel Rogue 1v1 Deckbuilder Desktop Client"
 authors = ["Duel Rogue"]
 edition = "2021"

@@ -36,13 +36,18 @@ const SCENE_DEFEAT = 'assets/ui/bg_defeat.webp';
 
 /** Remembers which files loaded, so a missing file is requested only once. */
 const imageStatus = new Map();
+const loadedSceneSrcs = new Set();
 
-function probeImage(src) {
+export function probeImage(src) {
+  if (!src) return Promise.resolve(false);
   const known = imageStatus.get(src);
   if (known) return known;
   const pending = new Promise((resolve) => {
     const img = new Image();
-    img.onload = () => resolve(true);
+    img.onload = () => {
+      loadedSceneSrcs.add(src);
+      resolve(true);
+    };
     img.onerror = () => resolve(false);
     img.src = src;
   });
@@ -87,7 +92,8 @@ export function applySceneBackdrop(viewKey, ctx = {}) {
     return;
   }
   if (host.dataset.src === scene.src && host.classList.contains('has-image')) return;
-  probeImage(scene.src).then((ok) => {
+
+  const commitBackdrop = (ok) => {
     if (requestId !== sceneRequestId) return;
     const layer = host.querySelector('.scene-backdrop-img');
     if (!ok || !layer) {
@@ -98,7 +104,13 @@ export function applySceneBackdrop(viewKey, ctx = {}) {
     host.dataset.src = scene.src;
     layer.style.backgroundImage = `url("${scene.src}")`;
     host.classList.add('has-image');
-  });
+  };
+
+  if (loadedSceneSrcs.has(scene.src)) {
+    commitBackdrop(true);
+    return;
+  }
+  probeImage(scene.src).then(commitBackdrop);
 }
 
 // ---------------------------------------------------------------------------

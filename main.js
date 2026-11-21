@@ -59,17 +59,26 @@ import {
 } from './src/ui/raritySystem.js';
 import {
   MASTERY_TIERS,
+  MASTERY_TIER_META,
   MASTERY_FX_PRESETS,
   loadMasteryFxConfig,
   saveMasteryFxConfig,
   resolveCardMasteryVisual,
+  isMasteryPresetUnlocked,
+  getNextMasteryUnlockInfo,
+  getMasteryTierFromPoints,
 } from './src/ui/masterySystem.js';
+import { filterAndSortBagCardIds } from './src/ui/deckEditorFilter.js';
 import {
   bakeAllVectorAssets,
   resolveBakedAsset,
   upgradeDomSvgImages,
+  getVectorBakeStats,
+  bakeDynamicSvgAsset,
+  resolveBakedDynamicAsset,
+  hasBakedDynamicAsset,
 } from './src/ui/vectorBaker.js';
-import { applySceneBackdrop, npcPortraitChain, npcDialogue, productWrapHtml } from './src/ui/sceneArt.js';
+import { applySceneBackdrop, sceneFor, probeImage, npcPortraitChain, npcDialogue, productWrapHtml } from './src/ui/sceneArt.js';
 import {
   SLEEVE_PRESETS,
   MAT_PRESETS,
@@ -79,6 +88,8 @@ import {
   normalizeCustomSleeve,
   dialColorToCss,
   buildCustomSleeveSvgDataUri,
+  getSleeveBakeKey,
+  getSleeveBakeSource,
   loadCosmeticsConfig,
   saveCosmeticsConfig,
   resolvePlayerSleeveSpec,
@@ -92,11 +103,17 @@ applyRarityConfigToRoot(rarityConfig);
 applyDuelCosmetics(cosmeticsConfig);
 configureCardRenderer({
   rarityPresetResolver: (rarityKey) => rarityConfig[rarityKey]?.preset || 'NONE',
-  masteryVisualResolver: (cardId) => {
+  masteryVisualResolver: (cardId, cardOrDef = null) => {
+    if (cardOrDef && cardOrDef.ownerSeat === 1) {
+      return resolveCardMasteryVisual(cardId, 0, 0, { tierDefaults: {}, cardOverrides: {} });
+    }
     const entry = typeof binder !== 'undefined' ? binder?.entries?.[cardId] : null;
     return resolveCardMasteryVisual(cardId, entry?.masteryPoints || 0, entry?.state || 0, masteryFxConfig);
   },
-  sleeveResolver: () => resolvePlayerSleeveSpec(cosmeticsConfig),
+  sleeveResolver: ({ compact = false } = {}) => resolvePlayerSleeveSpec(cosmeticsConfig, {
+    compact,
+    bakedUrlResolver: (key, isCompact) => resolveBakedDynamicAsset(key, { compact: isCompact }),
+  }),
 });
 
 // 1. 브라우저 개입 원천 차단기 (우클릭, F5, Ctrl+R, 줌 차단)
@@ -127,6 +144,113 @@ const binder = new BinderCore({
 });
 let engine = new DuelRogueEngine(binder, DEFAULT_CARD_CATALOG);
 const runSaves = new RunSaveStore(window.localStorage);
+
+function getCardMasteryVisualFx(cardId, ownerSeat = 0) {
+  if (!cardId || typeof binder === 'undefined' || ownerSeat === 1) {
+    return { isMastered: false, hasEntranceFx: false, tint: '#38bdf8', glow: 0, foil: 0, preset: 'NONE', tier: 'UNMASTERED' };
+  }
+  const entry = binder?.entries?.[cardId] || null;
+  const resolved = resolveCardMasteryVisual(cardId, entry?.masteryPoints || 0, entry?.state || 0, masteryFxConfig);
+  const preset = resolved.preset || 'NONE';
+  return {
+    isMastered: resolved.tier === 'MASTERED',
+    hasEntranceFx: preset !== 'NONE',
+    tint: resolved.tint || '#38bdf8',
+    glow: Number(resolved.glow) || 0,
+    foil: Number(resolved.foil) || 0,
+    preset,
+    tier: resolved.tier,
+  };
+}
+
+/**
+ * 카드가 보드에 실제 안착한 뒤(배열 재배치 완료 후) 슬롯 중심 좌표를 측정해
+ * 소유자의 숙련도 등장 연출과 슬램 애니메이션을 정확한 위치에 출력합니다.
+ */
+function triggerUnitSummonEntrance(unitEl, mFx) {
+  if (!unitEl) return;
+  requestAnimationFrame(() => {
+    if (!unitEl.isConnected) return;
+    const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0 };
+    const sr = unitEl.getBoundingClientRect();
+    const sx = sr.left - cRect.left + sr.width / 2;
+    const sy = sr.top - cRect.top + sr.height / 2;
+    if (mFx?.hasEntranceFx) unitEl.dataset.entrancePreset = mFx.preset;
+    void unitEl.offsetWidth;
+    unitEl.classList.add('summon-slam-enter');
+    spawnCardMasteryEntranceVfx(sx, sy, mFx, false);
+  });
+}
+
+/**
+ * 카드에 설정된 숙련도 이펙트 프리셋에 맞춰 듀얼 등장(소환/마법 발동) 시각 연출을 출력합니다.
+ */
+function spawnCardMasteryEntranceVfx(x, y, mFx, isSpell = false) {
+  const preset = mFx?.preset || 'NONE';
+  const baseColor = isSpell ? '#34d399' : '#38bdf8';
+  const tint = mFx?.tint || baseColor;
+  switch (preset) {
+    case 'SUBTLE_EDGE':
+      fxEngine.spawnSummonBurst(x, y, tint, isSpell ? 136 : 118);
+      fxEngine.spawnShockwave(x, y, isSpell ? 96 : 82, tint);
+      break;
+    case 'ARCANE_SPARK':
+      fxEngine.spawnSummonBurst(x, y, tint, isSpell ? 148 : 132);
+      fxEngine.spawnShockwave(x, y, isSpell ? 104 : 88, tint);
+      fxEngine.spawnShockwave(x, y, isSpell ? 136 : 118, '#e9d5ff');
+      fxEngine.spawnImpactStarburst(x, y, isSpell ? 30 : 24, tint);
+      break;
+    case 'HOLO_FOIL':
+      fxEngine.spawnSummonBurst(x, y, tint, isSpell ? 164 : 148);
+      fxEngine.spawnShockwave(x, y, isSpell ? 112 : 96, '#38bdf8');
+      fxEngine.spawnShockwave(x, y, isSpell ? 144 : 126, tint);
+      fxEngine.spawnImpactStarburst(x, y, isSpell ? 40 : 32, '#fef08a');
+      break;
+    case 'GOLDEN_CROWN':
+      fxEngine.spawnSummonBurst(x, y, tint, isSpell ? 182 : 165);
+      fxEngine.spawnShockwave(x, y, isSpell ? 122 : 108, '#fef08a');
+      fxEngine.spawnShockwave(x, y, isSpell ? 158 : 142, tint);
+      fxEngine.spawnImpactStarburst(x, y, isSpell ? 48 : 38, tint);
+      break;
+    default:
+      fxEngine.spawnSummonBurst(x, y, baseColor, isSpell ? 130 : 105);
+      break;
+  }
+}
+
+/**
+ * 숙련도 이펙트 프리셋 드롭다운을 해금 포인트 조건에 맞춰 일괄 구성합니다.
+ */
+function populateMasteryPresetSelect(selEl, points = 0, cardState = 0, { allowDefault = true, currentValue = 'DEFAULT', disabledAll = false } = {}) {
+  if (!selEl) return;
+  if (disabledAll) {
+    selEl.disabled = true;
+    selEl.value = allowDefault ? 'DEFAULT' : 'NONE';
+    return;
+  }
+  selEl.disabled = false;
+  Array.from(selEl.options).forEach((opt) => {
+    if (opt.value === 'DEFAULT' || opt.value === 'NONE') {
+      opt.disabled = false;
+      return;
+    }
+    const info = MASTERY_FX_PRESETS[opt.value];
+    if (!info) return;
+    const unlocked = isMasteryPresetUnlocked(opt.value, points, cardState);
+    opt.disabled = !unlocked;
+    opt.textContent = unlocked
+      ? info.label
+      : `🔒 ${info.label} (${info.minPoints}pt 필요)`;
+  });
+  const fallbackVal = allowDefault ? 'DEFAULT' : 'NONE';
+  selEl.value = (
+    currentValue === 'DEFAULT' ||
+    currentValue === 'NONE' ||
+    (MASTERY_FX_PRESETS[currentValue] && isMasteryPresetUnlocked(currentValue, points, cardState))
+  )
+    ? currentValue
+    : fallbackVal;
+}
 
 /**
  * 그림 파일이 있으면 그림을, 없으면 대체 표시(이모지 등)를 보여 주는 HTML.
@@ -455,16 +579,183 @@ const VIEW_BGM = {
 
 let currentViewKey = null;
 let viewTransitionTimerId = null;
+let switchViewSeqId = 0;
+const preloadedResourceUrls = new Set();
+
+function preloadResourceUrl(src, timeoutMs = 3500) {
+  if (!src || typeof src !== 'string') return Promise.resolve();
+  if (preloadedResourceUrls.has(src)) return Promise.resolve();
+  if (typeof Image === 'undefined') {
+    preloadedResourceUrls.add(src);
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      preloadedResourceUrls.add(src);
+      resolve();
+    };
+    const timer = setTimeout(finish, timeoutMs);
+    img.onload = async () => {
+      try {
+        if (typeof img.decode === 'function') await img.decode();
+      } catch {
+        // decode 오류는 무시하고 완료 처리
+      }
+      finish();
+    };
+    img.onerror = finish;
+    img.src = src;
+  });
+}
+
+function getCurrentSceneContext() {
+  const phase = engine?.state?.phase;
+  return {
+    boss: phase === 'STAGE_5_FINAL_BOSS' ? engine.state.assignedFinalBoss : '',
+    victory: phase === 'RUN_VICTORY',
+    alleyMerchant: document.body.dataset.alleyMerchant === '1',
+  };
+}
+
+function collectCardIdsArtUrls(cardIds = []) {
+  const urls = [];
+  const seenIds = new Set();
+  for (const cid of cardIds) {
+    if (!cid || seenIds.has(cid)) continue;
+    seenIds.add(cid);
+    const def = lookupCardDef(cid);
+    if (!def) continue;
+    const artSrc = getCardArtSrc(def, { compact: false });
+    if (artSrc && !artSrc.endsWith('.svg') && !artSrc.startsWith('blob:') && !artSrc.startsWith('data:')) {
+      urls.push(artSrc);
+    }
+  }
+  return urls;
+}
+
+function collectViewAssetUrls(viewKey) {
+  const urls = new Set();
+  const ctx = getCurrentSceneContext();
+  const scene = sceneFor(viewKey, ctx);
+  if (scene?.src) urls.add(scene.src);
+
+  const snap = typeof engine !== 'undefined' ? engine.getSnapshot?.() : null;
+  if (viewKey === 'VIEW_TITLE_LOBBY') {
+    urls.add('assets/ui/game_logo.webp');
+    urls.add('assets/ui/app_icon.png');
+  } else if (viewKey === 'VIEW_FORTUNE_TELLER') {
+    urls.add('assets/ui/npc_fortune_base.webp');
+  } else if (viewKey === 'VIEW_CHECKPOINT_SHOP') {
+    urls.add('assets/ui/npc_shopkeeper.webp');
+    const offerIds = (snap?.shopOffers || []).map((o) => o?.cardId).filter(Boolean);
+    collectCardIdsArtUrls(offerIds).forEach((u) => urls.add(u));
+  } else if (viewKey === 'VIEW_CHECKPOINT_MERCHANT') {
+    urls.add('assets/ui/npc_merchant.webp');
+    const merchIds = (snap?.merchantOffers || []).flatMap((o) => [o?.wantCardId, o?.giveCardId]).filter(Boolean);
+    collectCardIdsArtUrls(merchIds).forEach((u) => urls.add(u));
+  } else if (viewKey === 'VIEW_CHECKPOINT_DECK_EDITOR') {
+    const editorIds = [
+      snap?.playerDeckMasterCardId,
+      ...(snap?.playerDeckCardIds || []),
+      ...(snap?.trunkCardIds || []),
+    ].filter(Boolean);
+    collectCardIdsArtUrls(editorIds).forEach((u) => urls.add(u));
+  } else if (viewKey === 'VIEW_DUEL_ARENA') {
+    const mat = MAT_PRESETS[cosmeticsConfig?.matPreset];
+    if (mat?.image) urls.add(mat.image);
+    const duel = snap?.activeDuel;
+    const duelCardIds = [];
+    (duel?.seats || []).forEach((s) => {
+      [...(s?.deck || []), ...(s?.hand || []), ...(s?.board || []), ...(s?.graveyard || [])].forEach((c) => {
+        if (c?.cardId) duelCardIds.push(c.cardId);
+      });
+    });
+    collectCardIdsArtUrls(duelCardIds).forEach((u) => urls.add(u));
+  } else if (viewKey === 'VIEW_PACK_OPENING') {
+    const packIds = (snap?.lastPackCards || []).filter(Boolean);
+    collectCardIdsArtUrls(packIds).forEach((u) => urls.add(u));
+  } else if (viewKey === 'VIEW_MERCHANT_EVENT') {
+    urls.add('assets/ui/npc_merchant.webp');
+  }
+
+  return Array.from(urls);
+}
+
+async function bakePlayerAndPresetSleeves(bakeAllPresets = false) {
+  if (bakeAllPresets) {
+    const presetKeys = Object.keys(SLEEVE_PRESETS).filter((k) => k !== 'CUSTOM');
+    await Promise.all(presetKeys.map((presetId) => {
+      const info = getSleeveBakeSource({ ...cosmeticsConfig, sleevePreset: presetId });
+      if (hasBakedDynamicAsset(info.bakeKey)) return Promise.resolve();
+      return bakeDynamicSvgAsset(info.bakeKey, info.svgDataUri, {
+        width: 640,
+        height: 896,
+        thumbWidth: 240,
+        thumbHeight: 336,
+      });
+    }));
+  }
+  const active = getSleeveBakeSource(cosmeticsConfig);
+  if (!hasBakedDynamicAsset(active.bakeKey)) {
+    await bakeDynamicSvgAsset(active.bakeKey, active.svgDataUri, {
+      width: 640,
+      height: 896,
+      thumbWidth: 240,
+      thumbHeight: 336,
+      revokePrefix: active.isCustom ? 'sleeve:CUSTOM:' : null,
+    });
+  }
+}
+
+function needsViewResourceLoad(viewKey) {
+  if (!getVectorBakeStats().ready) return true;
+  const activeSleeveKey = getSleeveBakeKey(cosmeticsConfig);
+  if ((viewKey === 'VIEW_DUEL_ARENA' || viewKey === 'VIEW_TITLE_LOBBY') && !hasBakedDynamicAsset(activeSleeveKey)) {
+    return true;
+  }
+  const urls = collectViewAssetUrls(viewKey);
+  return urls.some((u) => !preloadedResourceUrls.has(u));
+}
+
+async function ensureViewResourcesReady(viewKey) {
+  const isInitialVectorBake = !getVectorBakeStats().ready;
+  await bakeAllVectorAssets({ onProgress: () => {} });
+  await bakePlayerAndPresetSleeves(isInitialVectorBake);
+  const scene = sceneFor(viewKey, getCurrentSceneContext());
+  const urls = collectViewAssetUrls(viewKey).filter((u) => !preloadedResourceUrls.has(u));
+  await Promise.all([
+    scene?.src ? probeImage(scene.src) : Promise.resolve(),
+    ...urls.map((u) => preloadResourceUrl(u)),
+  ]);
+}
+
+function upgradeBakedViewAssets(root = document) {
+  upgradeDomSvgImages(root);
+  if (typeof document === 'undefined' || !root?.querySelectorAll) return;
+  root.querySelectorAll('.card-back-wrapper[data-player-sleeve="1"] .card-back-svg-img').forEach((img) => {
+    const wrapper = img.closest('.card-back-wrapper');
+    const compact = img.dataset.compact === '1'
+      || Boolean(wrapper?.closest('.battlefield-view, .trunk-card-tile, .unit-field-card, .pile-slot, .sleeve-thumb'));
+    const spec = resolvePlayerSleeveSpec(cosmeticsConfig, {
+      compact,
+      bakedUrlResolver: (key, isCompact) => resolveBakedDynamicAsset(key, { compact: isCompact }),
+    });
+    if (wrapper?.dataset.sleeve && wrapper.dataset.sleeve === spec.preset && spec.isBaked && img.src !== spec.src) {
+      img.src = spec.src;
+      wrapper.dataset.bakedSleeve = '1';
+    }
+  });
+}
 
 /** Background of the current view (see src/ui/sceneArt.js). */
 function refreshSceneBackdrop(viewKey = currentViewKey) {
   if (!viewKey) return;
-  const phase = engine?.state?.phase;
-  applySceneBackdrop(viewKey, {
-    boss: phase === 'STAGE_5_FINAL_BOSS' ? engine.state.assignedFinalBoss : '',
-    victory: phase === 'RUN_VICTORY',
-    alleyMerchant: document.body.dataset.alleyMerchant === '1',
-  });
+  applySceneBackdrop(viewKey, getCurrentSceneContext());
 }
 
 const VIEW_DEPTH = {
@@ -495,7 +786,6 @@ function openModalWithCrt(modalEl, { mode = 'hidden' } = {}) {
     modalEl.classList.remove('is-hidden');
   }
   fitCardNameTextBoxes(modalEl);
-  requestAnimationFrame(() => fitCardNameTextBoxes(modalEl));
 }
 
 function closeModalWithCrt(modalEl, { mode = 'hidden', onClosed = null } = {}) {
@@ -529,6 +819,7 @@ function closeModalWithCrt(modalEl, { mode = 'hidden', onClosed = null } = {}) {
 }
 
 function switchView(viewKey, opts = {}) {
+  const seq = ++switchViewSeqId;
   if (viewKey !== 'VIEW_DUEL_ARENA') {
     duelTurnTimer.stop();
   }
@@ -537,27 +828,45 @@ function switchView(viewKey, opts = {}) {
   if (viewKey === 'VIEW_DUEL_ARENA') bgm = phase === 'STAGE_5_FINAL_BOSS' ? 'BGM_BOSS' : 'BGM_DUEL';
   if (viewKey === 'VIEW_RUN_SUMMARY') bgm = phase === 'RUN_VICTORY' ? 'BGM_VICTORY' : 'BGM_DEFEAT';
   if (bgm) audio.playBgm(bgm);
-  document.body.dataset.view = viewKey;
-  document.body.dataset.boss = phase === 'STAGE_5_FINAL_BOSS' ? engine.state.assignedFinalBoss || '' : '';
-  refreshSceneBackdrop(viewKey);
 
   const prevKey = currentViewKey;
+  const prevEl = prevKey ? views[prevKey] : null;
   const isActualChange = Boolean(prevKey && prevKey !== viewKey);
   currentViewKey = viewKey;
-  const transMs = Math.max(0, Number(tunerSettings?.transitionMs ?? 260));
+  const transMs = Math.max(120, Number(tunerSettings?.transitionMs ?? 260));
+  const collapseMs = Math.min(220, Math.max(150, Math.round(transMs * 0.8)));
   document.documentElement.style.setProperty('--view-transition-ms', `${transMs}ms`);
 
-  const veil = document.getElementById('view-transition-veil');
-  const applySwitch = (playEnterCrt = true) => {
+  const loadingScreen = document.getElementById('loading-blank-screen');
+  if (viewTransitionTimerId) {
+    clearTimeout(viewTransitionTimerId);
+    viewTransitionTimerId = null;
+  }
+
+  const revealTargetView = (playEnterCrt = true) => {
+    if (seq !== switchViewSeqId) return;
+    loadingScreen?.classList.remove('is-active');
+
+    // 배경은 진입 효과(CRT 켜짐)가 시작되는 이 시점에 맞춰 동시에 교체한다.
+    const livePhase = engine?.state?.phase;
+    document.body.dataset.view = viewKey;
+    document.body.dataset.boss = livePhase === 'STAGE_5_FINAL_BOSS' ? engine.state.assignedFinalBoss || '' : '';
+    refreshSceneBackdrop(viewKey);
+
+    if (typeof opts.onBeforeReveal === 'function') {
+      opts.onBeforeReveal();
+    }
+
     Object.values(views).forEach((v) => v?.classList.remove('active', 'screen-entering', 'screen-crt-closing'));
-    if (views[viewKey]) {
-      const targetView = views[viewKey];
+    const targetView = views[viewKey];
+    if (targetView) {
       targetView.classList.add('active');
       if (targetView.__enterCleanupTimer) {
         clearTimeout(targetView.__enterCleanupTimer);
         targetView.__enterCleanupTimer = null;
       }
-      if (playEnterCrt && isActualChange && transMs > 0) {
+      upgradeBakedViewAssets(targetView);
+      if (playEnterCrt && transMs > 0) {
         void targetView.offsetWidth;
         targetView.classList.add('screen-entering');
         const finishEnter = () => {
@@ -570,51 +879,71 @@ function switchView(viewKey, opts = {}) {
         };
         targetView.addEventListener('animationend', finishEnter, { once: true });
         targetView.__enterCleanupTimer = setTimeout(finishEnter, transMs + 60);
+      } else {
+        fitCardNameTextBoxes(targetView);
       }
-      fitCardNameTextBoxes(targetView);
-      requestAnimationFrame(() => fitCardNameTextBoxes(targetView));
     }
-    if (isActualChange && viewKey === 'VIEW_DUEL_ARENA' && fxCanvas) {
+
+    if ((isActualChange || !prevEl) && viewKey === 'VIEW_DUEL_ARENA' && fxCanvas) {
       const r = fxCanvas.getBoundingClientRect();
       fxEngine.spawnSummonBurst(r.width * 0.5, r.height * 0.5, phase === 'STAGE_5_FINAL_BOSS' ? '#f43f5e' : '#38bdf8', 170);
     }
+
+    if (typeof opts.onRevealed === 'function') {
+      opts.onRevealed();
+    }
   };
 
-  if (viewTransitionTimerId) {
-    clearTimeout(viewTransitionTimerId);
-    viewTransitionTimerId = null;
+  const requiresLoad = Boolean(opts.forceLoading || needsViewResourceLoad(viewKey));
+
+  // 동일 뷰 재진입(리로드 불필요) 시 애니메이션 없이 즉시 반영
+  if (!isActualChange && prevEl && !requiresLoad) {
+    loadingScreen?.classList.remove('is-active');
+    revealTargetView(false);
+    return;
   }
 
-  const isBackNavigation = opts.direction === 'back'
-    || (opts.direction !== 'forward' && isActualChange && (VIEW_DEPTH[viewKey] ?? 0) < (VIEW_DEPTH[prevKey] ?? 0));
+  // 리소스 로드가 필요한 전환: 현재 화면 CRT 축소 -> 아무 UI도 없는 빈 로딩 상태 -> 로드 완료 후 CRT 확장 오픈
+  if (requiresLoad) {
+    const beginBlankLoad = async () => {
+      if (seq !== switchViewSeqId) return;
+      Object.values(views).forEach((v) => v?.classList.remove('active', 'screen-entering', 'screen-crt-closing'));
+      loadingScreen?.classList.add('is-active');
+      try {
+        await ensureViewResourcesReady(viewKey);
+      } finally {
+        if (seq === switchViewSeqId) {
+          revealTargetView(true);
+        }
+      }
+    };
 
-  if (isActualChange && transMs > 0) {
-    const prevEl = views[prevKey];
-    if (isBackNavigation && prevEl) {
-      Object.values(views).forEach((v) => v?.classList.remove('screen-entering', 'screen-crt-closing'));
-      if (views[viewKey]) views[viewKey].classList.add('active');
-      prevEl.classList.remove('active');
+    if (prevEl && isActualChange) {
+      Object.values(views).forEach((v) => v?.classList.remove('active', 'screen-entering', 'screen-crt-closing'));
       prevEl.classList.add('screen-crt-closing');
-      veil?.classList.add('is-active');
       viewTransitionTimerId = setTimeout(() => {
         prevEl.classList.remove('screen-crt-closing');
-        veil?.classList.remove('is-active');
-        applySwitch(false);
         viewTransitionTimerId = null;
-      }, Math.min(220, Math.max(150, Math.round(transMs * 0.8))));
-    } else if (veil) {
-      veil.classList.add('is-active');
-      applySwitch(true);
-      viewTransitionTimerId = setTimeout(() => {
-        veil.classList.remove('is-active');
-        viewTransitionTimerId = null;
-      }, Math.min(180, Math.round(transMs * 0.55)));
+        beginBlankLoad();
+      }, collapseMs);
     } else {
-      applySwitch(true);
+      beginBlankLoad();
     }
+    return;
+  }
+
+  // 리소스 로드가 이미 완료된 일반 화면 전환: CRT 축소 -> 즉시 CRT 확장 전환
+  loadingScreen?.classList.remove('is-active');
+  if (isActualChange && prevEl && transMs > 0) {
+    Object.values(views).forEach((v) => v?.classList.remove('active', 'screen-entering', 'screen-crt-closing'));
+    prevEl.classList.add('screen-crt-closing');
+    viewTransitionTimerId = setTimeout(() => {
+      prevEl.classList.remove('screen-crt-closing');
+      viewTransitionTimerId = null;
+      revealTargetView(true);
+    }, collapseMs);
   } else {
-    veil?.classList.remove('is-active');
-    applySwitch(false);
+    revealTargetView(Boolean(!prevEl));
   }
 }
 
@@ -1328,6 +1657,173 @@ function toCanvasLocalRect(domRect) {
   };
 }
 
+/**
+ * 카드 파괴 시 즉시 산산조각 내지 않고 먼저 카드 전면에 균열(금)을 형성한 뒤 파편 폭발/영혼 궤적으로 이어집니다.
+ */
+function triggerUnitCrackThenShatter(unitEl, cardLocalRect, gyLocalRect, unitDef, gyElementId, shardsCount) {
+  if (unitEl) {
+    unitEl.classList.remove('slam-hit-target', 'slam-blocked-guard');
+    unitEl.classList.add('card-cracking');
+  }
+  if (cardLocalRect) {
+    fxEngine.spawnCardCrackEffect(cardLocalRect, '#7dd3fc', 0.25);
+  }
+  setTimeout(() => {
+    if (unitEl) {
+      unitEl.classList.remove('card-cracking');
+      unitEl.classList.add('card-whiteout');
+    }
+    if (cardLocalRect) {
+      fxEngine.spawnCardShatter(cardLocalRect, shardsCount);
+      if (gyLocalRect) {
+        fxEngine.spawnSoulWisp(cardLocalRect, gyLocalRect, () => {
+          if (gyElementId && unitDef && document.getElementById(gyElementId)) {
+            addGraveyardGhost(gyElementId, unitDef);
+          }
+        });
+      }
+    }
+    audio.playCardShatter();
+    audio.playSoulWisp?.();
+  }, 220);
+}
+
+const duelCounterState = {
+  duelId: null,
+  lp: [null, null],
+  lpDisplay: [null, null],
+  lpAnimRaf: [null, null],
+  units: new Map(), // instanceId -> { atk, def }
+  unitAnimRaf: new Map(), // `${instanceId}:atk|def` -> rafId
+};
+
+function resetDuelCounterState(duelId = null) {
+  duelCounterState.lpAnimRaf.forEach((raf) => { if (raf) cancelAnimationFrame(raf); });
+  duelCounterState.unitAnimRaf.forEach((raf) => { if (raf) cancelAnimationFrame(raf); });
+  duelCounterState.lpAnimRaf = [null, null];
+  duelCounterState.unitAnimRaf.clear();
+  duelCounterState.units.clear();
+  duelCounterState.duelId = duelId;
+  duelCounterState.lp = [null, null];
+  duelCounterState.lpDisplay = [null, null];
+}
+
+/**
+ * 유희왕 마스터 듀얼식 빠른 순차 숫자 롤링 연출.
+ */
+function animateRollingDigits(el, fromVal, toVal, {
+  durationMs = 420,
+  accentEl = null,
+  upClass = 'stat-rolling-up',
+  downClass = 'stat-rolling-down',
+  onStep = null,
+  onRaf = null,
+  onDone = null,
+} = {}) {
+  if (!el) return null;
+  const start = Math.round(fromVal);
+  const end = Math.round(toVal);
+  const targetCls = end > start ? upClass : downClass;
+  if (accentEl) {
+    accentEl.classList.remove(upClass, downClass);
+    accentEl.classList.add(targetCls);
+  }
+  const t0 = performance.now();
+  let lastShown = start;
+  el.textContent = String(start);
+  onStep?.(start);
+
+  const tick = (now) => {
+    const raw = Math.min(1, (now - t0) / durationMs);
+    const eased = 1 - Math.pow(1 - raw, 2.2);
+    const cur = raw >= 1 ? end : Math.round(start + (end - start) * eased);
+    if (cur !== lastShown) {
+      lastShown = cur;
+      el.textContent = String(cur);
+      onStep?.(cur);
+    }
+    if (raw < 1) {
+      const id = requestAnimationFrame(tick);
+      onRaf?.(id);
+    } else {
+      el.textContent = String(end);
+      onStep?.(end);
+      if (accentEl) {
+        setTimeout(() => accentEl.classList.remove(upClass, downClass), 120);
+      }
+      onRaf?.(null);
+      onDone?.();
+    }
+  };
+  const firstId = requestAnimationFrame(tick);
+  onRaf?.(firstId);
+  return firstId;
+}
+
+function applyUnitStatRolling(unitEl, unit) {
+  if (!unitEl || !unit?.instanceId) return;
+  const curAtk = Number(unit.currentAttack ?? unit.attack ?? 0);
+  const curDef = Number(unit.currentDefense ?? unit.currentHealth ?? unit.defense ?? unit.health ?? 0);
+  const prev = duelCounterState.units.get(unit.instanceId);
+  duelCounterState.units.set(unit.instanceId, { atk: curAtk, def: curDef });
+  if (!prev) return;
+
+  const rollBadge = (keySuffix, badgeSelector, fromVal, toVal) => {
+    if (fromVal === toVal) return;
+    const animKey = `${unit.instanceId}:${keySuffix}`;
+    const oldRaf = duelCounterState.unitAnimRaf.get(animKey);
+    if (oldRaf) cancelAnimationFrame(oldRaf);
+    const badgeEl = unitEl.querySelector(badgeSelector);
+    const numEl = badgeEl?.querySelector('.stat-badge-num');
+    if (!numEl) return;
+
+    animateRollingDigits(numEl, fromVal, toVal, {
+      durationMs: 360,
+      accentEl: badgeEl,
+      upClass: 'stat-rolling-up',
+      downClass: 'stat-rolling-down',
+      onRaf: (id) => {
+        if (id) duelCounterState.unitAnimRaf.set(animKey, id);
+        else duelCounterState.unitAnimRaf.delete(animKey);
+      },
+    });
+  };
+
+  rollBadge('def', '.overlay-stat-badge.def-badge', prev.def, curDef);
+  rollBadge('atk', '.overlay-stat-badge.atk-badge', prev.atk, curAtk);
+
+  if (prev.def !== curDef || prev.atk !== curAtk) {
+    requestAnimationFrame(() => {
+      if (!unitEl.isConnected || !fxCanvas) return;
+      const cRect = fxCanvas.getBoundingClientRect();
+      if (prev.def !== curDef) {
+        const dEl = unitEl.querySelector('.overlay-stat-badge.def-badge') || unitEl;
+        const r = dEl.getBoundingClientRect();
+        const diff = curDef - prev.def;
+        fxEngine.showFloatingText(
+          r.left - cRect.left + r.width / 2,
+          r.top - cRect.top - 6,
+          `수비 ${diff > 0 ? `+${diff}` : diff}`,
+          diff > 0 ? '#4ade80' : '#f87171',
+          20
+        );
+      }
+      if (prev.atk !== curAtk) {
+        const aEl = unitEl.querySelector('.overlay-stat-badge.atk-badge') || unitEl;
+        const r = aEl.getBoundingClientRect();
+        const diff = curAtk - prev.atk;
+        fxEngine.showFloatingText(
+          r.left - cRect.left + r.width / 2,
+          r.top - cRect.top - 6,
+          `공격 ${diff > 0 ? `+${diff}` : diff}`,
+          diff > 0 ? '#38bdf8' : '#fb923c',
+          20
+        );
+      }
+    });
+  }
+}
+
 function captureBoardRects(boardSelector) {
   const map = new Map();
   document.querySelectorAll(`${boardSelector} .unit-field-card[data-instance-id]`).forEach((el) => {
@@ -1465,9 +1961,8 @@ function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, preCpuIds, preP
       audio.playCardPlayImpact();
       const unitEl = document.querySelector(`#cpu-board .unit-field-card[data-instance-id="${summonedUnit.instanceId}"]`);
       if (unitEl) {
-        unitEl.classList.add('summon-slam-enter');
-        const ur = unitEl.getBoundingClientRect();
-        fxEngine.spawnSummonBurst(ur.left - cRect.left + ur.width / 2, ur.top - cRect.top + ur.height / 2, '#38bdf8', 105);
+        const mFx = getCardMasteryVisualFx(summonedUnit.cardId, summonedUnit.ownerSeat ?? 1);
+        triggerUnitSummonEntrance(unitEl, mFx);
       }
       showCardPlayShowcase(summonedUnit, {
         actorLabel: '상대 몬스터 소환',
@@ -1484,7 +1979,8 @@ function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, preCpuIds, preP
       const ar = arenaEl ? arenaEl.getBoundingClientRect() : cRect;
       const sx = ar.left - cRect.left + ar.width / 2;
       const sy = ar.top - cRect.top + ar.height * 0.42;
-      fxEngine.spawnSummonBurst(sx, sy, '#34d399', 130);
+      const mSpellFx = spellDef ? getCardMasteryVisualFx(spellDef.id, castCard?.ownerSeat ?? 1) : { hasEntranceFx: false, preset: 'NONE' };
+      spawnCardMasteryEntranceVfx(sx, sy, mSpellFx, true);
       fxEngine.triggerScreenShake(7);
       if (act.chosenTarget?.targetInstanceId) {
         const tEl = document.querySelector(`.unit-field-card[data-instance-id="${act.chosenTarget.targetInstanceId}"]`);
@@ -1533,6 +2029,13 @@ function playCpuAttackVisualEffects({ preCpuRects, prePlayerRects, prePlayerHand
     ? (handFallbackRect || prePlayerHandRect)
     : (prePlayerRects.get(res.targetInstanceId) || handFallbackRect);
   const attackerEl = document.querySelector(`#cpu-board .unit-field-card[data-instance-id="${res.attackerInstanceId}"]`);
+  const cpuAttackerCardId = attackerEl?.querySelector?.('[data-card-id]')?.getAttribute('data-card-id') || null;
+  const cpuAtkMastery = cpuAttackerCardId ? getCardMasteryVisualFx(cpuAttackerCardId, 1) : { hasEntranceFx: false };
+  const playerTargetEl = res.targetInstanceId
+    ? document.querySelector(`#player-board .unit-field-card[data-instance-id="${res.targetInstanceId}"]`)
+    : null;
+  const playerTargetCardId = playerTargetEl?.querySelector?.('[data-card-id]')?.getAttribute('data-card-id') || null;
+  const playerDefMastery = playerTargetCardId ? getCardMasteryVisualFx(playerTargetCardId, 0) : { hasEntranceFx: false };
 
   animateCpuAttackerSlam(attackerEl, rawTargetRect, atkPower, () => {
     const postPlayerIds = new Set((liveDuel?.seats?.[0]?.board || []).map((u) => u.instanceId));
@@ -1544,21 +2047,34 @@ function playCpuAttackVisualEffects({ preCpuRects, prePlayerRects, prePlayerHand
 
       if (isHeroHit) {
         audio.playPlayerImpact(atkPower);
-        fxEngine.spawnShockwave(tx, ty, 240, '#ffffff');
-        fxEngine.spawnImpactStarburst(tx, ty, 65, '#f43f5e');
+        fxEngine.spawnShockwave(tx, ty, 240, cpuAtkMastery.hasEntranceFx ? cpuAtkMastery.tint : '#ffffff');
+        fxEngine.spawnImpactStarburst(tx, ty, cpuAtkMastery.hasEntranceFx ? 76 : 65, cpuAtkMastery.hasEntranceFx ? cpuAtkMastery.tint : '#f43f5e');
         fxEngine.spawnPlayerDustPuff(tx, ty, Math.max(200, rawTargetRect.width * 0.75), Math.max(85, rawTargetRect.height), 48);
         fxEngine.showFloatingText(tx, ty - 26, `-${res.damageDealt}`, '#ef4444', 32);
         playerHandEl?.classList.add('slam-hit-target');
         setTimeout(() => playerHandEl?.classList.remove('slam-hit-target'), 320);
       } else {
-        audio.playDamageHit();
-        fxEngine.spawnShockwave(tx, ty, Math.min(130, 45 + atkPower * 3.5), '#ffffff');
-        fxEngine.spawnImpactStarburst(tx, ty, Math.min(45, 16 + atkPower * 2), atkPower > 10 ? '#f59e0b' : '#38bdf8');
-        fxEngine.showFloatingText(tx, ty - 24, `-${res.damageDealt}`, '#ef4444', 28);
         const targetNowEl = document.querySelector(`#player-board .unit-field-card[data-instance-id="${res.targetInstanceId}"]`);
-        if (targetNowEl) {
-          targetNowEl.classList.add('slam-hit-target');
-          if (res.defenderDied) targetNowEl.classList.add('card-whiteout');
+        if (res.defenderDied) {
+          audio.playDamageHit();
+          const hitColor = cpuAtkMastery.hasEntranceFx
+            ? cpuAtkMastery.tint
+            : (atkPower > 10 ? '#f59e0b' : '#38bdf8');
+          fxEngine.spawnShockwave(tx, ty, Math.min(130, 45 + atkPower * 3.5), cpuAtkMastery.hasEntranceFx ? cpuAtkMastery.tint : '#ffffff');
+          fxEngine.spawnImpactStarburst(tx, ty, Math.min(54, 16 + atkPower * 2 + (cpuAtkMastery.hasEntranceFx ? 8 : 0)), hitColor);
+          if (playerDefMastery.hasEntranceFx) {
+            fxEngine.spawnShockwave(tx, ty, 90, playerDefMastery.tint);
+          }
+          if (targetNowEl) {
+            targetNowEl.classList.add('slam-hit-target');
+          }
+        } else {
+          audio.playLightTap();
+          fxEngine.spawnGuardBlockEffect(tx, ty, '#60a5fa');
+          if (targetNowEl) {
+            targetNowEl.classList.add('slam-blocked-guard');
+            setTimeout(() => targetNowEl.classList.remove('slam-blocked-guard'), 320);
+          }
         }
       }
     }
@@ -1566,22 +2082,18 @@ function playCpuAttackVisualEffects({ preCpuRects, prePlayerRects, prePlayerHand
     prePlayerIds.forEach((id) => {
       if (!postPlayerIds.has(id)) {
         const deadRect = prePlayerRects.get(id);
+        const deadEl = document.querySelector(`#player-board .unit-field-card[data-instance-id="${id}"]`);
         if (deadRect) {
-          const localR = toCanvasLocalRect(deadRect);
-          fxEngine.spawnCardShatter(localR, tunerSettings.shatterShards);
-          fxEngine.spawnSoulWisp(localR, pGyRect, () => {});
-          audio.playCardShatter();
+          triggerUnitCrackThenShatter(deadEl, toCanvasLocalRect(deadRect), pGyRect, null, null, tunerSettings.shatterShards);
         }
       }
     });
 
     if (res.attackerDied) {
       const deadCpuRect = preCpuRects.get(res.attackerInstanceId);
+      const deadCpuEl = document.querySelector(`#cpu-board .unit-field-card[data-instance-id="${res.attackerInstanceId}"]`);
       if (deadCpuRect) {
-        const localCpu = toCanvasLocalRect(deadCpuRect);
-        fxEngine.spawnCardShatter(localCpu, tunerSettings.shatterShards);
-        fxEngine.spawnSoulWisp(localCpu, cGyRect, () => {});
-        audio.playCardShatter();
+        triggerUnitCrackThenShatter(deadCpuEl, toCanvasLocalRect(deadCpuRect), cGyRect, null, null, tunerSettings.shatterShards);
       }
     }
 
@@ -2357,15 +2869,22 @@ function applyRunPhaseScreen(snap) {
     case 'STAGE_1_DUEL_1':
     case 'STAGE_3_DUEL_2':
     case 'STAGE_5_FINAL_BOSS': {
-      switchView('VIEW_DUEL_ARENA');
-      renderDuelArena(snap);
       const duelKey = snap.activeDuel ? `${snap.activeDuel.duelId}_${snap.activeDuel.seed}` : null;
-      if (duelKey && duelKey !== lastStartedDuelKey) {
-        lastStartedDuelKey = duelKey;
-        const cpuName = snap.activeDuel?.seats?.[1]?.duelistName || '상대 듀얼리스트';
-        triggerDuelStartCutIn(cpuName, '플레이어');
-      }
-      scheduleCpuTurnIfNeeded(snap);
+      switchView('VIEW_DUEL_ARENA', {
+        onBeforeReveal: () => {
+          const latest = engine.getSnapshot();
+          renderDuelArena(latest);
+        },
+        onRevealed: () => {
+          const latest = engine.getSnapshot();
+          if (duelKey && duelKey !== lastStartedDuelKey) {
+            lastStartedDuelKey = duelKey;
+            const cpuName = latest.activeDuel?.seats?.[1]?.duelistName || '상대 듀얼리스트';
+            triggerDuelStartCutIn(cpuName, '플레이어');
+          }
+          scheduleCpuTurnIfNeeded(latest);
+        },
+      });
       break;
     }
 
@@ -2463,7 +2982,6 @@ const defaultTunerSettings = {
   pierceSpeed: 1.0,
   hitstopMs: 50,
   transitionMs: 260,
-  ambientFxMult: 1.0,
   cpuTempo: 1.0,
   showcaseEnabled: true,
   showcaseX: 17,
@@ -2503,7 +3021,6 @@ function syncTunerInputs() {
   setSlider('slider-pierce-speed', tunerSettings.pierceSpeed);
   setSlider('slider-hitstop', tunerSettings.hitstopMs);
   setSlider('slider-transition-ms', tunerSettings.transitionMs);
-  setSlider('slider-ambient-fx', tunerSettings.ambientFxMult);
   setSlider('slider-cpu-tempo', tunerSettings.cpuTempo);
   setSlider('slider-showcase-x', tunerSettings.showcaseX);
   setSlider('slider-showcase-y', tunerSettings.showcaseY);
@@ -2520,7 +3037,6 @@ function syncTunerInputs() {
   setText('val-pierce-speed', `${Number(tunerSettings.pierceSpeed).toFixed(1)}x`);
   setText('val-hitstop', `${tunerSettings.hitstopMs}ms`);
   setText('val-transition-ms', `${tunerSettings.transitionMs}ms`);
-  setText('val-ambient-fx', `${Number(tunerSettings.ambientFxMult).toFixed(1)}x`);
   setText('val-cpu-tempo', `${Number(tunerSettings.cpuTempo).toFixed(1)}x`);
   setText('val-showcase-x', `${tunerSettings.showcaseX}%`);
   setText('val-showcase-y', `${tunerSettings.showcaseY}%`);
@@ -2588,7 +3104,6 @@ const TUNER_SLIDER_MAP = [
   ['slider-pierce-speed', 'val-pierce-speed', 'pierceSpeed', (v) => `${v.toFixed(1)}x`, false],
   ['slider-hitstop', 'val-hitstop', 'hitstopMs', (v) => `${v}ms`, true],
   ['slider-transition-ms', 'val-transition-ms', 'transitionMs', (v) => `${v}ms`, true],
-  ['slider-ambient-fx', 'val-ambient-fx', 'ambientFxMult', (v) => `${v.toFixed(1)}x`, false],
   ['slider-cpu-tempo', 'val-cpu-tempo', 'cpuTempo', (v) => `${v.toFixed(1)}x`, false],
   ['slider-showcase-x', 'val-showcase-x', 'showcaseX', (v) => `${v}%`, true],
   ['slider-showcase-y', 'val-showcase-y', 'showcaseY', (v) => `${v}%`, true],
@@ -2649,7 +3164,6 @@ function renderRarityTunerPreview() {
     activeRarityPreviewCompact ? 0.55 : 0.95,
     activeRarityPreviewCompact
   );
-  fitCardNameTextBoxes(mount);
   requestAnimationFrame(() => fitCardNameTextBoxes(mount));
   if (caption) {
     const info = RARITY_PRESET_INFO[tierCfg.preset];
@@ -3354,16 +3868,30 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
       // ★ 1. 역경직 (Hitstop / Freeze Frame) - 타격 쾌감의 핵심
       fxEngine.triggerHitstop(tunerSettings.hitstopMs || 50);
 
-      // ★ 2. 캔버스 가산 발광 충격파 링 & 스파크 버스트 (본체 피격 시 상단 중앙 대형 폭발)
+      // ★ 2. 캔버스 가산 발광 충격파 링 & 스파크 버스트 (소유자 숙련도 프리셋 반영 · 상황별 분기)
+      const atkMastery = getCardMasteryVisualFx(attackerDef?.id, 0);
+      const defMastery = targetUnit ? getCardMasteryVisualFx(targetUnit.cardId, targetUnit.ownerSeat ?? 1) : { hasEntranceFx: false };
       if (isTargetLeader) {
-        fxEngine.spawnShockwave(cx, cy, 240, '#ffffff');
-        fxEngine.spawnImpactStarburst(cx, cy, 65, '#f43f5e');
+        fxEngine.spawnShockwave(cx, cy, 240, atkMastery.hasEntranceFx ? atkMastery.tint : '#ffffff');
+        fxEngine.spawnImpactStarburst(cx, cy, atkMastery.hasEntranceFx ? 76 : 65, atkMastery.hasEntranceFx ? atkMastery.tint : '#f43f5e');
         fxEngine.spawnPlayerDustPuff(cx, cy, 260, 90, 48);
+        fxEngine.showFloatingText(cx, cy - 25, `-${res.damageDealt}`, '#ef4444', 32);
         audio.playPlayerImpact(atk);
         appendCombatLog('attack', `🩸 상대 본체에 ${res.damageDealt}의 직접 타격 피해를 입혔습니다!`);
+      } else if (res.defenderDied) {
+        const sparkColor = atkMastery.hasEntranceFx ? atkMastery.tint : (atk > 10 ? '#f59e0b' : '#38bdf8');
+        fxEngine.spawnShockwave(cx, cy, Math.min(130, 45 + atk * 3.5), atkMastery.hasEntranceFx ? atkMastery.tint : '#ffffff');
+        fxEngine.spawnImpactStarburst(cx, cy, Math.min(54, 16 + atk * 2 + (atkMastery.hasEntranceFx ? 8 : 0)), sparkColor);
+        if (defMastery.hasEntranceFx) {
+          fxEngine.spawnShockwave(cx, cy, 90, defMastery.tint);
+        }
       } else {
-        fxEngine.spawnShockwave(cx, cy, Math.min(130, 45 + atk * 3.5), '#ffffff');
-        fxEngine.spawnImpactStarburst(cx, cy, Math.min(45, 16 + atk * 2), atk > 10 ? '#f59e0b' : '#38bdf8');
+        // 파괴 실패 시 막힌 듯한 방어 이펙트 (공격력 수치 텍스트 미출력)
+        audio.playLightTap();
+        fxEngine.spawnGuardBlockEffect(cx, cy, '#60a5fa');
+        if (defMastery.hasEntranceFx) {
+          fxEngine.spawnShockwave(cx, cy, 80, defMastery.tint);
+        }
       }
 
       // ★ 2-C. [세트 마법 트리거 격발 및 불발 피드백]
@@ -3389,30 +3917,27 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
         }
       }
 
-      // ★ 3. 물리 카메라 쉐이크 & 부유 데미지 텍스트 팝업
-      fxEngine.triggerScreenShake(Math.min(25, 4 + atk * 1.3));
-      fxEngine.showFloatingText(cx, cy - 25, `-${res.damageDealt}`, '#ef4444', isTargetLeader ? 32 : 28);
+      // ★ 3. 물리 카메라 쉐이크 & 피격/방어 막힘 반응
+      fxEngine.triggerScreenShake(Math.min(25, 4 + atk * (isTargetLeader || res.defenderDied ? 1.3 : 0.75)));
+      if (isTargetLeader || res.defenderDied) {
+        targetEl.classList.add('slam-hit-target');
+      } else {
+        targetEl.classList.add('slam-blocked-guard');
+        setTimeout(() => targetEl.classList.remove('slam-blocked-guard'), 320);
+      }
 
-      targetEl.classList.add('slam-hit-target');
-
-      // ★ 4. 카드 파괴 시퀀스 (Canvas 크리스탈 물리 Shatter + 3차 베지에 영혼 Wisp)
+      // ★ 4. 카드 파괴 시퀀스 (먼저 금이 가고 → 이후 산산조각 Shatter + 영혼 Wisp)
       if (res.defenderDied) {
         const defenderDef = lookupCardDef(res.defenderCardId);
-        targetEl.classList.add('card-whiteout');
-        audio.playCardShatter();
+        audio.playDamageHit();
         appendCombatLog('destroy', `💀 [전투 파괴!] 공격력이 수비력을 상회하여 「${defenderDef?.name || targetUnit?.name || '적 유닛'}」이(가) 파괴되어 묘지로 이송되었습니다!`);
 
-        // 캔버스 크리스탈 물리 유리 파편 폭발
         const cardLocalRect = {
           left: currentTargetRect.left - canvasRect.left,
           top: currentTargetRect.top - canvasRect.top,
           width: currentTargetRect.width,
           height: currentTargetRect.height,
         };
-        fxEngine.spawnCardShatter(cardLocalRect, tunerSettings.shatterShards);
-
-        // 캔버스 3차 베지에 포물선 영혼 리본 트레일
-        audio.playSoulWisp();
         const gyEl = document.getElementById('cpu-graveyard') || document.getElementById('pg-graveyard-slot');
         const gyR = gyEl ? gyEl.getBoundingClientRect() : { left: 100, top: 100, width: 70, height: 90 };
         const gyLocalRect = {
@@ -3421,12 +3946,7 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
           width: gyR.width,
           height: gyR.height,
         };
-
-        fxEngine.spawnSoulWisp(cardLocalRect, gyLocalRect, () => {
-          if (document.getElementById('cpu-graveyard')) {
-            addGraveyardGhost('cpu-graveyard', defenderDef);
-          }
-        });
+        triggerUnitCrackThenShatter(targetEl, cardLocalRect, gyLocalRect, defenderDef, 'cpu-graveyard', tunerSettings.shatterShards);
       } else if (!isTargetLeader) {
         if (res.recoilDamage > 0) {
           audio.playPlayerImpact(res.recoilDamage);
@@ -3447,7 +3967,13 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
             setTimeout(() => playerLeaderEl.classList.remove('slam-hit-target'), 300);
           }
         } else {
-          appendCombatLog('attack', `🛡️ 「${targetUnit?.name || '적 유닛'}」이(가) 수비력으로 공격을 버텨냈습니다.`);
+          appendCombatLog('attack', `🛡️ 「${targetUnit?.name || '적 유닛'}」이(가) 수비력으로 공격을 막아냈습니다.`);
+        }
+        if (res.attackerDied) {
+          const atkRect = attackerEl.getBoundingClientRect();
+          const pGyEl = document.getElementById('player-graveyard');
+          const pGyR = pGyEl ? pGyEl.getBoundingClientRect() : { left: 100, top: 650, width: 70, height: 90 };
+          triggerUnitCrackThenShatter(attackerEl, toCanvasLocalRect(atkRect), toCanvasLocalRect(pGyR), attackerDef, 'player-graveyard', tunerSettings.shatterShards);
         }
       }
 
@@ -3562,6 +4088,7 @@ function renderDuelArena(snap) {
   if (!duel) return;
   applyDuelCosmetics(cosmeticsConfig);
   if (duel.status !== 'ONGOING' || duel.activeSeat !== 0) {
+    closeTributeModal();
     closeFieldTargetMode();
   }
 
@@ -3591,25 +4118,30 @@ function renderDuelArena(snap) {
     }
   }
 
-  // 플레이어 및 CPU 스탯 렌더링 (기본 체력 100)
+  // 플레이어 및 CPU 스탯 렌더링 (유희왕 마스터 듀얼식 빠른 순차 숫자 롤링)
+  if (duelCounterState.duelId !== duel.duelId) {
+    resetDuelCounterState(duel.duelId);
+  }
+
   const playerHp = Math.max(0, player.lp);
   const cpuHp = Math.max(0, cpu.lp);
-  document.getElementById('player-lp').textContent = playerHp;
+  const playerLpEl = document.getElementById('player-lp');
+  const cpuLpEl = document.getElementById('cpu-lp');
   updateChancesElement(document.getElementById('duel-player-chances'), snap.remainingChances ?? 3, snap.maxChances ?? 3);
   const playerSummonEl = document.getElementById('player-summon');
   if (playerSummonEl) playerSummonEl.textContent = `${player.normalSummonsRemaining ?? 0}/1`;
 
   document.getElementById('cpu-name').textContent = cpu.duelistName;
   flushDuelEventsToLog(duel);
-  document.getElementById('cpu-lp').textContent = cpuHp;
   const cpuSummonEl = document.getElementById('cpu-summon');
   if (cpuSummonEl) cpuSummonEl.textContent = `${cpu.normalSummonsRemaining ?? 0}/1`;
   const cpuBadgeEl = document.getElementById('cpu-badge');
   if (cpuBadgeEl) cpuBadgeEl.textContent = cpu.duelistId;
 
-  // 라이프포인트 게이지바 동적 구간별 색상 헬퍼 (상한선 제거 & 구간별 색상 변경)
-  const updateLpGaugeBar = (fillEl, hp) => {
+  // 라이프포인트 게이지바 동적 구간별 색상 헬퍼
+  const updateLpGaugeBar = (fillEl, hp, disableTransition = false) => {
     if (!fillEl) return;
+    fillEl.style.transition = disableTransition ? 'none' : '';
     const pct = Math.max(0, Math.min(100, (hp / 100) * 100));
     fillEl.style.width = `${pct}%`;
     if (hp >= 75) {
@@ -3624,11 +4156,41 @@ function renderDuelArena(snap) {
     }
   };
 
-  // 100 기준 체력바 연동 (상한선 없이 raw LP 수치 표기 & 구간별 색상 반영)
   const playerLpBar = document.getElementById('player-lp-bar');
   const cpuLpBar = document.getElementById('cpu-lp-bar');
-  updateLpGaugeBar(playerLpBar, playerHp);
-  updateLpGaugeBar(cpuLpBar, cpuHp);
+  const syncLpWithRoll = (seatIdx, lpEl, barEl, targetHp) => {
+    const startVal = duelCounterState.lpDisplay[seatIdx] ?? duelCounterState.lp[seatIdx];
+    duelCounterState.lp[seatIdx] = targetHp;
+    if (startVal === null || startVal === undefined || startVal === targetHp) {
+      duelCounterState.lpDisplay[seatIdx] = targetHp;
+      if (lpEl) lpEl.textContent = String(targetHp);
+      updateLpGaugeBar(barEl, targetHp, false);
+      return;
+    }
+    if (duelCounterState.lpAnimRaf[seatIdx]) {
+      cancelAnimationFrame(duelCounterState.lpAnimRaf[seatIdx]);
+      duelCounterState.lpAnimRaf[seatIdx] = null;
+    }
+    animateRollingDigits(lpEl, startVal, targetHp, {
+      durationMs: 420,
+      accentEl: lpEl,
+      upClass: 'lp-rolling-up',
+      downClass: 'lp-rolling-down',
+      onStep: (curVal) => {
+        duelCounterState.lpDisplay[seatIdx] = curVal;
+        updateLpGaugeBar(barEl, curVal, true);
+      },
+      onRaf: (id) => {
+        duelCounterState.lpAnimRaf[seatIdx] = id;
+      },
+      onDone: () => {
+        duelCounterState.lpDisplay[seatIdx] = targetHp;
+        updateLpGaugeBar(barEl, targetHp, false);
+      },
+    });
+  };
+  syncLpWithRoll(0, playerLpEl, playerLpBar, playerHp);
+  syncLpWithRoll(1, cpuLpEl, cpuLpBar, cpuHp);
 
   renderTurnButtonTitle(duel);
 
@@ -3750,6 +4312,7 @@ function renderDuelArena(snap) {
       });
     }
     cpuBoardEl.appendChild(unitEl);
+    applyUnitStatRolling(unitEl, unit);
   });
 
   // 상대 본체 직접 공격 바인딩 (화면 상단 아무데나 클릭해도 상대 플레이어 타겟팅)
@@ -3824,7 +4387,7 @@ function renderDuelArena(snap) {
       let hoveredTargetEl = null;
 
       const onPointerDown = (e) => {
-        if (e.button !== 0 || isAttackAnimating) return;
+        if (e.button !== 0 || isAttackAnimating || window.__activeTributeModalCleanup || activeFieldTargetCleanup) return;
         e.preventDefault();
         isDragging = true;
         hasMovedFar = false;
@@ -4001,7 +4564,19 @@ function renderDuelArena(snap) {
       });
     }
     playerBoardEl.appendChild(unitEl);
+    applyUnitStatRolling(unitEl, unit);
   });
+
+  // 퇴장한 유닛의 롤링 스탯 캐시 정리
+  const liveBoardUnitIds = new Set([
+    ...(cpu.board || []).map((u) => u.instanceId),
+    ...(player.board || []).map((u) => u.instanceId),
+  ]);
+  for (const cachedId of Array.from(duelCounterState.units.keys())) {
+    if (!liveBoardUnitIds.has(cachedId)) {
+      duelCounterState.units.delete(cachedId);
+    }
+  }
 
   if (selectedAttacker && duel.activeSeat === 0) {
     applyAttackOutcomeBadges(duel, selectedAttacker);
@@ -4271,8 +4846,15 @@ function closeSpellPopovers() {
 }
 
 document.addEventListener('pointerdown', (e) => {
-  if (!e.target.closest('.spell-action-popover') && !e.target.closest('.duel-card') && !e.target.closest('#tribute-select-modal')) {
+  if (!e.target.closest('.spell-action-popover') && !e.target.closest('.duel-card')) {
     closeSpellPopovers();
+  }
+  if (
+    window.__activeTributeModalCleanup &&
+    !e.target.closest('#tribute-select-modal') &&
+    !e.target.closest('.duel-card') &&
+    !e.target.closest('#player-board .unit-field-card')
+  ) {
     closeTributeModal();
   }
 });
@@ -4507,6 +5089,7 @@ function createUnitElement(unit, isPlayer, setSpells = []) {
 
 function handlePlayCard(cardInstanceId, tributeInstanceIds = null, chosenTarget = null) {
   try {
+    closeTributeModal();
     closeFieldTargetMode();
     const preSnap = engine.getSnapshot();
     const preDuel = preSnap?.activeDuel;
@@ -4528,17 +5111,16 @@ function handlePlayCard(cardInstanceId, tributeInstanceIds = null, chosenTarget 
     const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0, width: 1280, height: 800 };
     if (playedDef) {
       const isMonster = playedDef.type === 'MONSTER' || (playedDef.attack > 0 && playedDef.type !== 'SPELL');
+      const mFx = getCardMasteryVisualFx(playedDef.id, playedInst?.ownerSeat ?? 0);
       if (isMonster) {
         const summonedEl = document.querySelector(`#player-board .unit-field-card[data-instance-id="${cardInstanceId}"]`);
-        if (summonedEl) {
-          summonedEl.classList.add('summon-slam-enter');
-          const sr = summonedEl.getBoundingClientRect();
-          fxEngine.spawnSummonBurst(sr.left - cRect.left + sr.width / 2, sr.top - cRect.top + sr.height / 2, '#38bdf8', 105);
-        }
+        triggerUnitSummonEntrance(summonedEl, mFx);
       } else {
         const arenaEl = document.getElementById('arena-field');
         const ar = arenaEl ? arenaEl.getBoundingClientRect() : cRect;
-        fxEngine.spawnSummonBurst(ar.left - cRect.left + ar.width / 2, ar.top - cRect.top + ar.height * 0.56, '#34d399', 130);
+        const sx = ar.left - cRect.left + ar.width / 2;
+        const sy = ar.top - cRect.top + ar.height * 0.56;
+        spawnCardMasteryEntranceVfx(sx, sy, mFx, true);
       }
       showCardPlayShowcase(playedInst || playedDef, {
         actorLabel: isMonster ? '내 몬스터 소환' : '내 마법 발동',
@@ -4573,16 +5155,22 @@ function closeFieldTargetMode() {
 }
 
 function closeTributeModal() {
-  closeFieldTargetMode();
+  if (typeof window.__activeTributeModalCleanup === 'function') {
+    const fn = window.__activeTributeModalCleanup;
+    window.__activeTributeModalCleanup = null;
+    fn();
+  }
+  document.querySelectorAll('#tribute-select-modal, .tribute-select-popover').forEach((el) => el.remove());
   document.querySelectorAll('.duel-card.is-selected').forEach((el) => el.classList.remove('is-selected'));
 }
 
 /**
  * 하스스톤식 "카드를 먼저 필드에 내려놓은 뒤 대상 지정" 컨트롤러.
- * - mode: 'TRIBUTE_SUMMON' (제물 선택), 'MANUAL_TARGET' (단일 대상 지정), 'SET_MONSTER_FRONT' (몬스터 앞 세트 대상 선택)
+ * - mode: 'MANUAL_TARGET' (단일 대상 지정), 'SET_MONSTER_FRONT' (몬스터 앞 세트 대상 선택), 'TRIBUTE_SUMMON'
  */
 function startFieldTargetMode({ mode, cardInst, cardDef, duel, tributeIds = [] }) {
   closeSpellPopovers();
+  closeTributeModal();
   closeFieldTargetMode();
   clearTargetHighlights();
   clearPlayableDropZones();
@@ -4861,11 +5449,182 @@ function startFieldTargetMode({ mode, cardInst, cardDef, duel, tributeIds = [] }
 }
 
 function openTributeSelectionModal(cardInst, def, duel, player, cardEl = null) {
-  startFieldTargetMode({ mode: 'TRIBUTE_SUMMON', cardInst, cardDef: def, duel });
+  closeSpellPopovers();
+  closeFieldTargetMode();
+  closeTributeModal();
+
+  const latestDuel = engine.getSnapshot()?.activeDuel || duel;
+  const activePlayer = latestDuel?.seats?.[0] || player;
+  if (!latestDuel || latestDuel.status !== 'ONGOING' || latestDuel.activeSeat !== 0 || !activePlayer) return;
+
+  const targetHandEl = cardEl || document.querySelector(`.duel-card[data-card-instance-id="${cardInst.instanceId}"]`);
+  targetHandEl?.classList.add('is-selected');
+
+  const cardLevel = def.level ?? def.cost ?? 1;
+  if ((activePlayer.board || []).length === 0) {
+    const logEl = document.getElementById('duel-narrative-log');
+    if (logEl) logEl.textContent = '⚠️ [제물 부족] 필드에 제물로 바칠 몬스터가 없습니다.';
+    targetHandEl?.classList.remove('is-selected');
+    return;
+  }
+
+  const stepUpCandidates = activePlayer.board.filter((u) => cardLevel - (u.level || 1) <= 1);
+  const modal = document.createElement('div');
+  modal.className = 'tribute-select-popover';
+  modal.id = 'tribute-select-modal';
+
+  const selectedTributeIds = new Set();
+
+  function updateModalView() {
+    const selectedArray = Array.from(selectedTributeIds)
+      .map((id) => activePlayer.board.find((u) => u.instanceId === id))
+      .filter(Boolean);
+    const sumLevel = selectedArray.reduce((acc, u) => acc + (u.level || 1), 0);
+    const isStepUp = selectedArray.length === 1 && cardLevel - (selectedArray[0].level || 1) <= 1;
+    const isSummationValid = selectedArray.length >= 2 && sumLevel >= cardLevel;
+    const canSummon = isStepUp || isSummationValid;
+
+    const selectedEls = [];
+    document.querySelectorAll('#player-board .unit-field-card').forEach((el) => {
+      const uId = el.getAttribute('data-instance-id');
+      const unit = activePlayer.board.find((u) => u.instanceId === uId);
+      if (!unit) return;
+      el.classList.remove('tribute-selected', 'aura-tribute-ready', 'valid-evolution-target');
+      if (selectedTributeIds.has(uId)) {
+        el.classList.add('tribute-selected');
+        selectedEls.push(el);
+      } else if (cardLevel - (unit.level || 1) <= 1) {
+        el.classList.add('valid-evolution-target');
+      } else {
+        el.classList.add('aura-tribute-ready');
+      }
+    });
+    if (selectedEls.length > 0) {
+      fxEngine.setTargetAura(selectedEls, 'GREEN', false);
+    } else {
+      fxEngine.clearTargetAura();
+    }
+
+    const statusText = isStepUp
+      ? `✨ 1단계 계단식 진화 가능! (제물: ★Lv.${selectedArray[0].level} 1마리)`
+      : isSummationValid
+      ? `🔥 합산 릴리스 가능! (선택 합산: ★Lv.${sumLevel} / 필요: ★Lv.${cardLevel})`
+      : selectedArray.length === 0
+      ? '필드의 몬스터를 클릭하여 제물을 선택하세요.'
+      : `레벨 부족: 현재 ★Lv.${sumLevel} / 필요 ★Lv.${cardLevel}`;
+
+    const bodyEl = modal.querySelector('.tribute-select-body');
+    if (bodyEl) {
+      bodyEl.innerHTML = `
+        <div style="margin-bottom:8px;">소환 대상: <strong>${def.name} (★Lv.${cardLevel})</strong></div>
+        <div class="tribute-select-status">
+          <span>${statusText}</span>
+        </div>
+      `;
+    }
+
+    const confirmBtn = modal.querySelector('#btn-confirm-tribute');
+    if (confirmBtn) {
+      confirmBtn.disabled = !canSummon;
+      confirmBtn.style.opacity = canSummon ? '1' : '0.4';
+      confirmBtn.style.cursor = canSummon ? 'pointer' : 'not-allowed';
+    }
+  }
+
+  modal.innerHTML = `
+    <div class="tribute-select-header">
+      <span>${svgIcon('crown')} 제물(릴리스) 소환 선택</span>
+      <span style="font-size:0.85rem; color:#f59e0b;">★Lv.${cardLevel}</span>
+    </div>
+    <div class="tribute-select-body"></div>
+    <div style="font-size:0.75rem; color:#94a3b8; line-height:1.3;">
+      ${svgIcon('bulb')} <strong>진화 룰</strong>: 1단계 높은 레벨은 단일 제물 1마리만으로 진화 소환 가능하며, 2단계 이상은 레벨 합산이 필요합니다.
+    </div>
+    <div class="tribute-select-actions">
+      <button id="btn-cancel-tribute" class="btn secondary-btn" style="padding:6px 14px; font-size:0.8rem;">취소</button>
+      <button id="btn-confirm-tribute" class="btn primary-btn" style="padding:6px 16px; font-size:0.8rem; background:#f59e0b; border-color:#d97706; color:#000; font-weight:800;">제물 소환</button>
+    </div>
+  `;
+
+  const boardClickCapture = (e) => {
+    if (e.target.closest('#tribute-select-modal')) return;
+    const unitEl = e.target.closest('#player-board .unit-field-card');
+    if (!unitEl) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const instId = unitEl.getAttribute('data-instance-id');
+    if (!instId) return;
+    if (selectedTributeIds.has(instId)) {
+      selectedTributeIds.delete(instId);
+    } else {
+      selectedTributeIds.add(instId);
+    }
+    audio.playLightTap();
+    updateModalView();
+  };
+
+  const onRightClickCancel = (e) => {
+    e.preventDefault();
+    closeTributeModal();
+  };
+
+  const onEscapeCancel = (e) => {
+    if (e.key === 'Escape') {
+      closeTributeModal();
+    }
+  };
+
+  document.addEventListener('click', boardClickCapture, true);
+  document.addEventListener('contextmenu', onRightClickCancel);
+  document.addEventListener('keydown', onEscapeCancel);
+
+  modal.querySelector('#btn-cancel-tribute').onclick = (e) => {
+    e.stopPropagation();
+    closeTributeModal();
+  };
+
+  modal.querySelector('#btn-confirm-tribute').onclick = (e) => {
+    e.stopPropagation();
+    const tributes = Array.from(selectedTributeIds);
+    const chosenUnits = tributes.map((id) => activePlayer.board.find((u) => u.instanceId === id)).filter(Boolean);
+    const sumLevel = chosenUnits.reduce((acc, u) => acc + (u.level || 1), 0);
+    const ok =
+      (chosenUnits.length === 1 && cardLevel - (chosenUnits[0].level || 1) <= 1) ||
+      (chosenUnits.length >= 2 && sumLevel >= cardLevel);
+    if (!ok) return;
+
+    const spec = getManualTargetSpec(latestDuel, def, 0, tributes);
+    closeTributeModal();
+    if (spec && (spec.unitIds.length > 0 || spec.heroSeats.length > 0)) {
+      startFieldTargetMode({ mode: 'MANUAL_TARGET', cardInst, cardDef: def, duel: latestDuel, tributeIds: tributes });
+    } else {
+      handlePlayCard(cardInst.instanceId, tributes);
+    }
+  };
+
+  if (activePlayer.board.length === 1 && stepUpCandidates.length === 1) {
+    selectedTributeIds.add(activePlayer.board[0].instanceId);
+  }
+
+  document.body.appendChild(modal);
+  updateModalView();
+
+  window.__activeTributeModalCleanup = () => {
+    document.removeEventListener('click', boardClickCapture, true);
+    document.removeEventListener('contextmenu', onRightClickCancel);
+    document.removeEventListener('keydown', onEscapeCancel);
+    fxEngine.clearTargetAura();
+    document.querySelectorAll('#player-board .unit-field-card').forEach((el) => {
+      el.classList.remove('tribute-selected', 'aura-tribute-ready', 'valid-evolution-target');
+    });
+    modal.remove();
+    document.querySelectorAll('.duel-card.is-selected').forEach((el) => el.classList.remove('is-selected'));
+  };
 }
 
 // 턴 종료 버튼 (중앙 타이머 정지 및 차례 넘김)
 document.getElementById('btn-end-turn')?.addEventListener('click', () => {
+  closeTributeModal();
   closeFieldTargetMode();
   audio.playTurnBell();
   duelTurnTimer.stop();
@@ -5868,11 +6627,85 @@ function sortDeckMasterFirst(cardIds, deckMasterCardId) {
 })();
 
 /** 5. 유희왕 콘솔 스타일 가방 & 덱 편집기 (트렁크) */
+const deckEditorFilterState = {
+  query: '',
+  sortBy: 'DEFAULT',
+};
+let editorSelectedTileKey = null;
+
+function updateEditorBagToolbarUi() {
+  const searchInput = document.getElementById('input-editor-bag-search');
+  const clearBtn = document.getElementById('btn-editor-bag-search-clear');
+  const sortSel = document.getElementById('sel-editor-bag-sort');
+  if (searchInput && searchInput.value !== deckEditorFilterState.query) {
+    searchInput.value = deckEditorFilterState.query;
+  }
+  if (clearBtn) {
+    clearBtn.hidden = !deckEditorFilterState.query;
+  }
+  if (sortSel && sortSel.value !== deckEditorFilterState.sortBy) {
+    sortSel.value = deckEditorFilterState.sortBy;
+  }
+}
+
+(function initDeckEditorFilterToolbar() {
+  const searchInput = document.getElementById('input-editor-bag-search');
+  const clearBtn = document.getElementById('btn-editor-bag-search-clear');
+  const sortSel = document.getElementById('sel-editor-bag-sort');
+
+  searchInput?.addEventListener('input', (e) => {
+    deckEditorFilterState.query = e.target.value || '';
+    updateEditorBagToolbarUi();
+    if (engine?.getSnapshot) {
+      renderCheckpointDeckEditorSubpage(engine.getSnapshot());
+    }
+  });
+  searchInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && deckEditorFilterState.query) {
+      e.preventDefault();
+      e.stopPropagation();
+      deckEditorFilterState.query = '';
+      updateEditorBagToolbarUi();
+      if (engine?.getSnapshot) {
+        renderCheckpointDeckEditorSubpage(engine.getSnapshot());
+      }
+    }
+  });
+  clearBtn?.addEventListener('click', () => {
+    deckEditorFilterState.query = '';
+    updateEditorBagToolbarUi();
+    audio.playLightTap();
+    if (engine?.getSnapshot) {
+      renderCheckpointDeckEditorSubpage(engine.getSnapshot());
+    }
+    searchInput?.focus();
+  });
+  sortSel?.addEventListener('change', (e) => {
+    deckEditorFilterState.sortBy = e.target.value || 'DEFAULT';
+    audio.playLightTap();
+    if (engine?.getSnapshot) {
+      renderCheckpointDeckEditorSubpage(engine.getSnapshot());
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f' && currentViewKey === 'VIEW_CHECKPOINT_DECK_EDITOR') {
+      e.preventDefault();
+      searchInput?.focus();
+      searchInput?.select();
+    }
+  });
+})();
+
 function renderCheckpointDeckEditorSubpage(snap) {
   const rawDeckCards = snap.playerDeckCardIds || [];
   const trunkCards = snap.playerTrunkCardIds || [];
   const deckMasterId = snap.playerDeckMasterCardId;
   const deckCards = sortDeckMasterFirst(rawDeckCards, deckMasterId);
+  const filteredBagCards = filterAndSortBagCardIds(trunkCards, deckEditorFilterState, lookupCardDef);
+  const hasSearchQuery = Boolean(String(deckEditorFilterState.query || '').trim());
+
+  updateEditorBagToolbarUi();
 
   const deckNameTextEl = document.getElementById('editor-deck-name-text');
   const deckNameInputEl = document.getElementById('input-edit-deck-name');
@@ -5889,7 +6722,11 @@ function renderCheckpointDeckEditorSubpage(snap) {
   const trunkCountEl = document.getElementById('editor-trunk-count');
   const bagTitleCountEl = document.getElementById('editor-bag-title-count');
   if (trunkCountEl) trunkCountEl.textContent = trunkCards.length;
-  if (bagTitleCountEl) bagTitleCountEl.textContent = trunkCards.length;
+  if (bagTitleCountEl) {
+    bagTitleCountEl.textContent = hasSearchQuery
+      ? `${filteredBagCards.length} / ${trunkCards.length}`
+      : String(trunkCards.length);
+  }
 
   const meterPill = document.getElementById('editor-deck-meter-pill');
   const noticeEl = document.getElementById('editor-deck-validation-notice');
@@ -5914,23 +6751,29 @@ function renderCheckpointDeckEditorSubpage(snap) {
     }
   }
 
+  const selectEditorTile = (tileEl, tileKey, def, isDeckMaster) => {
+    editorSelectedTileKey = tileKey;
+    document.querySelectorAll('#view-checkpoint-deck-editor .trunk-card-tile.is-selected')
+      .forEach((el) => el.classList.remove('is-selected'));
+    tileEl?.classList.add('is-selected');
+    syncEditorInspectedCard(def, isDeckMaster);
+  };
+
   // 중앙: 현재 듀얼 덱 (5×6 순수 카드 그래픽 렌더링)
   const deckGrid = document.getElementById('editor-deck-cards-grid');
   if (deckGrid) {
     deckGrid.innerHTML = '';
-    deckCards.forEach((cardId) => {
+    deckCards.forEach((cardId, idx) => {
       const def = lookupCardDef(cardId);
       if (!def) return;
 
       const isDeckMaster = cardId === deckMasterId;
-      const isLv1Monster = def.type === 'MONSTER' && (def.level ?? def.cost ?? 1) === 1;
+      const tileKey = `deck:${cardId}:${idx}`;
       const tileEl = document.createElement('div');
-      tileEl.className = `trunk-card-tile ${isDeckMaster ? 'is-deckmaster' : ''}`;
+      tileEl.className = `trunk-card-tile ${isDeckMaster ? 'is-deckmaster' : ''} ${editorSelectedTileKey === tileKey ? 'is-selected' : ''}`.trim();
       tileEl.title = isDeckMaster
-        ? `${def.name} (현재 덱 마스터 · 클릭하여 변경)`
-        : isLv1Monster
-          ? `${def.name} (클릭: 가방 이동 · 우클릭: 덱 마스터 지정)`
-          : def.name;
+        ? `${def.name} (현재 덱 마스터 · 좌클릭: 선택 · 우클릭: 변경)`
+        : `${def.name} (좌클릭: 선택 · 우클릭: 가방 이동)`;
 
       tileEl.innerHTML = `
         <div class="trunk-card-frame">
@@ -5938,39 +6781,41 @@ function renderCheckpointDeckEditorSubpage(snap) {
         </div>
       `;
 
-      tileEl.addEventListener('mouseenter', () => syncEditorInspectedCard(def, isDeckMaster));
+      tileEl.addEventListener('mouseenter', () => {
+        if (!editorSelectedTileKey) syncEditorInspectedCard(def, isDeckMaster);
+      });
 
-      if (isLv1Monster && !isDeckMaster) {
-        tileEl.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          applyDeckMasterChange(cardId);
-        });
-      }
+      // 왼쪽 클릭: 카드 선택 (상세/숙련도 편집 고정)
+      tileEl.addEventListener('click', () => {
+        audio.playLightTap();
+        selectEditorTile(tileEl, tileKey, def, isDeckMaster);
+      });
 
-      if (isDeckMaster) {
-        tileEl.addEventListener('click', () => {
-          syncEditorInspectedCard(def, true);
+      // 오른쪽 클릭: 기존 왼쪽 클릭 동작 (덱 마스터 변경 모달 or 가방 이동)
+      tileEl.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (isDeckMaster) {
+          selectEditorTile(tileEl, tileKey, def, true);
           audio.playCardPickup();
           openDeckMasterPickerModal();
-        });
-      } else {
-        tileEl.addEventListener('click', () => {
-          try {
-            audio.playCardPickup();
-            engine.moveCardDeckToTrunk(cardId);
-            renderCheckpointDeckEditorSubpage(engine.getSnapshot());
-            syncEditorInspectedCard(def, false);
-          } catch (e) {
-            console.error(e);
-          }
-        });
-      }
+          return;
+        }
+        try {
+          audio.playCardPickup();
+          if (editorSelectedTileKey === tileKey) editorSelectedTileKey = null;
+          engine.moveCardDeckToTrunk(cardId);
+          renderCheckpointDeckEditorSubpage(engine.getSnapshot());
+          syncEditorInspectedCard(def, false);
+        } catch (err) {
+          console.error(err);
+        }
+      });
 
       deckGrid.appendChild(tileEl);
     });
   }
 
-  // 우측: 가방 (트렁크 - 순수 카드 그래픽 렌더링)
+  // 우측: 가방 (트렁크 - 통합 검색 필터링 + 정렬 압축 표시)
   const bagGrid = document.getElementById('editor-bag-cards-grid');
   if (bagGrid) {
     bagGrid.innerHTML = '';
@@ -5980,14 +6825,22 @@ function renderCheckpointDeckEditorSubpage(snap) {
           ${svgIcon('bag')} 가방이 비어 있습니다.<br>상점에서 부스터 팩이나 낱장 카드를 구매해 보세요.
         </div>
       `;
+    } else if (filteredBagCards.length === 0) {
+      bagGrid.innerHTML = `
+        <div style="color:#64748b; font-size:0.82rem; padding:36px 10px; text-align:center; grid-column:1/-1; line-height:1.6;">
+          ${svgIcon('search')} 검색 조건과 일치하는 카드가 없습니다.<br>
+          <small style="opacity:0.8;">카드 이름, #태그, 키워드, 효과를 다시 확인해 주세요.</small>
+        </div>
+      `;
     } else {
-      trunkCards.forEach((cardId) => {
+      filteredBagCards.forEach((cardId, idx) => {
         const def = lookupCardDef(cardId);
         if (!def) return;
 
+        const tileKey = `bag:${cardId}:${idx}`;
         const tileEl = document.createElement('div');
-        tileEl.className = 'trunk-card-tile';
-        tileEl.title = def.name;
+        tileEl.className = `trunk-card-tile ${editorSelectedTileKey === tileKey ? 'is-selected' : ''}`.trim();
+        tileEl.title = `${def.name} (좌클릭: 선택 · 우클릭: 덱 편성)`;
 
         tileEl.innerHTML = `
           <div class="trunk-card-frame">
@@ -5995,16 +6848,27 @@ function renderCheckpointDeckEditorSubpage(snap) {
           </div>
         `;
 
-        tileEl.addEventListener('mouseenter', () => syncEditorInspectedCard(def, false));
+        tileEl.addEventListener('mouseenter', () => {
+          if (!editorSelectedTileKey) syncEditorInspectedCard(def, false);
+        });
 
+        // 왼쪽 클릭: 카드 선택 (상세/숙련도 편집 고정)
         tileEl.addEventListener('click', () => {
+          audio.playLightTap();
+          selectEditorTile(tileEl, tileKey, def, false);
+        });
+
+        // 오른쪽 클릭: 기존 왼쪽 클릭 동작 (덱으로 편성)
+        tileEl.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
           try {
             audio.playCardPlayImpact();
+            if (editorSelectedTileKey === tileKey) editorSelectedTileKey = null;
             engine.moveCardTrunkToDeck(cardId);
             renderCheckpointDeckEditorSubpage(engine.getSnapshot());
             syncEditorInspectedCard(def, false);
-          } catch (e) {
-            console.error(e);
+          } catch (err) {
+            console.error(err);
           }
         });
 
@@ -6277,19 +7141,44 @@ function syncEditorInspectedCard(def, isDeckMaster = false) {
   currentEditorInspectedCardId = def.id;
   updateCardInspector(def, null, null, { isDeckMaster });
 
+  const entry = binder?.entries?.[def.id] || null;
+  const pts = entry?.masteryPoints || 0;
+  const state = entry?.state || 0;
+  const tier = getMasteryTierFromPoints(pts, state);
+  const tierLabel = MASTERY_TIER_META[tier]?.shortLabel || '미숙련';
+  const nextUnlock = getNextMasteryUnlockInfo(pts, state);
+
   const labelEl = document.getElementById('editor-mastery-card-label');
+  const progressEl = document.getElementById('editor-mastery-progress-info');
   const selEl = document.getElementById('sel-editor-card-mastery-fx');
+
   if (labelEl) labelEl.textContent = def.name;
+  if (progressEl) {
+    progressEl.textContent = nextUnlock.nextMilestone
+      ? `${nextUnlock.currentPoints}pt (${tierLabel}) · ${nextUnlock.nextPresetLabel} 해금까지 ${nextUnlock.remainingPoints}pt`
+      : `${nextUnlock.currentPoints}pt (마스터) · 모든 이펙트 해금 완료`;
+  }
   if (selEl) {
-    selEl.disabled = false;
     const override = masteryFxConfig.cardOverrides?.[def.id];
-    selEl.value = override && override.preset ? override.preset : 'DEFAULT';
+    const desired = override && override.preset ? override.preset : 'DEFAULT';
+    populateMasteryPresetSelect(selEl, pts, state, { allowDefault: true, currentValue: desired });
   }
 }
 
 document.getElementById('sel-editor-card-mastery-fx')?.addEventListener('change', (e) => {
   if (!currentEditorInspectedCardId) return;
   const preset = e.target.value;
+  const entry = binder?.entries?.[currentEditorInspectedCardId] || null;
+  const pts = entry?.masteryPoints || 0;
+  const state = entry?.state || 0;
+
+  if (preset !== 'DEFAULT' && !isMasteryPresetUnlocked(preset, pts, state)) {
+    audio.playLightTap();
+    const def = lookupCardDef(currentEditorInspectedCardId);
+    if (def) syncEditorInspectedCard(def, def.id === engine.getSnapshot().playerDeckMasterCardId);
+    return;
+  }
+
   if (!masteryFxConfig.cardOverrides) masteryFxConfig.cardOverrides = {};
   if (preset === 'DEFAULT') {
     delete masteryFxConfig.cardOverrides[currentEditorInspectedCardId];
@@ -6344,6 +7233,9 @@ function openCheckpointDeckEditor() {
     trunkCardIds: [...(snap.playerTrunkCardIds || [])],
     deckMasterCardId: snap.playerDeckMasterCardId || null,
   };
+  editorSelectedTileKey = null;
+  currentEditorInspectedCardId = null;
+  deckEditorFilterState.query = '';
   switchView('VIEW_CHECKPOINT_DECK_EDITOR');
   renderCheckpointDeckEditorSubpage(snap);
 }
@@ -7660,6 +8552,36 @@ function updateBinderDossier(slot, def) {
       `;
     }
   }
+
+  // 8. 바인더 선택 카드 개별 숙련도 이펙트 동기화 (숙련도 해금 게이트 동일 적용)
+  const cardLabelEl = document.getElementById('binder-mastery-card-label');
+  const cardProgressEl = document.getElementById('binder-mastery-progress-info');
+  const cardSelEl = document.getElementById('sel-binder-card-mastery-preset');
+  const cardPts = entry.masteryPoints || 0;
+  const cardState = slot.state || 0;
+  const cardTier = getMasteryTierFromPoints(cardPts, cardState);
+  const cardTierLabel = MASTERY_TIER_META[cardTier]?.shortLabel || '미숙련';
+  const nextUnlock = getNextMasteryUnlockInfo(cardPts, cardState);
+
+  if (cardLabelEl) cardLabelEl.textContent = isUnknown ? '???' : def.name;
+  if (cardProgressEl) {
+    if (isUnknown) {
+      cardProgressEl.textContent = '미발견 카드입니다. 카드를 발견하면 숙련도별 이펙트를 설정할 수 있습니다.';
+    } else {
+      cardProgressEl.textContent = nextUnlock.nextMilestone
+        ? `${nextUnlock.currentPoints}pt (${cardTierLabel}) · ${nextUnlock.nextPresetLabel} 해금까지 ${nextUnlock.remainingPoints}pt`
+        : `${nextUnlock.currentPoints}pt (마스터) · 모든 이펙트 해금 완료`;
+    }
+  }
+  if (cardSelEl) {
+    const override = masteryFxConfig.cardOverrides?.[def.id];
+    const desired = override && override.preset ? override.preset : 'DEFAULT';
+    populateMasteryPresetSelect(cardSelEl, cardPts, cardState, {
+      allowDefault: true,
+      currentValue: desired,
+      disabledAll: isUnknown,
+    });
+  }
 }
 
 function syncBinderMasteryControls() {
@@ -7668,7 +8590,12 @@ function syncBinderMasteryControls() {
   if (!tierSel || !presetSel) return;
   const tier = tierSel.value || 'MASTERED';
   const cfg = masteryFxConfig.tierDefaults?.[tier];
-  presetSel.value = cfg?.preset || 'NONE';
+  const tierMinPts = MASTERY_TIER_META[tier]?.minPoints ?? 0;
+  const tierState = tier === 'MASTERED' ? 3 : 2;
+  populateMasteryPresetSelect(presetSel, tierMinPts, tierState, {
+    allowDefault: false,
+    currentValue: cfg?.preset || 'NONE',
+  });
 }
 
 document.getElementById('sel-binder-mastery-tier')?.addEventListener('change', syncBinderMasteryControls);
@@ -7676,6 +8603,13 @@ document.getElementById('sel-binder-mastery-preset')?.addEventListener('change',
   const tierSel = document.getElementById('sel-binder-mastery-tier');
   const tier = tierSel?.value || 'MASTERED';
   const preset = e.target.value;
+  const tierMinPts = MASTERY_TIER_META[tier]?.minPoints ?? 0;
+  const tierState = tier === 'MASTERED' ? 3 : 2;
+  if (!isMasteryPresetUnlocked(preset, tierMinPts, tierState)) {
+    audio.playLightTap();
+    syncBinderMasteryControls();
+    return;
+  }
   const info = MASTERY_FX_PRESETS[preset] || MASTERY_FX_PRESETS.NONE;
   if (!masteryFxConfig.tierDefaults) masteryFxConfig.tierDefaults = {};
   masteryFxConfig.tierDefaults[tier] = {
@@ -7684,6 +8618,38 @@ document.getElementById('sel-binder-mastery-preset')?.addEventListener('change',
     foil: info.foil,
     tint: info.tint,
   };
+  saveMasteryFxConfig(masteryFxConfig);
+  audio.playCardPickup();
+  renderBinderPage(currentBinderPage, currentBinderSelectedCardId);
+});
+
+document.getElementById('sel-binder-card-mastery-preset')?.addEventListener('change', (e) => {
+  if (!currentBinderSelectedCardId) return;
+  const preset = e.target.value;
+  const entry = binder?.entries?.[currentBinderSelectedCardId] || null;
+  const pts = entry?.masteryPoints || 0;
+  const state = entry?.state || 0;
+  if (state === BinderCardState.UNKNOWN) {
+    audio.playLightTap();
+    return;
+  }
+  if (preset !== 'DEFAULT' && !isMasteryPresetUnlocked(preset, pts, state)) {
+    audio.playLightTap();
+    renderBinderPage(currentBinderPage, currentBinderSelectedCardId);
+    return;
+  }
+  if (!masteryFxConfig.cardOverrides) masteryFxConfig.cardOverrides = {};
+  if (preset === 'DEFAULT') {
+    delete masteryFxConfig.cardOverrides[currentBinderSelectedCardId];
+  } else {
+    const info = MASTERY_FX_PRESETS[preset] || MASTERY_FX_PRESETS.NONE;
+    masteryFxConfig.cardOverrides[currentBinderSelectedCardId] = {
+      preset,
+      glow: info.glow,
+      foil: info.foil,
+      tint: info.tint,
+    };
+  }
   saveMasteryFxConfig(masteryFxConfig);
   audio.playCardPickup();
   renderBinderPage(currentBinderPage, currentBinderSelectedCardId);
@@ -8326,18 +9292,5 @@ initSlamPlayground();
 // 정적 data-vicon 벡터 아이콘 일괄 하이드레이션
 hydrateVectorIcons();
 
-// 초기화: 타이틀 로비 화면 시작
-switchView('VIEW_TITLE_LOBBY');
-
-// 게임 실행 직후 모든 정적 SVG 벡터 그래픽 사전 베이킹(런타임 필터 렉 제거)
-(async () => {
-  const badgeEl = document.getElementById('vector-bake-badge');
-  await bakeAllVectorAssets({
-    onProgress: () => {},
-  });
-  upgradeDomSvgImages(document);
-  if (badgeEl) {
-    badgeEl.hidden = true;
-    badgeEl.classList.add('is-ready');
-  }
-})();
+// 초기화: 빈 CRT 로딩 화면 상태에서 벡터·슬리브·초기 리소스를 모두 굽고 로비 화면 진입
+switchView('VIEW_TITLE_LOBBY', { forceLoading: true });

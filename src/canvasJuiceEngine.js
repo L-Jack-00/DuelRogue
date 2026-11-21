@@ -32,6 +32,8 @@ export class CanvasJuiceEngine {
     // 플레이어 본체 피격 특화 먼지 풀 (LJack Dust Dispersion)
     this.dustPuffs = [];
     this.dustRings = [];
+    this.crackOverlays = [];
+    this.guardShields = [];
 
     // 대상 카드 오라
     this.activeAuras = []; // { rect, colorType: 'GREEN' | 'PURPLE' | 'YELLOW' | 'RED' }
@@ -47,9 +49,7 @@ export class CanvasJuiceEngine {
     this.appContainer = null;
     this.viewWidth = 1280;
     this.viewHeight = 800;
-
-    // 배경 대기 파티클 (은은한 비전 입자)
-    this.ambientMotes = Array.from({ length: 24 }, () => this._createAmbientMote(true));
+    this._rafId = null;
 
     // 튜너 설정 연동
     this.settings = {
@@ -58,23 +58,6 @@ export class CanvasJuiceEngine {
       shatterShards: 18,
       pierceSpeed: 1.0,
       hitstopMs: 50,
-      ambientFxMult: 1.0,
-    };
-  }
-
-  _createAmbientMote(randomY = false) {
-    const w = this.viewWidth || 1280;
-    const h = this.viewHeight || 800;
-    const palette = ['#38bdf8', '#c084fc', '#fbbf24'];
-    return {
-      x: Math.random() * w,
-      y: randomY ? Math.random() * h : h + 10,
-      vx: (Math.random() - 0.5) * 14,
-      vy: -(8 + Math.random() * 18),
-      size: 1.2 + Math.random() * 2.0,
-      alpha: 0.08 + Math.random() * 0.16,
-      phase: Math.random() * Math.PI * 2,
-      color: palette[Math.floor(Math.random() * palette.length)],
     };
   }
 
@@ -82,7 +65,6 @@ export class CanvasJuiceEngine {
     this.canvas = canvasElement;
     this.ctx = canvasElement.getContext('2d');
     this.resize();
-    window.addEventListener('resize', () => this.resize());
     this.start();
   }
 
@@ -103,15 +85,48 @@ export class CanvasJuiceEngine {
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
+  hasActiveVisuals() {
+    return (
+      this.hitstopRemaining > 0 ||
+      this.shakePower > 0 ||
+      this.wasShaking ||
+      this.shards.length > 0 ||
+      this.shockwaves.length > 0 ||
+      this.soulWisps.length > 0 ||
+      this.piercingBolts.length > 0 ||
+      this.floatingTexts.length > 0 ||
+      this.impactSparks.length > 0 ||
+      this.dustPuffs.length > 0 ||
+      this.dustRings.length > 0 ||
+      this.crackOverlays.length > 0 ||
+      this.guardShields.length > 0 ||
+      this.activeAuras.length > 0 ||
+      Boolean(this.aimingArrow)
+    );
+  }
+
+  wake() {
+    if (!this.canvas || !this.ctx || !this.isRunning) return;
+    if (this._rafId !== null) return;
+    this.lastTime = performance.now();
+    this._rafId = requestAnimationFrame((t) => this.loop(t));
+  }
+
   start() {
     if (this.isRunning) return;
     this.isRunning = true;
     this.lastTime = performance.now();
-    requestAnimationFrame((t) => this.loop(t));
+    if (this.hasActiveVisuals()) {
+      this.wake();
+    }
   }
 
   stop() {
     this.isRunning = false;
+    if (this._rafId !== null) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
+    }
     this.shakePower = 0;
     this.shakeOffsetX = 0;
     this.shakeOffsetY = 0;
@@ -138,6 +153,7 @@ export class CanvasJuiceEngine {
   // 메인 게임 루프 (Fixed 60Hz Delta Timing)
   // ============================================================================
   loop(currentTime) {
+    this._rafId = null;
     if (!this.isRunning) return;
     const rawDt = (currentTime - this.lastTime) / 1000;
     const dt = Math.min(0.1, Math.max(0.001, rawDt));
@@ -146,16 +162,17 @@ export class CanvasJuiceEngine {
     // 역경직(Hitstop) 판정: 활성화 시 프레임을 잠시 정지시킴
     if (this.hitstopRemaining > 0) {
       this.hitstopRemaining -= rawDt * 1000;
-      // 역경직 중에는 파티클 이동을 멈추고 렌더링만 갱신
       this.render();
-      requestAnimationFrame((t) => this.loop(t));
+      this._rafId = requestAnimationFrame((t) => this.loop(t));
       return;
     }
 
     this.update(dt);
     this.render();
 
-    requestAnimationFrame((t) => this.loop(t));
+    if (this.hasActiveVisuals()) {
+      this._rafId = requestAnimationFrame((t) => this.loop(t));
+    }
   }
 
   update(dt) {
@@ -340,17 +357,20 @@ export class CanvasJuiceEngine {
       }
     }
 
-    // 9. 배경 대기 비전 입자 업데이트
-    const ambMult = Math.max(0, Number(this.settings.ambientFxMult ?? 1.0));
-    if (ambMult > 0) {
-      for (let i = 0; i < this.ambientMotes.length; i++) {
-        const m = this.ambientMotes[i];
-        m.phase += dt * 1.8;
-        m.x += (m.vx + Math.sin(m.phase) * 6) * dt;
-        m.y += m.vy * dt;
-        if (m.y < -12 || m.x < -20 || m.x > this.viewWidth + 20) {
-          this.ambientMotes[i] = this._createAmbientMote(false);
-        }
+    // 9. 카드 파괴 직전 균열(금) 오버레이 & 방어 막힘 실드
+    for (let i = this.crackOverlays.length - 1; i >= 0; i--) {
+      const cr = this.crackOverlays[i];
+      cr.elapsed += dt;
+      if (cr.elapsed >= cr.duration) {
+        this.crackOverlays.splice(i, 1);
+      }
+    }
+
+    for (let i = this.guardShields.length - 1; i >= 0; i--) {
+      const gs = this.guardShields[i];
+      gs.elapsed += dt;
+      if (gs.elapsed >= gs.duration) {
+        this.guardShields.splice(i, 1);
       }
     }
   }
@@ -365,21 +385,6 @@ export class CanvasJuiceEngine {
     ctx.save();
     // 뷰포트 전체(#game-app)가 CSS translate3d/rotate로 흔들리므로
     // #game-fx-canvas도 함께 진동하여 ctx.translate 중복 없이 1:1 완벽 정렬됨.
-
-    // 0. 배경 대기 파티클 (은은한 깊이감)
-    const ambMult = Math.max(0, Number(this.settings.ambientFxMult ?? 1.0));
-    if (ambMult > 0) {
-      ctx.save();
-      for (const m of this.ambientMotes) {
-        const pulse = 0.55 + 0.45 * Math.sin(m.phase * 1.4);
-        ctx.globalAlpha = Math.min(0.45, m.alpha * ambMult * pulse);
-        ctx.fillStyle = m.color;
-        ctx.beginPath();
-        ctx.arc(m.x, m.y, m.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
 
     // 1. 대상 카드 오라 렌더링
     this.renderAuras(ctx);
@@ -399,6 +404,10 @@ export class CanvasJuiceEngine {
 
     // 2-4. 관통 에너지 볼트 & 코멧 테일
     this.renderPiercingBolts(ctx);
+
+    // 2-5. 방어 막힘 실드 & 카드 파괴 균열(금) 그리기
+    this.renderGuardShields(ctx);
+    this.renderCrackOverlays(ctx);
 
     ctx.restore(); // 기본 블렌드 복원
 
@@ -762,6 +771,7 @@ export class CanvasJuiceEngine {
    */
   triggerHitstop(ms = 50) {
     this.hitstopRemaining = ms;
+    this.wake();
   }
 
   /**
@@ -770,6 +780,7 @@ export class CanvasJuiceEngine {
   triggerScreenShake(power = 10) {
     this.shakePower = Math.min(32, Math.max(this.shakePower, power));
     this.wasShaking = true;
+    this.wake();
   }
 
   /**
@@ -787,6 +798,7 @@ export class CanvasJuiceEngine {
       life: 0.4,
       maxLife: 0.4,
     });
+    this.wake();
   }
 
   /**
@@ -808,6 +820,143 @@ export class CanvasJuiceEngine {
         color,
       });
     }
+    this.wake();
+  }
+
+  /**
+   * 5. 카드 파괴 직전 균열(금) 이펙트 + 방어 막힘 이펙트
+   */
+  renderCrackOverlays(ctx) {
+    this.crackOverlays.forEach((cr) => {
+      const t = Math.min(1, cr.elapsed / cr.duration);
+      const grow = Math.min(1, cr.elapsed / Math.max(0.06, cr.duration * 0.45));
+      const alpha = t < 0.78 ? 0.96 : Math.max(0, (1 - t) / 0.22);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      cr.paths.forEach((pts) => {
+        if (pts.length < 2) return;
+        const maxSeg = Math.max(1, Math.floor((pts.length - 1) * grow));
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i = 1; i <= maxSeg; i++) {
+          ctx.lineTo(pts[i].x, pts[i].y);
+        }
+        if (maxSeg < pts.length - 1) {
+          const frac = (pts.length - 1) * grow - maxSeg;
+          const a = pts[maxSeg];
+          const b = pts[maxSeg + 1];
+          ctx.lineTo(a.x + (b.x - a.x) * frac, a.y + (b.y - a.y) * frac);
+        }
+
+        // 외곽 발광 균열선 + 중심 백색 섬광선
+        ctx.strokeStyle = cr.color;
+        ctx.shadowColor = cr.color;
+        ctx.shadowBlur = 14;
+        ctx.lineWidth = 4.2;
+        ctx.stroke();
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.shadowBlur = 4;
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      });
+      ctx.restore();
+    });
+  }
+
+  renderGuardShields(ctx) {
+    this.guardShields.forEach((gs) => {
+      const t = Math.min(1, gs.elapsed / gs.duration);
+      const alpha = (1 - t) * 0.9;
+      const radius = gs.baseRadius * (0.78 + t * 0.48);
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.strokeStyle = gs.color;
+      ctx.fillStyle = gs.fillColor;
+      ctx.shadowColor = gs.color;
+      ctx.shadowBlur = 16;
+      ctx.lineWidth = 3.2 * (1 - t * 0.45);
+
+      // 육각 방패 윤곽 (파괴 실패 / 방어 막힘 피드백)
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 3) * i - Math.PI / 2;
+        const px = gs.x + Math.cos(a) * radius;
+        const py = gs.y + Math.sin(a) * radius;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  spawnCardCrackEffect(cardRect, color = '#7dd3fc', duration = 0.25) {
+    if (!cardRect) return;
+    const cx = cardRect.left + cardRect.width * 0.5;
+    const cy = cardRect.top + cardRect.height * 0.48;
+    const w = cardRect.width || 90;
+    const h = cardRect.height || 126;
+
+    const branchDefs = [
+      [{ x: 0, y: 0 }, { x: -w * 0.16, y: -h * 0.14 }, { x: -w * 0.28, y: -h * 0.34 }, { x: -w * 0.42, y: -h * 0.46 }],
+      [{ x: 0, y: 0 }, { x: w * 0.14, y: -h * 0.18 }, { x: w * 0.32, y: -h * 0.28 }, { x: w * 0.44, y: -h * 0.44 }],
+      [{ x: 0, y: 0 }, { x: -w * 0.20, y: h * 0.12 }, { x: -w * 0.36, y: h * 0.28 }, { x: -w * 0.46, y: h * 0.45 }],
+      [{ x: 0, y: 0 }, { x: w * 0.18, y: h * 0.16 }, { x: w * 0.30, y: h * 0.34 }, { x: w * 0.43, y: h * 0.47 }],
+      [{ x: -w * 0.16, y: -h * 0.14 }, { x: -w * 0.04, y: -h * 0.36 }, { x: w * 0.08, y: -h * 0.48 }],
+      [{ x: w * 0.18, y: h * 0.16 }, { x: w * 0.02, y: h * 0.34 }, { x: -w * 0.09, y: h * 0.48 }],
+    ];
+    const paths = branchDefs.map((pts) =>
+      pts.map((p) => ({
+        x: cx + p.x + (Math.random() - 0.5) * 4,
+        y: cy + p.y + (Math.random() - 0.5) * 4,
+      }))
+    );
+
+    this.crackOverlays.push({
+      paths,
+      color,
+      elapsed: 0,
+      duration,
+    });
+    this.wake();
+  }
+
+  spawnGuardBlockEffect(x, y, color = '#60a5fa') {
+    this.guardShields.push({
+      x,
+      y,
+      color,
+      fillColor: 'rgba(96, 165, 250, 0.22)',
+      baseRadius: 46,
+      elapsed: 0,
+      duration: 0.34,
+    });
+    this.spawnShockwave(x, y, 64, color);
+    for (let i = 0; i < 12; i++) {
+      const a = Math.PI * 0.15 + (Math.PI * 0.7) * (i / 11) + (Math.random() - 0.5) * 0.25;
+      const side = i % 2 === 0 ? 1 : -1;
+      const spd = 85 + Math.random() * 115;
+      this.impactSparks.push({
+        x: x + side * 12,
+        y,
+        vx: Math.cos(a) * spd * side,
+        vy: -Math.abs(Math.sin(a)) * spd * 0.75,
+        life: 0.24 + Math.random() * 0.12,
+        maxLife: 0.36,
+        alpha: 0.9,
+        size: 2.2 + Math.random() * 2.2,
+        color: '#bfdbfe',
+      });
+    }
+    this.wake();
   }
 
   /**
@@ -880,6 +1029,7 @@ export class CanvasJuiceEngine {
       trail: [],
       onArrive,
     });
+    this.wake();
   }
 
   /**
@@ -912,6 +1062,7 @@ export class CanvasJuiceEngine {
         onHit?.();
       },
     });
+    this.wake();
   }
 
   /**
@@ -929,6 +1080,7 @@ export class CanvasJuiceEngine {
       life: 0.85,
       maxLife: 0.85,
     });
+    this.wake();
   }
 
   /**
@@ -1033,6 +1185,7 @@ export class CanvasJuiceEngine {
       maxLife: 0.45,
       life: 0.45,
     });
+    this.wake();
   }
 
   /**
@@ -1040,7 +1193,7 @@ export class CanvasJuiceEngine {
    */
   setTargetAura(elements, colorType = 'RED', append = false) {
     if (!elements || !elements.length) {
-      if (!append) this.activeAuras = [];
+      if (!append) this.clearTargetAura();
       return;
     }
     const canvasRect = this.canvas.getBoundingClientRect();
@@ -1059,6 +1212,7 @@ export class CanvasJuiceEngine {
       })
       .filter((a) => a.rect.width > 0 && a.rect.height > 0);
     this.activeAuras = append ? [...this.activeAuras, ...entries] : entries;
+    if (this.activeAuras.length > 0) this.wake();
   }
 
   /**
@@ -1115,13 +1269,20 @@ export class CanvasJuiceEngine {
 
   setAimingArrow(x1, y1, x2, y2, color = 'RED') {
     this.aimingArrow = { x1, y1, x2, y2, color };
+    this.wake();
   }
 
   clearAimingArrow() {
     this.aimingArrow = null;
+    if (!this.hasActiveVisuals() && this.ctx) {
+      this.ctx.clearRect(0, 0, this.viewWidth || 1920, this.viewHeight || 1080);
+    }
   }
 
   clearTargetAura() {
     this.activeAuras = [];
+    if (!this.hasActiveVisuals() && this.ctx) {
+      this.ctx.clearRect(0, 0, this.viewWidth || 1920, this.viewHeight || 1080);
+    }
   }
 }
