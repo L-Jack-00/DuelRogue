@@ -6,7 +6,7 @@
 import { normalizeRarityKey } from './raritySystem.js';
 
 export const BAG_SORT_OPTIONS = [
-  { value: 'DEFAULT', label: '기본순' },
+  { value: 'DEFAULT', label: '입수순' },
   { value: 'LEVEL', label: '레벨순' },
   { value: 'ATTACK', label: '공격력순' },
   { value: 'DEFENSE', label: '수비력순' },
@@ -63,12 +63,87 @@ function isMonsterDef(def) {
   return Boolean(def && (def.type === 'MONSTER' || (Number(def.attack) > 0 && def.type !== 'SPELL')));
 }
 
+function compareCardEntriesBySort(a, b, sortBy, acquisitionOrder) {
+  const ad = a.def;
+  const bd = b.def;
+  if (!ad && !bd) return a.index - b.index;
+  if (!ad) return 1;
+  if (!bd) return -1;
+
+  // 모든 정렬 기준에서 몬스터가 마법보다 항상 앞에 배치된다 (몬스터 > 마법)
+  const aIsMonster = isMonsterDef(ad);
+  const bIsMonster = isMonsterDef(bd);
+  const aMonster = aIsMonster ? 0 : 1;
+  const bMonster = bIsMonster ? 0 : 1;
+  if (aMonster !== bMonster) return aMonster - bMonster;
+
+  const aName = String(ad.name || '');
+  const bName = String(bd.name || '');
+  const nameCmp = aName.localeCompare(bName, 'ko');
+
+  if (sortBy === 'DEFAULT') {
+    if (acquisitionOrder && typeof acquisitionOrder === 'object') {
+      const aSeq = Number(acquisitionOrder[a.cardId] ?? 0);
+      const bSeq = Number(acquisitionOrder[b.cardId] ?? 0);
+      if (bSeq !== aSeq) return bSeq - aSeq;
+      return nameCmp || a.index - b.index;
+    }
+    return b.index - a.index;
+  }
+
+  // 마법 카드 정렬 (이름순 / 레어도순 외 기준에서는 가나다순)
+  if (!aIsMonster && !bIsMonster) {
+    if (sortBy === 'RARITY') {
+      const aRar = RARITY_RANK[normalizeRarityKey(ad.rarity)] ?? 0;
+      const bRar = RARITY_RANK[normalizeRarityKey(bd.rarity)] ?? 0;
+      return bRar - aRar || nameCmp || a.index - b.index;
+    }
+    return nameCmp || a.index - b.index;
+  }
+
+  // 몬스터 카드 정렬 (가나다순을 3단계 타이브레이커로 앞당김)
+  const aLv = Number(ad.level ?? ad.cost ?? 1);
+  const bLv = Number(bd.level ?? bd.cost ?? 1);
+  const aAtk = Number(ad.attack ?? 0);
+  const bAtk = Number(bd.attack ?? 0);
+  const aDef = Number(ad.defense ?? ad.health ?? 0);
+  const bDef = Number(bd.defense ?? bd.health ?? 0);
+  const aRar = RARITY_RANK[normalizeRarityKey(ad.rarity)] ?? 0;
+  const bRar = RARITY_RANK[normalizeRarityKey(bd.rarity)] ?? 0;
+
+  let cmp = 0;
+  switch (sortBy) {
+    case 'LEVEL':
+      cmp = bLv - aLv || bAtk - aAtk;
+      break;
+    case 'ATTACK':
+      cmp = bAtk - aAtk || bLv - aLv;
+      break;
+    case 'DEFENSE':
+      cmp = bDef - aDef || bLv - aLv;
+      break;
+    case 'RARITY':
+      cmp = bRar - aRar || bLv - aLv;
+      break;
+    case 'NAME':
+      cmp = nameCmp;
+      break;
+    default:
+      cmp = 0;
+  }
+
+  if (cmp !== 0) return cmp;
+  if (nameCmp !== 0) return nameCmp;
+  return a.index - b.index;
+}
+
 /**
- * 카드 ID 배열을 지정된 기준(DEFAULT / LEVEL / ATTACK / DEFENSE / RARITY / NAME)으로 안정 정렬합니다.
+ * 카드 ID 배열을 지정된 기준(DEFAULT(입수순) / LEVEL / ATTACK / DEFENSE / RARITY / NAME)으로 정렬합니다.
+ * - 모든 기준에서 몬스터가 마법보다 앞에 옵니다.
  */
-export function sortBagCardIds(cardIds, sortBy = 'DEFAULT', lookupDef = () => null) {
+export function sortBagCardIds(cardIds, sortBy = 'DEFAULT', lookupDef = () => null, acquisitionOrder = null) {
   const list = Array.isArray(cardIds) ? [...cardIds] : [];
-  if (!sortBy || sortBy === 'DEFAULT') return list;
+  if (list.length <= 1) return list;
 
   const indexed = list.map((cardId, index) => ({
     cardId,
@@ -76,63 +151,37 @@ export function sortBagCardIds(cardIds, sortBy = 'DEFAULT', lookupDef = () => nu
     def: lookupDef(cardId) || null,
   }));
 
-  indexed.sort((a, b) => {
-    const ad = a.def;
-    const bd = b.def;
-    if (!ad && !bd) return a.index - b.index;
-    if (!ad) return 1;
-    if (!bd) return -1;
-
-    const aMonster = isMonsterDef(ad) ? 0 : 1;
-    const bMonster = isMonsterDef(bd) ? 0 : 1;
-    const aLv = Number(ad.level ?? ad.cost ?? 1);
-    const bLv = Number(bd.level ?? bd.cost ?? 1);
-    const aAtk = Number(ad.attack ?? 0);
-    const bAtk = Number(bd.attack ?? 0);
-    const aDef = Number(ad.defense ?? ad.health ?? 0);
-    const bDef = Number(bd.defense ?? bd.health ?? 0);
-    const aRar = RARITY_RANK[normalizeRarityKey(ad.rarity)] ?? 0;
-    const bRar = RARITY_RANK[normalizeRarityKey(bd.rarity)] ?? 0;
-    const aName = String(ad.name || '');
-    const bName = String(bd.name || '');
-
-    let cmp = 0;
-    switch (sortBy) {
-      case 'LEVEL':
-        cmp = aLv - bLv || aMonster - bMonster || bAtk - aAtk;
-        break;
-      case 'ATTACK':
-        cmp = bAtk - aAtk || aMonster - bMonster || bDef - aDef;
-        break;
-      case 'DEFENSE':
-        cmp = bDef - aDef || aMonster - bMonster || bAtk - aAtk;
-        break;
-      case 'RARITY':
-        cmp = bRar - aRar || bLv - aLv || aMonster - bMonster;
-        break;
-      case 'NAME':
-        cmp = aName.localeCompare(bName, 'ko');
-        break;
-      default:
-        cmp = 0;
-    }
-
-    if (cmp !== 0) return cmp;
-    const nameTie = aName.localeCompare(bName, 'ko');
-    if (nameTie !== 0) return nameTie;
-    return a.index - b.index;
-  });
+  indexed.sort((a, b) => compareCardEntriesBySort(a, b, sortBy, acquisitionOrder));
 
   return indexed.map((item) => item.cardId);
 }
 
 /**
+ * 덱 리스트를 덱 마스터 최우선 → 몬스터(레벨 높은 순 → 공격력 높은 순 → 가나다순) → 마법(가나다순)으로 정렬합니다.
+ */
+export function sortDeckListCardIds(cardIds, deckMasterCardId = null, lookupDef = () => null) {
+  if (!Array.isArray(cardIds)) return [];
+  const masters = [];
+  const others = [];
+  for (const id of cardIds) {
+    if (deckMasterCardId && id === deckMasterCardId) masters.push(id);
+    else others.push(id);
+  }
+  const sortedOthers = sortBagCardIds(others, 'LEVEL', lookupDef);
+  return [...masters, ...sortedOthers];
+}
+
+/**
  * 검색어 필터링 후 정렬된 카드 ID 목록을 반환합니다.
  */
-export function filterAndSortBagCardIds(cardIds, { query = '', sortBy = 'DEFAULT' } = {}, lookupDef = () => null) {
+export function filterAndSortBagCardIds(
+  cardIds,
+  { query = '', sortBy = 'DEFAULT', acquisitionOrder = null } = {},
+  lookupDef = () => null
+) {
   const list = Array.isArray(cardIds) ? cardIds : [];
   const filtered = String(query || '').trim()
     ? list.filter((id) => matchesBagSearchQuery(lookupDef(id), query))
     : [...list];
-  return sortBagCardIds(filtered, sortBy, lookupDef);
+  return sortBagCardIds(filtered, sortBy, lookupDef, acquisitionOrder);
 }

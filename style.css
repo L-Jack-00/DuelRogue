@@ -992,12 +992,12 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin: 0 auto 14px auto;
+  margin: 0;
   padding: 5px 12px;
   border-radius: 999px;
   background: rgba(30, 41, 59, 0.85);
   border: 1px solid #475569;
-  color: #cbd5e1;
+  color: #f8fafc;
   font-size: 0.78rem;
   font-weight: 700;
 }
@@ -1526,6 +1526,47 @@ body {
   padding: 6px 24px;
 }
 
+.cpu-duelist::before,
+.player-duelist::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: calc(100% + 28px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity;
+}
+
+.cpu-duelist::before {
+  top: 0;
+  background:
+    radial-gradient(ellipse 76% 100% at 50% 0%, rgba(248, 113, 113, 0.44) 0%, rgba(220, 38, 38, 0) 76%),
+    linear-gradient(180deg, rgba(153, 27, 27, 0.72) 0%, rgba(220, 38, 38, 0.34) 52%, rgba(239, 68, 68, 0) 100%);
+  box-shadow: inset 0 3px 0 rgba(248, 113, 113, 0.88);
+}
+
+.player-duelist::before {
+  bottom: 0;
+  background:
+    radial-gradient(ellipse 76% 100% at 50% 100%, rgba(56, 189, 248, 0.42) 0%, rgba(37, 99, 235, 0) 76%),
+    linear-gradient(0deg, rgba(30, 58, 138, 0.72) 0%, rgba(37, 99, 235, 0.32) 52%, rgba(56, 189, 248, 0) 100%);
+  box-shadow: inset 0 -3px 0 rgba(96, 165, 250, 0.88);
+}
+
+.cpu-duelist.is-active-turn::before,
+.player-duelist.is-active-turn::before {
+  opacity: 1;
+  animation: masterDuelTurnGlowPulse 2.8s ease-in-out 0.9s infinite;
+}
+
+@keyframes masterDuelTurnGlowPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.76; }
+}
+
 /* ============================================================================
  * [대각 대칭형 1v1 PvP 헤드업 HUD 레이아웃]
  * 상대 플레이어 정보: 좌측 상단 (Top-Left)
@@ -1734,10 +1775,10 @@ body {
 }
 
 /* ============================================================================
- * [묘지(Graveyard) 상세 뷰어 모달 (역순/최신순 나열)]
+ * [묘지(Graveyard) 상세 뷰어 모달 (YGOPRO 스타일: 비차단 배경 · 드래그 이동 · 가로 카드 나열)]
  * ============================================================================ */
 .graveyard-viewer-modal {
-  position: absolute;
+  position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
@@ -1745,7 +1786,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  background: transparent;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
   visibility: visible;
   opacity: 1;
 }
@@ -1757,41 +1800,46 @@ body {
 }
 
 .graveyard-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(3, 7, 18, 0.82);
+  display: none;
+  pointer-events: none;
+  background: transparent;
 }
 
 .graveyard-modal-card {
   position: relative;
   z-index: 2;
   margin: auto;
-  width: 92%;
-  max-width: 580px;
-  max-height: 82vh;
-  background: rgba(15, 23, 42, 0.97);
+  width: min(760px, 86vw);
+  max-width: 92vw;
+  background: rgba(15, 23, 42, 0.96);
   border: 1.5px solid #64748b;
-  border-radius: 14px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 24px rgba(100, 116, 139, 0.3);
+  border-radius: 10px;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.72);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: modal-pop-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: auto;
+  animation: modal-pop-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .graveyard-modal-header {
-  padding: 14px 20px;
-  background: rgba(30, 41, 59, 0.85);
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.92);
   border-bottom: 1px solid #334155;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.graveyard-modal-header.is-dragging {
+  cursor: grabbing;
 }
 
 .graveyard-modal-title {
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 800;
   color: #f8fafc;
   display: flex;
@@ -1800,7 +1848,7 @@ body {
 }
 
 .gy-count-tag {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: #94a3b8;
 }
@@ -1823,57 +1871,72 @@ body {
 }
 
 .graveyard-modal-body {
-  padding: 16px 20px;
-  overflow-y: auto;
-  max-height: calc(82vh - 64px);
+  padding: 12px 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: 10px;
+  min-height: 158px;
 }
 
 .empty-gy-notice {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 40px 20px;
+  gap: 8px;
+  padding: 28px 16px;
   color: #64748b;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 600;
 }
 
 .empty-gy-icon {
-  font-size: 2.2rem;
+  font-size: 2rem;
   opacity: 0.7;
 }
 
-.gy-card-entry {
+.gy-card-tile {
+  flex: 0 0 auto;
+  width: 96px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
-  background: rgba(30, 41, 59, 0.6);
-  border: 1px solid #334155;
-  border-radius: 8px;
-  padding: 8px 12px;
+  gap: 4px;
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
-  position: relative;
+  transition: transform 0.16s ease;
 }
 
-.gy-card-entry:hover {
-  background: rgba(51, 65, 85, 0.85);
-  border-color: #38bdf8;
-  transform: translateX(3px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+.gy-card-tile:hover {
+  transform: translateY(-4px);
 }
 
-.gy-card-badge {
+.gy-card-tile-badge {
   font-family: monospace;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 800;
   color: #94a3b8;
-  min-width: 44px;
+  line-height: 1.1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gy-card-tile-frame {
+  width: 96px;
+  aspect-ratio: 400 / 560;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+}
+
+.gy-card-tile.is-latest .gy-card-tile-frame {
+  outline: 2px solid #f43f5e;
+  outline-offset: 1px;
 }
 
 .latest-tag {
@@ -1881,81 +1944,8 @@ body {
   color: #fff;
   padding: 1px 4px;
   border-radius: 3px;
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-weight: 700;
-  margin-left: 2px;
-}
-
-.gy-card-mini-preview {
-  width: 76px;
-  height: auto;
-  aspect-ratio: 400 / 560;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gy-card-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.gy-card-name-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.gy-card-name {
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #f1f5f9;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.gy-card-type-tag {
-  font-size: 0.65rem;
-  padding: 1px 6px;
-  border-radius: 3px;
-  font-weight: 700;
-}
-
-.gy-card-type-tag.tag-monster {
-  background: rgba(56, 189, 248, 0.18);
-  color: #38bdf8;
-  border: 1px solid #0284c7;
-}
-
-.gy-card-type-tag.tag-spell {
-  background: rgba(168, 85, 247, 0.18);
-  color: #c084fc;
-  border: 1px solid #7e22ce;
-}
-
-.gy-card-stats {
-  display: flex;
-  gap: 12px;
-  font-size: 0.76rem;
-  color: #cbd5e1;
-}
-
-.gy-card-stats .stat-atk strong { color: #f87171; }
-.gy-card-stats .stat-def strong { color: #38bdf8; }
-
-.gy-card-desc {
-  font-size: 0.74rem;
-  color: #94a3b8;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .empty-deck-icon {
@@ -3083,6 +3073,7 @@ body {
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid rgba(248, 113, 113, 0.45);
+  color: #f8fafc;
   font-size: 0.82rem;
   font-weight: 800;
 }
@@ -3100,8 +3091,13 @@ body {
   width: 24px;
   height: 24px;
 }
-.chance-heart-svg.is-full {
+.chance-heart-svg.is-full:not(.chance-heart-img) {
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+.chance-heart-img {
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
 }
 .chance-heart-svg.is-empty {
   opacity: 0.72;
@@ -4393,10 +4389,10 @@ body {
  * [LJack Game Protocol v1.4.0] 손맛 & 피직스 & 연출 엔진 스타일
  * ============================================================================ */
 
-/* 1. 묘지 (Graveyard) 영역 & 암전된 잔영 */
+/* 1. 묘지 (Graveyard) 영역 & 가장 최근 파괴/사용 카드 표시 */
 .graveyard-zone {
-  width: 72px;
-  height: 96px;
+  width: 70px;
+  height: 98px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px dashed #334155;
   border-radius: 6px;
@@ -4405,8 +4401,20 @@ body {
   align-items: center;
   justify-content: center;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  cursor: pointer;
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+.graveyard-zone.has-cards {
+  border-style: solid;
+  border-color: #475569;
+  background: transparent;
+  box-shadow: none;
+}
+
+.graveyard-zone.has-cards .gy-label {
+  display: none;
 }
 
 .gy-label {
@@ -4419,26 +4427,26 @@ body {
 
 .gy-stack {
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-.graveyard-card-ghost {
-  position: absolute;
-  top: 4px; left: 4px; right: 4px; bottom: 4px;
-  background: #111827;
-  border: 1px solid #1f2937;
-  border-radius: 4px;
-  filter: brightness(0.35) grayscale(1);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 2px;
-  font-size: 0.6rem;
-  color: #4b5563;
-  text-align: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.7);
+.gy-top-card-frame {
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.75);
+}
+
+.gy-count-badge {
+  right: -6px;
+  bottom: -6px;
+  z-index: 5;
+  background: rgba(15, 23, 42, 0.92);
+  border-color: #64748b;
+  color: #f8fafc;
 }
 
 /* 2. 체력 바 (100 LP HP Bar - 대형 게이지 및 시인성 강화) */
@@ -8942,6 +8950,37 @@ body {
   filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.92));
 }
 
+.showcase-effect-pill {
+  max-width: min(300px, 34vw);
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1.5px solid #c084fc;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85), 0 0 14px rgba(192, 132, 252, 0.35);
+  color: #f3e8ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.38;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.showcase-effect-pill.is-fizzled {
+  border-color: #94a3b8;
+  color: #cbd5e1;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85);
+}
+
+.card-play-showcase.is-set-trigger .showcase-banner-pill {
+  border-color: #c084fc;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.85), 0 0 16px rgba(192, 132, 252, 0.55);
+}
+
+.card-play-showcase.is-set-trigger .showcase-banner-pill.is-cpu {
+  border-color: #f43f5e;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.85), 0 0 16px rgba(244, 63, 94, 0.55);
+}
+
 /* ============================================================================
  * [상대 & 플레이어 유닛 소환 / 마법 발동 / 공격 연출 애니메이션]
  * ============================================================================ */
@@ -9001,6 +9040,14 @@ body {
   -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.9) 18%, transparent 62%);
   mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.9) 18%, transparent 62%);
   animation: victoryRaysSpin 12s linear infinite;
+  will-change: transform;
+}
+
+.victory-rays.is-baked {
+  border-radius: 0;
+  background: center / 100% 100% no-repeat var(--baked-victory-rays-url);
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .victory-emblem-card {
@@ -9011,11 +9058,12 @@ body {
   gap: 8px;
   padding: 26px 56px;
   border-radius: 18px;
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(30, 27, 14, 0.94));
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 14, 0.95));
   border: 2px solid #facc15;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 48px rgba(250, 204, 21, 0.55);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.82), 0 0 28px rgba(250, 204, 21, 0.35);
   transform: scale(0.76);
   transition: transform 0.36s cubic-bezier(0.18, 1.28, 0.32, 1);
+  will-change: transform;
 }
 
 .duel-victory-overlay.is-visible .victory-emblem-card {
@@ -9028,6 +9076,25 @@ body {
   filter: drop-shadow(0 0 18px rgba(250, 204, 21, 0.75));
 }
 
+.victory-trophy-icon.is-baked,
+.defeat-skull-icon.is-baked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  filter: none;
+}
+
+.fx-baked-emblem-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
 .victory-headline {
   margin: 0;
   font-family: 'Cinzel', serif;
@@ -9037,7 +9104,6 @@ body {
   background: linear-gradient(180deg, #fffbeb 0%, #fde047 52%, #d97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.85));
 }
 
 .victory-subtext {
@@ -9305,19 +9371,15 @@ body {
 /* ============================================================================
  * [듀얼 개시 VS 대결 구도 + 승리 블러 일시 정지 + 패배 흑백 전환 연출]
  * ============================================================================ */
-#view-duel-arena {
-  transition: filter 1.15s ease;
-}
-
 #view-duel-arena.is-arena-blurred > .duel-side-panel,
 #view-duel-arena.is-arena-blurred > .duel-main-stage {
-  filter: blur(7px) brightness(0.75);
+  opacity: 0.45;
   pointer-events: none;
-  transition: filter 0.28s ease;
+  transition: opacity 0.24s ease;
 }
 
 #view-duel-arena.is-defeat-desaturate {
-  filter: grayscale(100%) blur(4px) brightness(0.68);
+  filter: grayscale(88%) brightness(0.68);
   pointer-events: none;
 }
 
@@ -9418,9 +9480,10 @@ body {
   border-radius: 18px;
   background: linear-gradient(145deg, rgba(30, 14, 18, 0.96), rgba(15, 12, 16, 0.98));
   border: 2px solid #ef4444;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.92), 0 0 48px rgba(239, 68, 68, 0.5);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.86), 0 0 26px rgba(239, 68, 68, 0.34);
   transform: scale(0.76);
   transition: transform 0.34s cubic-bezier(0.18, 1.28, 0.32, 1);
+  will-change: transform;
 }
 
 /* 모든 시드 텍스트 영역 마우스 드래그 선택 허용 */

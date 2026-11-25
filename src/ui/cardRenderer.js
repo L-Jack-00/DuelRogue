@@ -306,13 +306,14 @@ export function updateCardInspector(cardOrDef, dynamicAtk = null, dynamicDef = n
   }
 
   const def = cardOrDef.cardId ? lookupCardDef(cardOrDef.cardId) || cardOrDef : cardOrDef;
-  const atk = dynamicAtk ?? cardOrDef.currentAttack ?? def.attack ?? 0;
-  const defense = dynamicDef ?? cardOrDef.currentDefense ?? def.defense ?? (def.health ?? 0);
+  // 상세 정보 패널에서는 필드 버프/피해로 변한 수치가 아니라 카드 원본의 기본 스탯을 표시한다.
+  const baseAtk = def.attack ?? 0;
+  const baseDefense = def.defense ?? (def.health ?? 0);
   const keywords = def.keywords || [];
   const tags = def.tags || [];
   const isGod = def.isGod || def.level === 6;
 
-  const idleCardHtml = generateIdleCardHtml(def, atk, defense);
+  const idleCardHtml = generateIdleCardHtml(def, baseAtk, baseDefense);
   previewTargets.forEach((el) => {
     el.innerHTML = idleCardHtml;
   });

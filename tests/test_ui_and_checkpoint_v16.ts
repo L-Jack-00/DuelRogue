@@ -15,18 +15,27 @@ import {
   getNextMasteryUnlockInfo,
 } from '../src/ui/masterySystem.js';
 import {
+  BAG_SORT_OPTIONS,
   matchesBagSearchQuery,
   filterAndSortBagCardIds,
+  sortDeckListCardIds,
 } from '../src/ui/deckEditorFilter.js';
 import {
   VECTOR_BAKE_SPECS,
+  VICTORY_DEFEAT_FX_SPECS,
   normalizeVectorAssetKey,
   injectSvgPixelDimensions,
   resolveBakedAsset,
   bakeAllVectorAssets,
+  bakeVictoryDefeatEffectAssets,
+  getVictoryDefeatBakeStats,
   bakeDynamicSvgAsset,
   resolveBakedDynamicAsset,
 } from '../src/ui/vectorBaker.js';
+import { CanvasJuiceEngine } from '../src/canvasJuiceEngine.js';
+import { getCardDef as lookupCatalogDef } from '../src/cards/catalog.js';
+import { registerCatalog, createDuel, setSpell, endTurn } from '../src/duel/duelCore.js';
+import { transformReleaseHtml, transformReleaseMainJs } from '../tools/prepare_tauri_dist.mjs';
 import {
   getSleeveBakeKey,
   getSleeveBakeSource,
@@ -327,36 +336,143 @@ Deno.test('모든 뷰(전장·패·인스펙터·바인더·덱요약 캔버스)
   );
 });
 
-Deno.test('덱 편집 검색/정렬: 통합 검색(이름+태그+키워드+효과 AND) 및 6종 정렬', () => {
+Deno.test('덱 편집 검색/정렬: 통합 검색(이름+태그+키워드+효과 AND), 몬스터>마법 분리, 6종 정렬 및 덱 리스트 정렬', () => {
   const defs: Record<string, any> = {
+    DM: { id: 'DM', name: '초심 마법사', type: 'MONSTER', tags: ['마법사'], keywords: [], effect: '', level: 1, attack: 400, defense: 400, rarity: 'COMMON' },
     C1: { id: 'C1', name: '불꽃 기사', type: 'MONSTER', tags: ['화염', '기사'], keywords: ['관통'], effect: '적 1체에 200 피해', level: 4, attack: 1600, defense: 1200, rarity: 'RARE' },
+    C1B: { id: 'C1B', name: '가시 전사', type: 'MONSTER', tags: ['전사'], keywords: [], effect: '', level: 4, attack: 1600, defense: 800, rarity: 'RARE' },
     C2: { id: 'C2', name: '강철 방패병', type: 'MONSTER', tags: ['수비', '병사'], keywords: ['도발'], effect: '수비 표시로 소환된다', level: 3, attack: 900, defense: 2100, rarity: 'COMMON' },
     C3: { id: 'C3', name: '마력 폭발', type: 'SPELL', tags: ['화염', '주문'], keywords: [], effect: '상대 필드에 관통 데미지', rarity: 'EPIC' },
+    S2: { id: 'S2', name: '가호의 빛', type: 'SPELL', tags: ['주문'], keywords: [], effect: '아군 회복', rarity: 'COMMON' },
   };
   const lookup = (id: string) => defs[id];
-  const bag = ['C1', 'C2', 'C3'];
+  const bag = ['C1', 'C2', 'C3', 'C1B', 'S2'];
 
+  assert(BAG_SORT_OPTIONS[0].label === '입수순', '기본 정렬 라벨이 입수순이어야 합니다.');
   assert(matchesBagSearchQuery(defs.C1, '#화염 기사'), '#화염 태그와 이름 공백 AND 검색이 매칭되어야 합니다.');
   assert(!matchesBagSearchQuery(defs.C3, '#화염 기사'), '공백 구분 AND 조건에서 모든 토큰을 만족하지 않으면 제외되어야 합니다.');
   assert(matchesBagSearchQuery(defs.C2, '도발 수비'), '키워드와 효과 텍스트 공백 AND 검색이 매칭되어야 합니다.');
 
   const fireFiltered = filterAndSortBagCardIds(bag, { query: '#화염', sortBy: 'DEFAULT' }, lookup);
-  assert(fireFiltered.length === 2 && fireFiltered.includes('C1') && fireFiltered.includes('C3'), '#화염 검색 시 일치하는 카드만 가방에서 압축 표시되어야 합니다.');
+  assert(fireFiltered[0] === 'C1' && fireFiltered[1] === 'C3', '#화염 검색 시에도 몬스터 > 마법 순으로 배치되어야 합니다.');
 
-  const byAtk = filterAndSortBagCardIds(bag, { query: '', sortBy: 'ATTACK' }, lookup);
-  assert(byAtk[0] === 'C1' && byAtk[1] === 'C2' && byAtk[2] === 'C3', '공격력순 정렬이 내림차순으로 동작해야 합니다.');
+  // 입수순: 최근 획득(높은 순번) 우선, 모든 경우 몬스터 > 마법 분리
+  const acqOrder = { C1: 1, C2: 5, C1B: 3, C3: 2, S2: 6 };
+  const byAcq = filterAndSortBagCardIds(bag, { query: '', sortBy: 'DEFAULT', acquisitionOrder: acqOrder }, lookup);
+  assert(
+    byAcq.join(',') === 'C2,C1B,C1,S2,C3',
+    `입수순은 몬스터(최근순) → 마법(최근순)이어야 합니다. (실제: ${byAcq.join(',')})`
+  );
 
-  const byDef = filterAndSortBagCardIds(bag, { query: '', sortBy: 'DEFENSE' }, lookup);
-  assert(byDef[0] === 'C2' && byDef[1] === 'C1', '수비력순 정렬이 내림차순으로 동작해야 합니다.');
-
+  // 레벨순: 몬스터(고레벨 → 고공격력 → 가나다순) → 마법(가나다순)
   const byLv = filterAndSortBagCardIds(bag, { query: '', sortBy: 'LEVEL' }, lookup);
-  assert(byLv[0] === 'C3' && byLv[1] === 'C2' && byLv[2] === 'C1', '레벨순 정렬이 낮은 레벨(마법/Lv1 → 고레벨) 커브 순으로 동작해야 합니다.');
+  assert(
+    byLv.join(',') === 'C1B,C1,C2,S2,C3',
+    `레벨순은 몬스터(고레벨→고공격력→가나다순) → 마법(가나다순)이어야 합니다. (실제: ${byLv.join(',')})`
+  );
 
+  // 공격력순: 몬스터(고공격력 → 고레벨 → 가나다순) → 마법(가나다순)
+  const byAtk = filterAndSortBagCardIds(bag, { query: '', sortBy: 'ATTACK' }, lookup);
+  assert(
+    byAtk.join(',') === 'C1B,C1,C2,S2,C3',
+    `공격력순은 몬스터(고공격력→고레벨→가나다순) → 마법(가나다순)이어야 합니다. (실제: ${byAtk.join(',')})`
+  );
+
+  // 수비력순: 몬스터(고수비력 → 고레벨 → 가나다순) → 마법(가나다순)
+  const byDef = filterAndSortBagCardIds(bag, { query: '', sortBy: 'DEFENSE' }, lookup);
+  assert(
+    byDef.join(',') === 'C2,C1,C1B,S2,C3',
+    `수비력순은 몬스터(고수비력→고레벨→가나다순) → 마법(가나다순)이어야 합니다. (실제: ${byDef.join(',')})`
+  );
+
+  // 레어도순: 몬스터(고레어도 → 고레벨 → 가나다순) → 마법(고레어도 → 가나다순)
   const byRarity = filterAndSortBagCardIds(bag, { query: '', sortBy: 'RARITY' }, lookup);
-  assert(byRarity[0] === 'C3' && byRarity[2] === 'C2', '레어도순 정렬이 상위 등급 우선이어야 합니다.');
+  assert(
+    byRarity.join(',') === 'C1B,C1,C2,C3,S2',
+    `레어도순은 몬스터(고레어도→고레벨→가나다순) → 마법(고레어도→가나다순)이어야 합니다. (실제: ${byRarity.join(',')})`
+  );
 
+  // 이름순: 몬스터(가나다순) → 마법(가나다순)
   const byName = filterAndSortBagCardIds(bag, { query: '', sortBy: 'NAME' }, lookup);
-  assert(byName[0] === 'C2' && byName[1] === 'C3' && byName[2] === 'C1', '이름순 정렬이 가나다순으로 동작해야 합니다.');
+  assert(
+    byName.join(',') === 'C1B,C2,C1,S2,C3',
+    `이름순은 몬스터(가나다순) → 마법(가나다순)이어야 합니다. (실제: ${byName.join(',')})`
+  );
+
+  // 덱 리스트 정렬: 덱 마스터 최우선 → 몬스터(고레벨 → 고공격력 → 가나다순) → 마법(가나다순)
+  const sortedDeck = sortDeckListCardIds(['C3', 'C2', 'C1', 'DM', 'S2', 'C1B'], 'DM', lookup);
+  assert(
+    sortedDeck.join(',') === 'DM,C1B,C1,C2,S2,C3',
+    `덱 리스트는 덱마스터 → 몬스터(고레벨→고공격력→가나다순) → 마법(가나다순)이어야 합니다. (실제: ${sortedDeck.join(',')})`
+  );
+});
+
+Deno.test('엔진 가방 입수순 추적: 최초 획득 기준 유지, 덱↔가방 이동 유지, 완전 상실 후 재획득 시 최신 취급', async () => {
+  const html = await Deno.readTextFile('./index.html');
+  assert(html.includes('<option value="DEFAULT">입수순</option>'), 'index.html의 기본 정렬 옵션은 입수순이어야 합니다.');
+
+  const binder = new BinderCore({ catalog: DEFAULT_CARD_CATALOG, storage: new InMemoryBinderStorage() });
+  const engine: any = new DuelRogueEngine(binder, DEFAULT_CARD_CATALOG, 20261121);
+  engine.startNewRun('RUN_ACQ_TEST', 20261121);
+  engine.selectFortuneDestiny('BLUE_JUSTICE', 'CHECKPOINT');
+
+  const starterId = engine.state.playerDeckCardIds.find((id: string) => id !== engine.state.playerDeckMasterCardId)!;
+  const starterSeq = engine.state.cardAcquisitionOrder[starterId];
+  assert(starterSeq === 1, '시작 덱 카드는 초기 입수 순번 1을 가져야 합니다.');
+
+  // 새 카드(미보유) 2종 순차 획득
+  const nonOwned = DEFAULT_CARD_CATALOG.filter(
+    (c: any) => !engine.state.playerDeckCardIds.includes(c.id) && c.collectible !== false
+  );
+  const cardA = nonOwned[0].id;
+  const cardB = nonOwned[1].id;
+
+  engine.state.playerTrunkCardIds.push(cardA);
+  engine.markCardAcquired(cardA);
+  const seqA = engine.state.cardAcquisitionOrder[cardA];
+
+  // 이미 보유 중인 카드A를 중복 획득해도 최초 획득 순번 유지
+  engine.state.playerTrunkCardIds.push(cardA);
+  engine.markCardAcquired(cardA);
+  assert(engine.state.cardAcquisitionOrder[cardA] === seqA, '보유 중인 카드를 중복 획득해도 최초 입수 순번을 유지해야 합니다.');
+
+  engine.state.playerTrunkCardIds.push(cardB);
+  engine.markCardAcquired(cardB);
+  const seqB = engine.state.cardAcquisitionOrder[cardB];
+  assert(seqB > seqA && seqA > starterSeq, '나중에 처음 얻은 카드일수록 더 높은 입수 순번을 가져야 합니다.');
+
+  // 덱에서 뺀 스타터 카드도 최초 입수 순번(1) 유지
+  engine.moveCardDeckToTrunk(starterId);
+  assert(engine.state.cardAcquisitionOrder[starterId] === starterSeq, '덱에서 가방으로 옮겨도 최초 입수 순번을 유지해야 합니다.');
+
+  // 암상인 거래 등으로 특정 카드(cardA)를 모두 상실한 뒤 다시 얻으면 최신 순번으로 갱신
+  engine.state.suspiciousMerchant = {
+    deals: [{
+      dealId: 'TEST_LOSE_A',
+      wantedCardIds: [cardA, cardA],
+      rewardCardId: nonOwned[2].id,
+      feeGold: 0,
+      completed: false,
+    }],
+    items: [],
+  };
+  engine.executeMerchantTrade('TEST_LOSE_A', [cardA, cardA]);
+  assert(
+    engine.state.cardAcquisitionOrder[cardA] == null,
+    '덱과 가방에서 모두 사라진 카드는 입수 순번 기록이 제거되어야 합니다.'
+  );
+
+  // 세이브/로드 후 재획득 시에도 최신 순번 부여
+  const saved = engine.exportSave();
+  const restoredBinder = new BinderCore({ catalog: DEFAULT_CARD_CATALOG, storage: new InMemoryBinderStorage() });
+  const restored: any = new DuelRogueEngine(restoredBinder, DEFAULT_CARD_CATALOG, 20261121);
+  restored.importSave(saved);
+  restored.state.playerTrunkCardIds.push(cardA);
+  restored.markCardAcquired(cardA);
+  assert(
+    restored.state.cardAcquisitionOrder[cardA] > restored.state.cardAcquisitionOrder[cardB],
+    '모두 잃었던 카드를 다시 획득하면 최신 획득 카드로 취급되어 기존 카드보다 높은 순번을 받아야 합니다.'
+  );
 });
 
 Deno.test('숙련도 해금 카운트다운 및 덱 편집 조작/오버레이/전투 VFX 회귀 검증', async () => {
@@ -483,5 +599,223 @@ Deno.test('숙련도 해금 카운트다운 및 덱 편집 조작/오버레이/�
     styleCss.includes('stat-rolling-down') &&
     /const revealTargetView[\s\S]*?refreshSceneBackdrop\(viewKey\);/.test(mainJs),
     '공격 실패 방어 막힘, 파괴 전 균열(금) 이펙트, 마스터 듀얼식 LP/수비력 순차 롤링 숫자 및 진입 시점 배경 교체가 연동되어야 합니다.'
+  );
+});
+
+Deno.test('승리/패배 이펙트 및 피격/스파크 파티클 실행 시 PNG/오프스크린 사전 베이킹 검증', async () => {
+  const fxKeys = new Set(VICTORY_DEFEAT_FX_SPECS.map((s) => s.key));
+  assert(
+    fxKeys.has('fx:victory:rays') &&
+    fxKeys.has('fx:victory:trophy') &&
+    fxKeys.has('fx:defeat:skull') &&
+    fxKeys.has('fx:chance:heart_full') &&
+    fxKeys.has('fx:chance:heart_empty'),
+    '승리/패배 연출 및 하트 아이콘 5종이 VICTORY_DEFEAT_FX_SPECS에 등록되어야 합니다.'
+  );
+
+  const fxStats = await bakeVictoryDefeatEffectAssets();
+  assert(
+    fxStats.ready === true && fxStats.totalCount === VICTORY_DEFEAT_FX_SPECS.length && getVictoryDefeatBakeStats().ready,
+    '헤드리스 환경에서도 승리/패배 PNG 베이킹 통계가 안전하게 ready 상태여야 합니다.'
+  );
+
+  const juice = new CanvasJuiceEngine();
+  assert(
+    juice.bakedSparkSprites instanceof Map &&
+    juice.bakedDustSprites instanceof Map &&
+    juice.bakedOrbSprites instanceof Map,
+    'CanvasJuiceEngine은 사전 베이킹된 스파크/먼지/오브 스프라이트 캐시를 보유해야 합니다.'
+  );
+
+  const mainJs = await Deno.readTextFile('./main.js');
+  const styleCss = await Deno.readTextFile('./style.css');
+  const canvasEngine = await Deno.readTextFile('./src/canvasJuiceEngine.js');
+  const bakerJs = await Deno.readTextFile('./src/ui/vectorBaker.js');
+
+  assert(
+    bakerJs.includes('const fxBakePromise = bakeVictoryDefeatEffectAssets();') &&
+    mainJs.includes('getVictoryDefeatBakeStats().ready') &&
+    mainJs.includes('upgradeVictoryDefeatDomAssets(root)') &&
+    mainJs.includes("resolveBakedDynamicAsset('fx:chance:heart_full')") &&
+    mainJs.includes("resolveBakedDynamicAsset('fx:chance:heart_empty')"),
+    '게임 실행 시 bakeAllVectorAssets를 통해 승리/패배 PNG가 베이킹되고 DOM/하트 UI에 연결되어야 합니다.'
+  );
+  assert(
+    styleCss.includes('.victory-rays.is-baked') &&
+    !styleCss.includes('filter: blur(7px)') &&
+    !styleCss.includes('filter: grayscale(100%) blur(4px)'),
+    '승리/패배 시 전장 전체 Gaussian blur 필터 렉이 제거되고 베이킹된 레이즈 스타일이 존재해야 합니다.'
+  );
+  const alleyCss = await Deno.readTextFile('./theme-alley.css');
+  assert(
+    alleyCss.includes('body.theme-alley .summary-chances-badge') &&
+    alleyCss.includes('body.theme-alley #summary-seed-badge') &&
+    /body\.theme-alley #summary-seed-badge\s*\{[^}]*color:\s*#f8fafc\s*!important/.test(alleyCss) &&
+    /body\.theme-alley \.summary-chances-badge\s*\{[^}]*color:\s*#f8fafc\s*!important/.test(alleyCss),
+    '리타이어/최종승리 요약 화면의 남색 배지(.summary-chances-badge, #summary-seed-badge) 텍스트는 밝은 흰색(#f8fafc)으로 대비가 보장되어야 합니다.'
+  );
+  const renderSparksBody = canvasEngine.slice(
+    canvasEngine.indexOf('renderSparks(ctx)'),
+    canvasEngine.indexOf('renderShards(ctx)')
+  );
+  const renderDustBody = canvasEngine.slice(
+    canvasEngine.indexOf('renderDustPuffs(ctx)'),
+    canvasEngine.indexOf('triggerHitstop(')
+  );
+  assert(
+    canvasEngine.includes('initParticleSprites()') &&
+    canvasEngine.includes('this._getDustPuffSprite(') &&
+    canvasEngine.includes('this._getGlowSparkSprite(') &&
+    canvasEngine.includes('this._getHeadOrbSprite(') &&
+    !renderDustBody.includes('createRadialGradient') &&
+    !renderSparksBody.includes('shadowBlur'),
+    '플레이어 피격 먼지 구름·스파크·발광 오브는 런타임 gradient/shadowBlur 대신 사전 베이킹 스프라이트 블릿을 사용해야 합니다.'
+  );
+});
+
+Deno.test('정식 릴리즈 빌드 시 일시정지·타이틀바 디버그 도구·테스트 모달 완전 제거 검증', async () => {
+  const rawHtml = await Deno.readTextFile('./index.html');
+  const rawMainJs = await Deno.readTextFile('./main.js');
+
+  const releaseHtml = transformReleaseHtml(rawHtml);
+  const releaseMainJs = transformReleaseMainJs(rawMainJs);
+
+  const removedIds = [
+    'btn-toggle-playground',
+    'btn-toggle-tuner',
+    'btn-toggle-rarity-tuner',
+    'btn-opt-tuner',
+    'btn-opt-rarity-tuner',
+    'btn-opt-playground',
+    'btn-instant-win-test',
+    'timer-pause-popup',
+    'overlay-live-tuner',
+    'overlay-rarity-tuner',
+    'overlay-slam-playground',
+  ];
+  for (const id of removedIds) {
+    assert(rawHtml.includes(`id="${id}"`), `개발 원본 index.html에는 ${id}가 유지되어야 합니다.`);
+    assert(!releaseHtml.includes(`id="${id}"`), `정식 릴리즈 HTML에서는 디버깅 요소(${id})가 완전히 제거되어야 합니다.`);
+  }
+
+  assert(
+    !releaseHtml.includes('클릭하여 일시정지 / 재개') &&
+    releaseHtml.includes('id="turn-timer-container"') &&
+    releaseHtml.includes('id="btn-return-main-menu"') &&
+    releaseHtml.includes('id="btn-toggle-binder-global"'),
+    '정식 릴리즈 HTML에서 메인 메뉴/카드 바인더와 턴 타이머 본체는 유지되고 일시정지 안내 툴팁만 제거되어야 합니다.'
+  );
+
+  assert(
+    rawMainJs.includes('const IS_RELEASE_BUILD = false;') &&
+    releaseMainJs.includes('const IS_RELEASE_BUILD = true;') &&
+    /togglePause\(\) \{\s*if \(!IS_DEBUG_TOOLS_ENABLED\) return;/.test(releaseMainJs) &&
+    /pause\(\) \{\s*if \(!IS_DEBUG_TOOLS_ENABLED\) return;/.test(releaseMainJs) &&
+    releaseMainJs.includes("IS_DEBUG_TOOLS_ENABLED && e.code === 'Space'"),
+    '정식 릴리즈 main.js에서는 IS_RELEASE_BUILD = true로 전환되어 일시정지(스페이스바/클릭) 및 디버그 단축키가 비활성화되어야 합니다.'
+  );
+});
+
+Deno.test('마스터 듀얼식 현재 턴 플레이어 그라데이션 발광 표시(내 턴 파랑 / 상대 턴 빨강) 검증', async () => {
+  const mainJs = await Deno.readTextFile('./main.js');
+  const styleCss = await Deno.readTextFile('./style.css');
+  const alleyCss = await Deno.readTextFile('./theme-alley.css');
+
+  assert(
+    mainJs.includes("document.getElementById('player-seat')?.classList.toggle('is-active-turn', isPlayerActiveTurn);") &&
+    mainJs.includes("document.getElementById('cpu-seat')?.classList.toggle('is-active-turn', isCpuActiveTurn);") &&
+    mainJs.includes("arenaViewEl.dataset.activeTurn = isPlayerActiveTurn ? 'player' : (isCpuActiveTurn ? 'cpu' : 'none');"),
+    '렌더링 시 현재 턴(activeSeat 0/1)에 따라 #player-seat / #cpu-seat에 .is-active-turn 클래스가 동기화되어야 합니다.'
+  );
+  assert(
+    styleCss.includes('.cpu-duelist.is-active-turn::before') &&
+    styleCss.includes('.player-duelist.is-active-turn::before') &&
+    styleCss.includes('transition: opacity 0.9s cubic-bezier') &&
+    !alleyCss.includes('body.theme-alley .cpu-duelist.is-active-turn {') &&
+    !alleyCss.includes('body.theme-alley .player-duelist.is-active-turn {'),
+    '상대 턴 적색 / 내 턴 청색 투명 그라데이션이 background 스냅 없이 opacity 트랜지션(0.9s)으로 자연스럽게 서서히 변해야 합니다.'
+  );
+});
+
+Deno.test('카드 상세 인스펙터 기본 스탯 유지 및 세트 카드 발동 확인 텀·효과 표시 검증', async () => {
+  const cardRendererJs = await Deno.readTextFile('./src/ui/cardRenderer.js');
+  const mainJs = await Deno.readTextFile('./main.js');
+  const styleCss = await Deno.readTextFile('./style.css');
+
+  // 1) 상세 정보 패널에서 필드 변화 스탯(currentAttack/currentDefense/dynamicAtk)이 아닌 원본 기본값 사용 확인
+  const inspectorSlice = cardRendererJs.slice(cardRendererJs.indexOf('export function updateCardInspector'));
+  assert(
+    inspectorSlice.includes('const baseAtk = def.attack ?? 0;') &&
+    inspectorSlice.includes('const baseDefense = def.defense ?? (def.health ?? 0);') &&
+    inspectorSlice.includes('generateIdleCardHtml(def, baseAtk, baseDefense)') &&
+    !inspectorSlice.includes('cardOrDef.currentAttack') &&
+    !inspectorSlice.includes('cardOrDef.currentDefense'),
+    'updateCardInspector는 필드에서 변화한 스탯이 아닌 카드 원본 기본 스탯만 표시해야 합니다.'
+  );
+
+  // 2) duelCore setTriggerHistory가 턴 종료/시작 시 복수 세트 카드 발동도 모두 순서대로 기록하는지 검증
+  registerCatalog(lookupCatalogDef);
+  const filler = Array(30).fill('C_BLUE_01');
+  const spellDef = DEFAULT_CARD_CATALOG.find((c: any) => c.type === 'SPELL')!;
+  const duel: any = createDuel({
+    duelId: 'TEST_SET_HIST',
+    seed: 123,
+    seats: [
+      { duelistId: 'P0', duelistName: 'P0', deckCardIds: filler, deckMasterCardId: 'C_BLUE_01' },
+      { duelistId: 'P1', duelistName: 'P1', deckCardIds: filler, deckMasterCardId: 'C_BLUE_01' },
+    ],
+  });
+  duel.activeSeat = 0;
+  duel.turnNumber = 3;
+  // 좌석0은 FIELD_LEFT(상대 턴 시작 시), 좌석1은 FIELD_RIGHT(상대 턴 종료 시)에 세트
+  duel.seats[0].hand.push({ instanceId: 'SP_0', cardId: spellDef.id, name: spellDef.name, type: 'SPELL', ownerSeat: 0 });
+  duel.seats[1].hand.push({ instanceId: 'SP_1', cardId: spellDef.id, name: spellDef.name, type: 'SPELL', ownerSeat: 1 });
+  duel.activeSeat = 1;
+  setSpell(duel, 1, 'SP_1', 'FIELD_RIGHT');
+  duel.activeSeat = 0;
+  setSpell(duel, 0, 'SP_0', 'FIELD_LEFT');
+  // hidden 해제(방금 세트한 턴이 지났다고 가정)
+  if (duel.fieldSetSlots.left) duel.fieldSetSlots.left.hidden = false;
+  if (duel.fieldSetSlots.right) duel.fieldSetSlots.right.hidden = false;
+  endTurn(duel, 0);
+
+  assert(
+    Array.isArray(duel.setTriggerHistory) &&
+    duel.setTriggerHistory.length === 2 &&
+    duel.setTriggerHistory[0].slotType === 'FIELD_RIGHT' &&
+    duel.setTriggerHistory[1].slotType === 'FIELD_LEFT',
+    '턴 종료→상대 턴 시작 사이에 2개 세트 카드가 연달아 발동해도 setTriggerHistory에 모두 순서대로 기록되어야 합니다.'
+  );
+
+  assert(
+    mainJs.includes('function presentPendingSetTriggers(') &&
+    mainJs.includes('const SET_TRIGGER_PAUSE_MS = 1650;') &&
+    styleCss.includes('.showcase-effect-pill') &&
+    styleCss.includes('.card-play-showcase.is-set-trigger'),
+    '세트 카드 발동 시 카드와 발동 효과 문구를 띄우고 SET_TRIGGER_PAUSE_MS 텀을 둔 뒤 진행해야 합니다.'
+  );
+});
+
+Deno.test('묘지 맨 위 카드 즉시 표시 및 YGOPRO 스타일 드래그·비차단·가로 정렬 뷰어 검증', async () => {
+  const mainJs = await Deno.readTextFile('./main.js');
+  const styleCss = await Deno.readTextFile('./style.css');
+  const alleyCss = await Deno.readTextFile('./theme-alley.css');
+
+  assert(
+    mainJs.includes('function renderGraveyardStack(') &&
+    mainJs.includes("renderGraveyardStack(\n    document.getElementById('cpu-graveyard')") &&
+    mainJs.includes("renderGraveyardStack(\n    document.getElementById('player-graveyard')") &&
+    mainJs.includes("playerGyZoneEl?.addEventListener('mouseenter'"),
+    '묘지 존에 가장 최근 파괴/사용된 카드가 필드의 카드처럼 앞면 렌더링되고 호버 시 상세 정보에 즉시 표시되어야 합니다.'
+  );
+  assert(
+    mainJs.includes('initGraveyardModalDragAndScroll') &&
+    mainJs.includes('gy-card-tile') &&
+    !mainJs.includes('gy-card-desc') &&
+    styleCss.includes('flex-direction: row;') &&
+    styleCss.includes('pointer-events: none;') &&
+    alleyCss.includes('body.theme-alley .graveyard-modal-backdrop') &&
+    alleyCss.includes('display: none !important;'),
+    '묘지 상세 뷰어는 어두운 뒷배경 없이 드래그 이동 가능하며 효과 문구 없이 카드를 가로로 나열해야 합니다.'
   );
 });

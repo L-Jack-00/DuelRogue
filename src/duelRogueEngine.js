@@ -224,6 +224,8 @@ export class DuelRogueEngine {
       playerDeckCardIds: [],
       playerDeckMasterCardId: null,
       playerTrunkCardIds: [], // 유희왕 콘솔 스타일 가방 (트렁크 보관소)
+      cardAcquisitionSeq: 0, // 보유 카드 최초 입수 순번 (가방 입수순 정렬용)
+      cardAcquisitionOrder: {}, // { [cardId]: number } — 완전 상실 시 제거, 재획득 시 최신 순번 갱신
       gold: 1000, // 2000년대 초 유희왕 500원 팩 2개 살 수 있는 1,000원 시작 자금
       roundNumber: 1, // 체크포인트 (라운드 n)
       checkpointShopStock: [], // 매번 랜덤하게 변하는 부스터 팩 종류 및 재고 수량
@@ -264,7 +266,80 @@ export class DuelRogueEngine {
     }
     // 진행 중이던 CPU 턴 계획은 다시 세운다
     if (this.state.activeDuel?.cpuMind) this.state.activeDuel.cpuMind.turnPlanned = null;
+    this.ensureAcquisitionTracking({ backfillMissing: true });
     return this.getSnapshot();
+  }
+
+  /** 입수 순서 추적 맵을 보장하고, 구버전 세이브의 누락 카드를 보정한다. */
+  ensureAcquisitionTracking({ backfillMissing = false } = {}) {
+    if (!this.state) return;
+    if (!this.state.cardAcquisitionOrder || typeof this.state.cardAcquisitionOrder !== 'object') {
+      this.state.cardAcquisitionOrder = {};
+    }
+    let seq = Number(this.state.cardAcquisitionSeq);
+    if (!Number.isFinite(seq) || seq < 0) seq = 0;
+    for (const val of Object.values(this.state.cardAcquisitionOrder)) {
+      const n = Number(val);
+      if (Number.isFinite(n) && n > seq) seq = n;
+    }
+    this.state.cardAcquisitionSeq = seq;
+
+    if (backfillMissing) {
+      const ownedIds = [
+        ...(this.state.playerDeckCardIds || []),
+        ...(this.state.playerTrunkCardIds || []),
+      ];
+      for (const cid of ownedIds) {
+        if (cid && this.state.cardAcquisitionOrder[cid] == null) {
+          this.state.cardAcquisitionSeq += 1;
+          this.state.cardAcquisitionOrder[cid] = this.state.cardAcquisitionSeq;
+        }
+      }
+    }
+  }
+
+  /** 시작 덱 카드들은 런 시작 시점의 동일 초기 순번으로 일괄 기록한다. */
+  markStarterDeckAcquired(cardIds = []) {
+    if (!this.state) return;
+    if (!this.state.cardAcquisitionOrder || typeof this.state.cardAcquisitionOrder !== 'object') {
+      this.state.cardAcquisitionOrder = {};
+    }
+    this.state.cardAcquisitionSeq = Math.max(1, Number(this.state.cardAcquisitionSeq) || 0);
+    const startSeq = this.state.cardAcquisitionSeq;
+    for (const cid of cardIds) {
+      if (cid && this.state.cardAcquisitionOrder[cid] == null) {
+        this.state.cardAcquisitionOrder[cid] = startSeq;
+      }
+    }
+  }
+
+  /**
+   * 카드 획득 시 최초 입수 순번을 기록한다.
+   * 이미 덱/가방에 보유 중(기존 기록 존재)이면 최초 순번을 유지하고,
+   * 미보유 상태(최초 획득 또는 완전 상실 후 재획득)일 때만 최신 순번을 부여한다.
+   */
+  markCardAcquired(cardId) {
+    if (!cardId || !this.state) return;
+    this.ensureAcquisitionTracking();
+    if (this.state.cardAcquisitionOrder[cardId] == null) {
+      this.state.cardAcquisitionSeq += 1;
+      this.state.cardAcquisitionOrder[cardId] = this.state.cardAcquisitionSeq;
+    }
+  }
+
+  /** 덱과 가방을 통틀어 0장이 된 카드의 입수 기록을 제거한다. */
+  pruneLostCardAcquisitionOrder() {
+    if (!this.state) return;
+    this.ensureAcquisitionTracking();
+    const ownedSet = new Set([
+      ...(this.state.playerDeckCardIds || []),
+      ...(this.state.playerTrunkCardIds || []),
+    ]);
+    for (const cid of Object.keys(this.state.cardAcquisitionOrder)) {
+      if (!ownedSet.has(cid)) {
+        delete this.state.cardAcquisitionOrder[cid];
+      }
+    }
   }
 
   /** 루트 시드와 도메인 키로 독립 서브 RNG를 생성한다. (방식 B) */
@@ -327,6 +402,7 @@ export class DuelRogueEngine {
 
     this.state.playerDeckCardIds = startingDeck.deckCardIds;
     this.state.playerDeckMasterCardId = startingDeck.deckMasterCardId;
+    this.markStarterDeckAcquired(startingDeck.deckCardIds);
 
     for (const cid of startingDeck.deckCardIds) {
       this.recordBinderAcquired(cid);
@@ -489,6 +565,7 @@ export class DuelRogueEngine {
       const pickedDrop = dropPool[Math.floor(giftRng.nextFloat() * dropPool.length)];
       if (pickedDrop) {
         this.state.playerTrunkCardIds.push(pickedDrop.id);
+        this.markCardAcquired(pickedDrop.id);
         this.recordBinderSeen(pickedDrop.id);
         this.recordBinderAcquired(pickedDrop.id);
         checkpointEvent.title = `가방에 「${pickedDrop.name}」 획득`;
@@ -693,6 +770,7 @@ export class DuelRogueEngine {
     const choices = openPack(pack, packRng, round);
     for (const drawnId of choices) {
       this.state.playerTrunkCardIds.push(drawnId);
+      this.markCardAcquired(drawnId);
       this.recordBinderSeen(drawnId);
       this.recordBinderAcquired(drawnId);
     }
@@ -723,6 +801,7 @@ export class DuelRogueEngine {
       this.state.playerTrunkCardIds = [];
     }
     this.state.playerTrunkCardIds.push(cardId);
+    this.markCardAcquired(cardId);
     this.recordBinderAcquired(cardId);
     return {
       gold: this.state.gold,
@@ -846,6 +925,8 @@ export class DuelRogueEngine {
       trunk.push(deal.rewardCardId);
     }
 
+    this.pruneLostCardAcquisitionOrder();
+    this.markCardAcquired(deal.rewardCardId);
     this.recordBinderAcquired(deal.rewardCardId);
     deal.completed = true;
 
@@ -883,6 +964,7 @@ export class DuelRogueEngine {
       this.state.playerTrunkCardIds = [];
     }
     this.state.playerTrunkCardIds.push(cardId);
+    this.markCardAcquired(cardId);
     this.recordBinderAcquired(cardId);
     this.state.pendingCardToSwap = cardId;
     return {
@@ -982,6 +1064,8 @@ export class DuelRogueEngine {
     const idx = this.state.playerDeckCardIds.indexOf(oldCardId);
     this.state.playerDeckCardIds.splice(idx, 1, newCardId);
     this.state.playerTrunkCardIds.push(oldCardId);
+    this.pruneLostCardAcquisitionOrder();
+    this.markCardAcquired(newCardId);
     this.recordBinderAcquired(newCardId);
 
     this.state.openedPackCards = [];
@@ -1262,6 +1346,7 @@ export class DuelRogueEngine {
     }
 
     this.state.playerDeckCardIds.push(chosenCardId);
+    this.markCardAcquired(chosenCardId);
     this.recordBinderAcquired(chosenCardId);
     this.state.currentRewardPackChoices = [];
 
@@ -1293,6 +1378,7 @@ export class DuelRogueEngine {
 
     if (choice === 'ACQUIRE_CARD') {
       this.state.playerDeckCardIds.push(offer.offerCardId);
+      this.markCardAcquired(offer.offerCardId);
       this.recordBinderAcquired(offer.offerCardId);
     } else {
       this.recordBinderPlayed(offer.bonusMasteryCardId, offer.bonusMasteryAmount);

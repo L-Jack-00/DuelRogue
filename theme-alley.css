@@ -1474,6 +1474,15 @@ body.theme-alley .duel-arena-field.drop-target-active {
 }
 body.theme-alley .duelist-meta {
   padding: 6px 10px !important;
+  transition: border-color 0.9s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.9s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+body.theme-alley .cpu-duelist.is-active-turn .duelist-meta {
+  border-color: #f87171 #991b1b #991b1b #f87171 !important;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.45) !important;
+}
+body.theme-alley .player-duelist.is-active-turn .duelist-meta {
+  border-color: #93c5fd #1d4ed8 #1d4ed8 #93c5fd !important;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.45) !important;
 }
 body.theme-alley .duelist-meta .duelist-name {
   color: var(--w2k-select) !important;
@@ -2099,12 +2108,16 @@ body.theme-alley .combat-log-stream {
 /* ----------------------------------------------------------- Authentic Windows 2000 Modals & Close Buttons */
 
 body.theme-alley .options-modal-backdrop,
-body.theme-alley .graveyard-modal-backdrop,
 body.theme-alley .timer-pause-backdrop,
 body.theme-alley .modal-overlay {
   background: rgba(15, 28, 52, 0.46) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+body.theme-alley .graveyard-modal-backdrop {
+  display: none !important;
+  background: transparent !important;
+  pointer-events: none !important;
 }
 
 /* Classic Square 20x18 Bevel Close & Tool Buttons in Caption Bars */
@@ -2241,7 +2254,6 @@ body.theme-alley .seed-run-notice {
 body.theme-alley .run-seed-code,
 body.theme-alley #hub-seeded-run-pill,
 body.theme-alley #hub-seeded-run-text,
-body.theme-alley #summary-seed-badge,
 body.theme-alley #seed-preview-status,
 body.theme-alley .seed-draggable {
   color: var(--w2k-select) !important;
@@ -2249,6 +2261,25 @@ body.theme-alley .seed-draggable {
   -webkit-user-select: text !important;
   -webkit-app-region: no-drag;
   cursor: text;
+}
+body.theme-alley .summary-chances-badge {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(248, 113, 113, 0.55) !important;
+}
+body.theme-alley #summary-seed-badge {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid #64748b !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -webkit-app-region: no-drag;
+  cursor: text;
+}
+body.theme-alley #summary-seed-badge.is-seeded {
+  background: #78350f !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.75) !important;
 }
 body.theme-alley .run-seed-tag {
   background: var(--w2k-select) !important;
@@ -2309,9 +2340,21 @@ body.theme-alley .rulebook-modal-footer {
 }
 body.theme-alley .rulebook-rookie-tip { color: #15803d !important; font-weight: 700; }
 
-/* Graveyard Modal, Pause Modal, Tuners & Playground in W2K */
-body.theme-alley .graveyard-modal-body { padding: 12px 14px !important; background: var(--w2k-well) !important; margin: 6px; border: 2px solid; border-color: var(--w2k-mid) var(--w2k-hi) var(--w2k-hi) var(--w2k-mid); }
-body.theme-alley .gy-card-entry { background: var(--w2k-face-soft) !important; border: 1px solid var(--w2k-mid) !important; border-radius: 0 !important; color: var(--w2k-ink) !important; }
+/* Graveyard Modal (YGOPRO Horizontal Strip in W2K), Pause Modal, Tuners & Playground */
+body.theme-alley .graveyard-modal-body {
+  padding: 10px 12px !important;
+  background: var(--w2k-well) !important;
+  margin: 6px;
+  border: 2px solid;
+  border-color: var(--w2k-mid) var(--w2k-hi) var(--w2k-hi) var(--w2k-mid);
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  gap: 10px !important;
+}
+body.theme-alley .gy-card-tile-badge { color: var(--w2k-select) !important; }
 body.theme-alley .empty-gy-notice { color: var(--w2k-muted) !important; }
 
 body.theme-alley .timer-pause-card { padding: 32px 26px 20px !important; position: relative; overflow: hidden; }
@@ -2825,7 +2868,6 @@ body.theme-alley .modal-crt-closing.modal-overlay {
   display: flex !important;
 }
 body.theme-alley .modal-crt-closing .options-modal-backdrop,
-body.theme-alley .modal-crt-closing .graveyard-modal-backdrop,
 body.theme-alley .modal-crt-closing .timer-pause-backdrop,
 body.theme-alley .modal-crt-closing.modal-overlay {
   transition: opacity 180ms ease;

@@ -8,6 +8,16 @@
  */
 
 import { BinderCardState } from './src/types.js';
+
+// 정식 릴리즈 빌드 시 tools/prepare_tauri_dist.mjs가 true로 치환하여 디버그 UI/단축키/일시정지를 비활성화합니다.
+const IS_RELEASE_BUILD = false;
+const IS_DEBUG_TOOLS_ENABLED = !IS_RELEASE_BUILD;
+
+if (!IS_DEBUG_TOOLS_ENABLED && typeof document !== 'undefined') {
+  document.querySelectorAll('[data-debug-only]').forEach((el) => el.remove());
+  const timerWrap = document.getElementById('turn-timer-container');
+  if (timerWrap) timerWrap.setAttribute('title', '턴 타이머');
+}
 import { BinderCore, LocalStorageBinderAdapter } from './src/binderCore.js';
 import {
   DuelRogueEngine,
@@ -68,12 +78,14 @@ import {
   getNextMasteryUnlockInfo,
   getMasteryTierFromPoints,
 } from './src/ui/masterySystem.js';
-import { filterAndSortBagCardIds } from './src/ui/deckEditorFilter.js';
+import { filterAndSortBagCardIds, sortDeckListCardIds } from './src/ui/deckEditorFilter.js';
 import {
   bakeAllVectorAssets,
   resolveBakedAsset,
   upgradeDomSvgImages,
   getVectorBakeStats,
+  getVictoryDefeatBakeStats,
+  upgradeVictoryDefeatDomAssets,
   bakeDynamicSvgAsset,
   resolveBakedDynamicAsset,
   hasBakedDynamicAsset,
@@ -409,6 +421,7 @@ class DuelTurnTimer {
   }
 
   togglePause() {
+    if (!IS_DEBUG_TOOLS_ENABLED) return;
     if (!this.active && !this.isPaused) return;
     if (this.isPaused) {
       this.resume();
@@ -418,6 +431,7 @@ class DuelTurnTimer {
   }
 
   pause() {
+    if (!IS_DEBUG_TOOLS_ENABLED) return;
     if (!this.isPlayerTurn || this.isPaused) return;
     this.isPaused = true;
     this.stopInterval();
@@ -506,7 +520,8 @@ class DuelTurnTimer {
       selectedAttackerInstanceId = null;
       clearTargetHighlights();
       engine.dispatchDuelCommand({ type: 'END_TURN', seat: 0 });
-      syncRunPhaseView();
+      const postDuel = engine.getSnapshot().activeDuel;
+      presentPendingSetTriggers(postDuel, () => syncRunPhaseView());
     }
   }
 
@@ -713,7 +728,7 @@ async function bakePlayerAndPresetSleeves(bakeAllPresets = false) {
 }
 
 function needsViewResourceLoad(viewKey) {
-  if (!getVectorBakeStats().ready) return true;
+  if (!getVectorBakeStats().ready || !getVictoryDefeatBakeStats().ready) return true;
   const activeSleeveKey = getSleeveBakeKey(cosmeticsConfig);
   if ((viewKey === 'VIEW_DUEL_ARENA' || viewKey === 'VIEW_TITLE_LOBBY') && !hasBakedDynamicAsset(activeSleeveKey)) {
     return true;
@@ -736,6 +751,7 @@ async function ensureViewResourcesReady(viewKey) {
 
 function upgradeBakedViewAssets(root = document) {
   upgradeDomSvgImages(root);
+  upgradeVictoryDefeatDomAssets(root);
   if (typeof document === 'undefined' || !root?.querySelectorAll) return;
   root.querySelectorAll('.card-back-wrapper[data-player-sleeve="1"] .card-back-svg-img').forEach((img) => {
     const wrapper = img.closest('.card-back-wrapper');
@@ -960,7 +976,19 @@ function applyShowcaseTunerVars() {
   root.setProperty('--showcase-scale', `${tunerSettings?.showcaseScale ?? 1.15}`);
 }
 
-function showCardPlayShowcase(cardOrDef, { actorLabel = '카드 발동', isCpu = false, atk = null, def = null } = {}) {
+function showCardPlayShowcase(
+  cardOrDef,
+  {
+    actorLabel = '카드 발동',
+    isCpu = false,
+    atk = null,
+    def = null,
+    effectText = '',
+    isSetTrigger = false,
+    isFizzled = false,
+    durationMs = null,
+  } = {}
+) {
   if (!cardOrDef || tunerSettings?.showcaseEnabled === false) return;
   const host = document.getElementById('card-play-showcase');
   if (!host) return;
@@ -976,6 +1004,9 @@ function showCardPlayShowcase(cardOrDef, { actorLabel = '카드 발동', isCpu =
   const resolvedAtk = atk ?? cardOrDef.currentAttack ?? cardDef.attack ?? 0;
   const resolvedDef = def ?? cardOrDef.currentDefense ?? cardDef.defense ?? cardDef.health ?? 0;
   const iconName = cardDef.type === 'SPELL' ? 'spell' : 'swords';
+  const effectPillHtml = effectText
+    ? `<div class="showcase-effect-pill ${isFizzled ? 'is-fizzled' : ''}">${effectText}</div>`
+    : '';
 
   host.innerHTML = `
     <div class="showcase-banner-pill ${isCpu ? 'is-cpu' : ''}">
@@ -984,21 +1015,132 @@ function showCardPlayShowcase(cardOrDef, { actorLabel = '카드 발동', isCpu =
     <div class="showcase-card-shell">
       ${generateCompositeCardHtml(cardDef, resolvedAtk, resolvedDef, 1.0, false)}
     </div>
+    ${effectPillHtml}
   `;
 
+  host.classList.toggle('is-set-trigger', Boolean(isSetTrigger));
   host.classList.remove('is-exiting', 'is-visible');
   void host.offsetWidth;
   host.classList.add('is-visible');
 
-  const duration = Math.max(400, Number(tunerSettings?.showcaseDurationMs ?? 1500));
+  const duration = Math.max(400, Number(durationMs ?? tunerSettings?.showcaseDurationMs ?? 1500));
   cardShowcaseFadeTimer = setTimeout(() => {
     host.classList.add('is-exiting');
     host.classList.remove('is-visible');
     cardShowcaseClearTimer = setTimeout(() => {
-      host.classList.remove('is-exiting');
+      host.classList.remove('is-exiting', 'is-set-trigger');
       host.innerHTML = '';
     }, 260);
   }, duration);
+}
+
+const SET_TRIGGER_PAUSE_MS = 1650;
+let lastPresentedSetTriggerDuelId = null;
+let lastPresentedSetTriggerSeq = 0;
+let isSetTriggerPaused = false;
+let setTriggerPauseTimers = [];
+
+function clearSetTriggerPauseTimers() {
+  for (const tid of setTriggerPauseTimers) {
+    clearTimeout(tid);
+  }
+  setTriggerPauseTimers = [];
+  isSetTriggerPaused = false;
+}
+
+function slotDisplayLabel(slotType) {
+  if (slotType === 'FIELD_LEFT') return '중앙 좌측 세트';
+  if (slotType === 'FIELD_RIGHT') return '중앙 우측 세트';
+  if (slotType === 'MONSTER_FRONT') return '몬스터 앞 세트';
+  return '세트 카드';
+}
+
+function presentSingleSetTrigger(trig, durationMs) {
+  const trigDef = lookupCardDef(trig.cardId);
+  if (!trigDef) return;
+  const isCpu = trig.ownerSeat === 1;
+  const ownerPrefix = isCpu ? '상대' : '내';
+  const slotTxt = slotDisplayLabel(trig.slotType);
+  const actorLabel = trig.fizzled
+    ? `${ownerPrefix} ${slotTxt} 불발`
+    : `${ownerPrefix} ${slotTxt} 발동!`;
+  const effectBody = trigDef.effect || trigDef.description || '';
+  const effectText = trig.fizzled
+    ? `💨 불발: ${trig.fizzleReason || '발동 조건 미충족'}`
+    : `⚡ 발동 효과: ${effectBody || `${trigDef.name} 효과 적용`}`;
+
+  const cRect = fxCanvas ? fxCanvas.getBoundingClientRect() : { left: 0, top: 0, width: 1280, height: 800 };
+  const slotEl = trig.slotType === 'FIELD_LEFT'
+    ? document.getElementById('field-set-left')
+    : trig.slotType === 'FIELD_RIGHT'
+      ? document.getElementById('field-set-right')
+      : document.getElementById('arena-field');
+  if (slotEl) {
+    const sr = slotEl.getBoundingClientRect();
+    const bx = sr.left - cRect.left + sr.width * 0.5;
+    const by = sr.top - cRect.top + sr.height * 0.5;
+    fxEngine.spawnSummonBurst(bx, by, trig.fizzled ? '#94a3b8' : '#c084fc', 110);
+  }
+  audio.playCardPickup();
+
+  const logEl = document.getElementById('duel-narrative-log');
+  if (logEl) {
+    logEl.textContent = trig.fizzled
+      ? `💨 [${ownerPrefix} 세트 불발] 「${trigDef.name}」 — ${trig.fizzleReason || '조건 불일치'}`
+      : `⚡ [${ownerPrefix} 세트 발동!] 「${trigDef.name}」 — ${effectBody}`;
+  }
+
+  showCardPlayShowcase(trigDef, {
+    actorLabel,
+    isCpu,
+    effectText,
+    isSetTrigger: true,
+    isFizzled: Boolean(trig.fizzled),
+    durationMs: Math.max(900, durationMs - 100),
+  });
+}
+
+/**
+ * 새로 격발된 세트 마법/함정이 있으면 카드·효과 문구를 보여주고 충분한 확인 텀을 둔 뒤 onDone을 호출한다.
+ * @returns {boolean} 대기 텀이 발생했으면 true
+ */
+function presentPendingSetTriggers(duel, onDone = null, { initialDelayMs = 0 } = {}) {
+  if (!duel) {
+    onDone?.();
+    return false;
+  }
+  if (lastPresentedSetTriggerDuelId !== duel.duelId) {
+    lastPresentedSetTriggerDuelId = duel.duelId;
+    lastPresentedSetTriggerSeq = 0;
+  }
+  const history = Array.isArray(duel.setTriggerHistory) ? duel.setTriggerHistory : [];
+  const pending = history.filter((item) => Number(item?.seq) > lastPresentedSetTriggerSeq);
+  if (pending.length === 0) {
+    onDone?.();
+    return false;
+  }
+
+  lastPresentedSetTriggerSeq = Number(pending[pending.length - 1].seq) || lastPresentedSetTriggerSeq;
+  const epoch = runSessionEpoch;
+  isSetTriggerPaused = true;
+  const totalPauseMs = initialDelayMs + pending.length * SET_TRIGGER_PAUSE_MS;
+  duelTransitionUntil = Math.max(duelTransitionUntil || 0, Date.now() + totalPauseMs);
+
+  pending.forEach((trig, idx) => {
+    const tId = setTimeout(() => {
+      if (epoch !== runSessionEpoch) return;
+      presentSingleSetTrigger(trig, SET_TRIGGER_PAUSE_MS);
+    }, initialDelayMs + idx * SET_TRIGGER_PAUSE_MS);
+    setTriggerPauseTimers.push(tId);
+  });
+
+  const doneId = setTimeout(() => {
+    if (epoch !== runSessionEpoch) return;
+    isSetTriggerPaused = false;
+    onDone?.();
+  }, totalPauseMs);
+  setTriggerPauseTimers.push(doneId);
+  return true;
 }
 
 // ============================================================================
@@ -1472,29 +1614,29 @@ for (const [layer, inputId] of [['master', 'opt-master-vol'], ['bgm', 'opt-bgm-v
 }
 
 // ============================================================================
-// [묘지(Graveyard) 상세 뷰어: 파괴된 카드 역순(최신순) 나열 모달]
+// [묘지(Graveyard) 상세 뷰어: YGOPRO 스타일 가로 나열 · 드래그 이동 · 비차단 배경]
 // ============================================================================
 const graveyardViewerModal = document.getElementById('graveyard-viewer-modal');
+const graveyardModalCard = graveyardViewerModal?.querySelector('.graveyard-modal-card') || null;
+const graveyardModalHeader = graveyardViewerModal?.querySelector('.graveyard-modal-header') || null;
 const btnCloseGraveyard = document.getElementById('btn-close-graveyard');
 const gyModalBackdrop = document.getElementById('gy-modal-backdrop');
+let activeGraveyardSeat = null;
 
-function openGraveyardViewer(seatIndex) {
+function renderGraveyardViewerCards(seatIndex) {
   const snap = engine.getSnapshot();
   if (!snap.activeDuel) return;
   const seat = snap.activeDuel.seats[seatIndex];
   if (!seat) return;
 
-  audio.playCardPickup();
-  const modal = document.getElementById('graveyard-viewer-modal');
   const titleEl = document.getElementById('gy-modal-title');
   const container = document.getElementById('gy-modal-cards-container');
-  if (!modal || !titleEl || !container) return;
+  if (!titleEl || !container) return;
 
   const isPlayer = seatIndex === 0;
   const gy = seat.graveyard || [];
-  titleEl.innerHTML = `${svgIcon('skull')} ${isPlayer ? '플레이어' : '상대'} 묘지 <span class="gy-count-tag">(총 ${gy.length}장 / 최신순)</span>`;
+  titleEl.innerHTML = `${svgIcon('skull')} ${isPlayer ? '플레이어' : '상대'} 묘지 <span class="gy-count-tag">(총 ${gy.length}장 · 최신순)</span>`;
 
-  hideLogCardHoverPreview();
   container.innerHTML = '';
   if (gy.length === 0) {
     container.innerHTML = `
@@ -1503,62 +1645,144 @@ function openGraveyardViewer(seatIndex) {
         <p>묘지에 파괴되거나 소모된 카드가 없습니다.</p>
       </div>
     `;
-  } else {
-    // 파괴된 카드들을 역순 (가장 최근에 파괴된 카드부터 먼저)으로 정렬
-    const reversedGy = [...gy].reverse();
-    reversedGy.forEach((cardInst, idx) => {
-      const def = lookupCardDef(cardInst.cardId) || cardInst;
-      const orderNum = gy.length - idx; // 원래 파괴된 순번
-      const cardRow = document.createElement('div');
-      cardRow.className = 'gy-card-entry';
-      cardRow.title = `클릭 시 좌측 카드 인스펙터에 상세 정보 표시`;
+    return;
+  }
 
-      const isMonster = def.type === 'MONSTER' || def.type === 'UNIT';
-      const atk = cardInst.currentAttack ?? def.attack ?? 0;
-      const defStat = cardInst.currentDefense ?? cardInst.currentHealth ?? def.defense ?? def.health ?? 0;
-      const level = def.level || 1;
-
-      cardRow.innerHTML = `
-        <div class="gy-card-badge">#${orderNum} ${idx === 0 ? '<span class="latest-tag">최신</span>' : ''}</div>
-        <div class="gy-card-mini-preview">
-          ${generateCompositeCardHtml(def, atk, defStat, 0.38, true)}
-        </div>
-        <div class="gy-card-info">
-          <div class="gy-card-name-line">
-            <span class="gy-card-name">${def.name}</span>
-            <span class="gy-card-type-tag ${isMonster ? 'tag-monster' : 'tag-spell'}">${isMonster ? `Lv.${level} 몬스터` : '마법 카드'}</span>
-          </div>
-          ${isMonster ? `
-            <div class="gy-card-stats">
-              <span class="stat-atk">공격력 <strong>${atk}</strong></span>
-              <span class="stat-def">수비력 <strong>${defStat}</strong></span>
-            </div>
-          ` : ''}
-          <div class="gy-card-desc">${def.description || def.effectDescription || '기본 카드 효과'}</div>
-        </div>
-      `;
-
-      cardRow.addEventListener('mouseenter', () => updateCardInspector(def));
-      cardRow.addEventListener('click', () => {
-        audio.playCardPickup();
-        updateCardInspector(def);
-      });
-
-      container.appendChild(cardRow);
+  // 가장 최근 파괴/사용된 카드부터 왼쪽에서 오른쪽으로 가로 나열 (YGOPRO 스타일)
+  const reversedGy = [...gy].reverse();
+  reversedGy.forEach((cardInst, idx) => {
+    const def = lookupCardDef(cardInst.cardId) || cardInst;
+    const orderNum = gy.length - idx;
+    const tile = document.createElement('div');
+    tile.className = `gy-card-tile ${idx === 0 ? 'is-latest' : ''}`;
+    tile.title = `${def.name} (#${orderNum} · 호버/클릭: 좌측 상세 정보 확인)`;
+    tile.innerHTML = `
+      <div class="gy-card-tile-badge">#${orderNum}${idx === 0 ? ' <span class="latest-tag">최신</span>' : ''}</div>
+      <div class="gy-card-tile-frame">
+        ${generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.42, true)}
+      </div>
+    `;
+    tile.addEventListener('mouseenter', () => updateCardInspector(def));
+    tile.addEventListener('click', () => {
+      audio.playCardPickup();
+      updateCardInspector(def);
     });
+    container.appendChild(tile);
+  });
+  fitCardNameTextBoxes(container);
+  container.scrollLeft = 0;
+}
+
+function openGraveyardViewer(seatIndex) {
+  const snap = engine.getSnapshot();
+  if (!snap.activeDuel) return;
+  const modal = document.getElementById('graveyard-viewer-modal');
+  if (!modal) return;
+
+  const isAlreadyOpen = !modal.classList.contains('is-hidden');
+  if (isAlreadyOpen && activeGraveyardSeat === seatIndex) {
+    closeGraveyardViewer();
+    return;
+  }
+
+  audio.playCardPickup();
+  hideLogCardHoverPreview();
+  activeGraveyardSeat = seatIndex;
+  renderGraveyardViewerCards(seatIndex);
+
+  if (!isAlreadyOpen && graveyardModalCard) {
+    graveyardModalCard.style.position = '';
+    graveyardModalCard.style.left = '';
+    graveyardModalCard.style.top = '';
+    graveyardModalCard.style.margin = '';
   }
 
   openModalWithCrt(modal, { mode: 'hidden' });
 }
 
-document.getElementById('player-graveyard')?.addEventListener('click', () => openGraveyardViewer(0));
-document.getElementById('cpu-graveyard')?.addEventListener('click', () => openGraveyardViewer(1));
-btnCloseGraveyard?.addEventListener('click', () => {
-  closeModalWithCrt(graveyardViewerModal, { mode: 'hidden' });
+function closeGraveyardViewer() {
+  activeGraveyardSeat = null;
+  if (graveyardViewerModal) {
+    closeModalWithCrt(graveyardViewerModal, { mode: 'hidden' });
+  }
+}
+
+(function initGraveyardModalDragAndScroll() {
+  const cardsContainer = document.getElementById('gy-modal-cards-container');
+  cardsContainer?.addEventListener('wheel', (e) => {
+    if (cardsContainer.scrollWidth > cardsContainer.clientWidth && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      e.preventDefault();
+      cardsContainer.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+
+  if (!graveyardModalHeader || !graveyardModalCard) return;
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let origLeft = 0;
+  let origTop = 0;
+
+  graveyardModalHeader.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    if (e.target.closest('#btn-close-graveyard')) return;
+    e.preventDefault();
+    const rect = graveyardModalCard.getBoundingClientRect();
+    origLeft = rect.left;
+    origTop = rect.top;
+    startX = e.clientX;
+    startY = e.clientY;
+    graveyardModalCard.style.position = 'fixed';
+    graveyardModalCard.style.margin = '0';
+    graveyardModalCard.style.left = `${origLeft}px`;
+    graveyardModalCard.style.top = `${origTop}px`;
+    dragging = true;
+    graveyardModalHeader.classList.add('is-dragging');
+    try { graveyardModalHeader.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+  });
+
+  graveyardModalHeader.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    const maxLeft = Math.max(8, window.innerWidth - graveyardModalCard.offsetWidth - 8);
+    const maxTop = Math.max(38, window.innerHeight - graveyardModalCard.offsetHeight - 8);
+    const nextLeft = Math.max(8, Math.min(maxLeft, origLeft + dx));
+    const nextTop = Math.max(38, Math.min(maxTop, origTop + dy));
+    graveyardModalCard.style.left = `${nextLeft}px`;
+    graveyardModalCard.style.top = `${nextTop}px`;
+  });
+
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    graveyardModalHeader.classList.remove('is-dragging');
+    try { graveyardModalHeader.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+  };
+  graveyardModalHeader.addEventListener('pointerup', endDrag);
+  graveyardModalHeader.addEventListener('pointercancel', endDrag);
+})();
+
+const playerGyZoneEl = document.getElementById('player-graveyard');
+const cpuGyZoneEl = document.getElementById('cpu-graveyard');
+playerGyZoneEl?.addEventListener('click', () => openGraveyardViewer(0));
+cpuGyZoneEl?.addEventListener('click', () => openGraveyardViewer(1));
+playerGyZoneEl?.addEventListener('mouseenter', () => {
+  const gy = engine.getSnapshot()?.activeDuel?.seats?.[0]?.graveyard;
+  if (gy?.length) {
+    const top = gy[gy.length - 1];
+    updateCardInspector(lookupCardDef(top.cardId) || top);
+  }
 });
-gyModalBackdrop?.addEventListener('click', () => {
-  closeModalWithCrt(graveyardViewerModal, { mode: 'hidden' });
+cpuGyZoneEl?.addEventListener('mouseenter', () => {
+  const gy = engine.getSnapshot()?.activeDuel?.seats?.[1]?.graveyard;
+  if (gy?.length) {
+    const top = gy[gy.length - 1];
+    updateCardInspector(lookupCardDef(top.cardId) || top);
+  }
 });
+btnCloseGraveyard?.addEventListener('click', closeGraveyardViewer);
+gyModalBackdrop?.addEventListener('click', closeGraveyardViewer);
 
 // 4. 턴 타이머 일시정지 팝업 모달 이벤트
 document.getElementById('btn-resume-timer-popup')?.addEventListener('click', () => {
@@ -1568,13 +1792,14 @@ document.getElementById('timer-pause-backdrop')?.addEventListener('click', () =>
   duelTurnTimer.resume();
 });
 document.getElementById('turn-timer-container')?.addEventListener('click', (e) => {
+  if (!IS_DEBUG_TOOLS_ENABLED) return;
   // 턴 종료 버튼 자체가 아닌 타이머 링 영역 클릭 시 일시정지/재개 토글
   const endBtn = document.getElementById('btn-end-turn');
   if (endBtn && (e.target === endBtn || endBtn.contains(e.target))) return;
   duelTurnTimer.togglePause();
 });
 
-// ESC 키로 열려있는 모달들 닫기 & Space 키로 타이머 일시정지 토글
+// ESC 키로 열려있는 모달들 닫기 & (디버그 전용) Space 키로 타이머 일시정지 토글
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const deckOverviewModal = document.getElementById('modal-deck-overview');
@@ -1595,12 +1820,12 @@ window.addEventListener('keydown', (e) => {
       toggleInGameOptions(false);
     }
     if (graveyardViewerModal && !graveyardViewerModal.classList.contains('is-hidden')) {
-      closeModalWithCrt(graveyardViewerModal, { mode: 'hidden' });
+      closeGraveyardViewer();
     }
     if (duelTurnTimer.isPaused) {
       duelTurnTimer.resume();
     }
-  } else if (e.code === 'Space' && !e.target.matches('input, textarea')) {
+  } else if (IS_DEBUG_TOOLS_ENABLED && e.code === 'Space' && !e.target.matches('input, textarea')) {
     if (views.VIEW_DUEL_ARENA?.classList.contains('active')) {
       // 듀얼 아레나 화면에서 스페이스바 입력 시 턴 타이머 일시정지/재개 토글
       e.preventDefault();
@@ -1914,19 +2139,7 @@ function playCpuStepVisualEffects({ preCpuRects, prePlayerRects, preCpuIds, preP
   const pGyRect = playerGyEl ? toCanvasLocalRect(playerGyEl.getBoundingClientRect()) : { left: 100, top: 650, width: 70, height: 90 };
   const cGyRect = cpuGyEl ? toCanvasLocalRect(cpuGyEl.getBoundingClientRect()) : { left: 1100, top: 100, width: 70, height: 90 };
 
-  // 1. 새로 격발된 세트 마법 / 함정 쇼케이스
-  if (liveDuel?.lastSpellTriggerResult && liveDuel.lastSpellTriggerResult !== preLastSpell) {
-    const trig = liveDuel.lastSpellTriggerResult;
-    const trigDef = lookupCardDef(trig.cardId);
-    if (trigDef) {
-      showCardPlayShowcase(trigDef, {
-        actorLabel: trig.fizzled ? `마법 불발 (${trigDef.name})` : (trig.ownerSeat === 1 ? '상대 세트 마법 발동!' : '내 함정/마법 발동!'),
-        isCpu: trig.ownerSeat === 1,
-      });
-    }
-  }
-
-  // 2. 사라진 플레이어 유닛 파괴 파편 & 영혼 궤적 (공격 스텝은 타격 직후 별도 처리)
+  // 1. 사라진 플레이어 유닛 파괴 파편 & 영혼 궤적 (세트 카드 발동 쇼케이스 및 텀은 presentPendingSetTriggers가 전담)
   if (act?.type !== 'ATTACK') {
     const postPlayerIds = new Set((liveDuel?.seats?.[0]?.board || []).map((u) => u.instanceId));
     prePlayerIds.forEach((id) => {
@@ -2118,19 +2331,11 @@ function playCpuAttackVisualEffects({ preCpuRects, prePlayerRects, prePlayerHand
         setTimeout(() => playerHandEl?.classList.remove('slam-hit-target'), 300);
       });
     }
-
-    if (res.triggeredSpell) {
-      const trigDef = lookupCardDef(res.triggeredSpell.cardId);
-      if (trigDef) {
-        showCardPlayShowcase(trigDef, {
-          actorLabel: res.triggeredSpell.fizzled ? `마법 불발 (${trigDef.name})` : (res.triggeredSpell.ownerSeat === 1 ? '상대 세트 마법 발동!' : '내 세트 마법 발동!'),
-          isCpu: res.triggeredSpell.ownerSeat === 1,
-        });
-      }
-    }
   }, () => {
-    syncRunPhaseView();
-    onComplete?.();
+    presentPendingSetTriggers(liveDuel, () => {
+      syncRunPhaseView();
+      onComplete?.();
+    });
   });
 }
 
@@ -2142,6 +2347,7 @@ function scheduleCpuTurnIfNeeded(snap) {
   if (!duel || duel.status !== 'ONGOING' || duel.activeSeat !== 1) {
     return;
   }
+  if (isSetTriggerPaused) return;
   if (isCpuTurnScheduled) return;
   isCpuTurnScheduled = true;
 
@@ -2208,6 +2414,18 @@ function scheduleCpuTurnIfNeeded(snap) {
       return;
     }
 
+    if (result.action?.type === 'END_TURN') {
+      presentPendingSetTriggers(liveDuel, () => {
+        if (epoch !== runSessionEpoch) {
+          isCpuTurnScheduled = false;
+          return;
+        }
+        isCpuTurnScheduled = false;
+        syncRunPhaseView();
+      });
+      return;
+    }
+
     syncRunPhaseView();
     playCpuStepVisualEffects({
       preCpuRects,
@@ -2218,7 +2436,9 @@ function scheduleCpuTurnIfNeeded(snap) {
       act: result.action,
       liveDuel,
     });
-    scheduleNextOrFinish(780);
+    presentPendingSetTriggers(liveDuel, () => {
+      scheduleNextOrFinish(780);
+    });
   };
   const startDelay = Math.max(
     Math.round(750 / cpuTempo),
@@ -2683,6 +2903,7 @@ function resetRunUiTransitionState(initialPhase = null, { clearTimers = true } =
       clearTimeout(checkpointEncounterToastTimer);
       checkpointEncounterToastTimer = null;
     }
+    clearSetTriggerPauseTimers();
   }
   isDuelEndTransitionPending = false;
   isCpuTurnScheduled = false;
@@ -2696,11 +2917,18 @@ function resetRunUiTransitionState(initialPhase = null, { clearTimers = true } =
   lastLoggedTurnKey = null;
   lastEventDuelId = null;
   lastEventIndex = 0;
+  lastPresentedSetTriggerDuelId = null;
+  lastPresentedSetTriggerSeq = 0;
 
   document.getElementById('view-duel-arena')?.classList.remove('is-arena-blurred', 'is-defeat-desaturate');
+  const arenaResetEl = document.getElementById('view-duel-arena');
+  if (arenaResetEl) arenaResetEl.dataset.activeTurn = 'none';
+  document.getElementById('player-seat')?.classList.remove('is-active-turn');
+  document.getElementById('cpu-seat')?.classList.remove('is-active-turn');
   document.getElementById('duel-victory-overlay')?.classList.remove('is-visible');
   document.getElementById('duel-defeat-overlay')?.classList.remove('is-visible');
   document.getElementById('duel-start-overlay')?.classList.remove('is-visible');
+  closeGraveyardViewer();
   document.getElementById('checkpoint-encounter-toast')?.classList.remove('is-visible');
   hidePackOpeningResultBanner();
   document.body.classList.remove('run-victory');
@@ -2776,11 +3004,19 @@ function triggerDuelVictoryFX(headline = 'VICTORY!', subtext = '결투에서 승
 function renderChancesHeartsHtml(remaining, max = 3) {
   const safeMax = Math.max(1, Number(max) || 3);
   const safeRem = Math.max(0, Math.min(safeMax, Number(remaining ?? safeMax)));
+  const fullBaked = resolveBakedDynamicAsset('fx:chance:heart_full');
+  const emptyBaked = resolveBakedDynamicAsset('fx:chance:heart_empty');
   let html = '';
   for (let i = 0; i < safeMax; i += 1) {
     const isFull = i < safeRem;
     if (isFull) {
-      html += `<svg class="chance-heart-svg is-full" data-chance-filled="true" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ef4444" stroke="#7f1d1d" stroke-width="1.6"/></svg>`;
+      if (fullBaked) {
+        html += `<img class="chance-heart-svg chance-heart-img is-full" data-chance-filled="true" src="${fullBaked}" alt="" draggable="false" />`;
+      } else {
+        html += `<svg class="chance-heart-svg is-full" data-chance-filled="true" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#ef4444" stroke="#7f1d1d" stroke-width="1.6"/></svg>`;
+      }
+    } else if (emptyBaked) {
+      html += `<img class="chance-heart-svg chance-heart-img is-empty" data-chance-filled="false" src="${emptyBaked}" alt="" draggable="false" />`;
     } else {
       html += `<svg class="chance-heart-svg is-empty" data-chance-filled="false" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="none" stroke="#94a3b8" stroke-width="2.1"/></svg>`;
     }
@@ -3049,7 +3285,7 @@ function syncTunerInputs() {
 }
 
 function toggleTunerModal() {
-  if (!overlayLiveTuner) return;
+  if (!IS_DEBUG_TOOLS_ENABLED || !overlayLiveTuner) return;
   if (overlayLiveTuner.classList.contains('active')) {
     closeModalWithCrt(overlayLiveTuner, { mode: 'active' });
   } else {
@@ -3059,6 +3295,7 @@ function toggleTunerModal() {
 }
 
 function saveTunerSettings() {
+  if (!IS_DEBUG_TOOLS_ENABLED) return;
   try {
     localStorage.setItem('duel_rogue_tuner_settings_v1', JSON.stringify(tunerSettings));
     const logEl = document.getElementById('duel-narrative-log');
@@ -3067,8 +3304,10 @@ function saveTunerSettings() {
   if (overlayLiveTuner) closeModalWithCrt(overlayLiveTuner, { mode: 'active' });
 }
 
-window.__TOGGLE_LIVE_TUNER = toggleTunerModal;
-window.__SAVE_LIVE_TUNER = saveTunerSettings;
+if (IS_DEBUG_TOOLS_ENABLED) {
+  window.__TOGGLE_LIVE_TUNER = toggleTunerModal;
+  window.__SAVE_LIVE_TUNER = saveTunerSettings;
+}
 
 document.getElementById('btn-toggle-tuner')?.addEventListener('click', toggleTunerModal);
 document.getElementById('btn-close-tuner')?.addEventListener('click', () => closeModalWithCrt(overlayLiveTuner, { mode: 'active' }));
@@ -3221,7 +3460,7 @@ function syncRarityTunerControls() {
 }
 
 function toggleRarityTunerModal() {
-  if (!overlayRarityTuner) return;
+  if (!IS_DEBUG_TOOLS_ENABLED || !overlayRarityTuner) return;
   if (overlayRarityTuner.classList.contains('active')) {
     closeModalWithCrt(overlayRarityTuner, { mode: 'active' });
   } else {
@@ -3230,7 +3469,9 @@ function toggleRarityTunerModal() {
   }
 }
 
-window.__TOGGLE_RARITY_TUNER = toggleRarityTunerModal;
+if (IS_DEBUG_TOOLS_ENABLED) {
+  window.__TOGGLE_RARITY_TUNER = toggleRarityTunerModal;
+}
 
 document.getElementById('btn-toggle-rarity-tuner')?.addEventListener('click', toggleRarityTunerModal);
 document.getElementById('btn-close-rarity-tuner')?.addEventListener('click', () => closeModalWithCrt(overlayRarityTuner, { mode: 'active' }));
@@ -3336,6 +3577,7 @@ document.getElementById('btn-rarity-save')?.addEventListener('click', () => {
 });
 
 document.addEventListener('keydown', (e) => {
+  if (!IS_DEBUG_TOOLS_ENABLED) return;
   if (e.key === 'F4') {
     e.preventDefault();
     toggleRarityTunerModal();
@@ -3613,16 +3855,52 @@ function clearPlayableDropZones() {
 }
 
 function addGraveyardGhost(graveyardId, cardDef) {
+  const zoneEl = document.getElementById(graveyardId === 'cpu-graveyard' ? 'cpu-graveyard' : 'player-graveyard');
   const stack = document.getElementById(graveyardId === 'cpu-graveyard' ? 'cpu-gy-stack' : 'player-gy-stack');
-  if (!stack) return;
-  const ghost = document.createElement('div');
-  ghost.className = 'graveyard-card-ghost';
-  ghost.innerHTML = `
-    <span style="font-weight:700;">${cardDef?.name || '파괴됨'}</span>
-    <span style="font-size:0.55rem; color:#64748b;">${svgIcon('skull')} DESTROYED</span>
+  if (!stack || !cardDef) return;
+  const def = cardDef.cardId ? lookupCardDef(cardDef.cardId) || cardDef : cardDef;
+  zoneEl?.classList.add('has-cards');
+  const prevCount = stack.querySelector('.gy-count-badge')?.textContent;
+  stack.innerHTML = `
+    <div class="gy-top-card-frame">
+      ${generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.34, true)}
+    </div>
+    ${prevCount ? `<div class="deck-count-badge gy-count-badge">${prevCount}</div>` : ''}
   `;
-  stack.innerHTML = '';
-  stack.appendChild(ghost);
+  fitCardNameTextBoxes(stack);
+}
+
+/**
+ * [묘지(Graveyard) 맨 위 카드 렌더링 헬퍼]
+ * - 필드의 카드처럼 가장 최근에 파괴/소모된 카드를 바로 앞면으로 표시하고 호버 시 상세 확인 가능
+ */
+function renderGraveyardStack(zoneEl, stackEl, graveyardCards = []) {
+  if (!stackEl) return;
+  const count = Array.isArray(graveyardCards) ? graveyardCards.length : 0;
+  if (count === 0) {
+    zoneEl?.classList.remove('has-cards');
+    if (zoneEl) {
+      delete zoneEl.dataset.topCardId;
+      zoneEl.title = zoneEl.id === 'cpu-graveyard' ? '상대 묘지 (비어 있음)' : '내 묘지 (비어 있음)';
+    }
+    stackEl.innerHTML = '';
+    return;
+  }
+
+  const topInst = graveyardCards[count - 1];
+  const def = lookupCardDef(topInst.cardId) || topInst;
+  zoneEl?.classList.add('has-cards');
+  if (zoneEl && def?.name) {
+    zoneEl.dataset.topCardId = def.id || '';
+    zoneEl.title = `${def.name} (묘지 ${count}장 · 호버: 상세 확인 · 클릭: 묘지 전체 보기)`;
+  }
+  stackEl.innerHTML = `
+    <div class="gy-top-card-frame">
+      ${generateCompositeCardHtml(def, def.attack, def.defense ?? def.health, 0.34, true)}
+    </div>
+    <div class="deck-count-badge gy-count-badge">${count}</div>
+  `;
+  fitCardNameTextBoxes(stackEl);
 }
 
 let selectedAttackerInstanceId = null;
@@ -3894,15 +4172,14 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
         }
       }
 
-      // ★ 2-C. [세트 마법 트리거 격발 및 불발 피드백]
+      // ★ 2-C. [세트 마법 트리거 격발 및 불발 피드백 + 확인 텀]
+      let pendingAttackSetTrigger = false;
       if (res.triggeredSpell) {
-        const trigDef = lookupCardDef(res.triggeredSpell.cardId);
-        if (trigDef) {
-          showCardPlayShowcase(trigDef, {
-            actorLabel: res.triggeredSpell.fizzled ? `마법 불발 (${trigDef.name})` : '상대 세트 마법 발동!',
-            isCpu: true,
-          });
-        }
+        pendingAttackSetTrigger = presentPendingSetTriggers(engine.getSnapshot().activeDuel, () => {
+          if (!isAttackAnimating) {
+            onComplete?.();
+          }
+        });
         if (res.triggeredSpell.fizzled) {
           fxEngine.showFloatingText(cx, cy - 50, `💨 마법 불발! (${res.triggeredSpell.name})`, '#94a3b8', 20);
           const logEl = document.getElementById('duel-narrative-log');
@@ -4025,7 +4302,9 @@ function performFullAttackSequence(attacker, attackerEl, targetUnit, targetEl, o
           selectedAttackerInstanceId = null;
           clearTargetHighlights();
           isAttackAnimating = false;
-          onComplete?.();
+          if (!pendingAttackSetTrigger || !isSetTriggerPaused) {
+            onComplete?.();
+          }
         }, 280);
       }, 350);
     }, slamTime);
@@ -4194,6 +4473,17 @@ function renderDuelArena(snap) {
 
   renderTurnButtonTitle(duel);
 
+  // 현재 턴 플레이어 시트 그라데이션 발광 동기화 (내 턴 = 파랑, 상대 턴 = 빨강)
+  const isOngoingTurn = duel.status === 'ONGOING';
+  const isPlayerActiveTurn = isOngoingTurn && duel.activeSeat === 0;
+  const isCpuActiveTurn = isOngoingTurn && duel.activeSeat === 1;
+  document.getElementById('player-seat')?.classList.toggle('is-active-turn', isPlayerActiveTurn);
+  document.getElementById('cpu-seat')?.classList.toggle('is-active-turn', isCpuActiveTurn);
+  const arenaViewEl = document.getElementById('view-duel-arena');
+  if (arenaViewEl) {
+    arenaViewEl.dataset.activeTurn = isPlayerActiveTurn ? 'player' : (isCpuActiveTurn ? 'cpu' : 'none');
+  }
+
   // 중앙 턴 타이머 동기화 (12시 시작 반시계방향 45초 타이머 연출)
   duelTurnTimer.syncWithDuel(duel);
 
@@ -4280,11 +4570,29 @@ function renderDuelArena(snap) {
   const cpuDeckTooltip = document.getElementById('cpu-deck-tooltip');
   if (cpuDeckTooltip) cpuDeckTooltip.innerHTML = `상대 덱: <strong id="cpu-deck-count-text">${cpu.deck.length}</strong>장 남음`;
 
-  // 플레이어 덱 스택 렌더링 & 호버 매수 툴팁
+  // 플레이어 덱 & 묘지 맨 위 카드 렌더링
   const playerDeckStack = document.getElementById('player-deck-stack');
   renderDeckStack(playerDeckStack, player.deck.length, true);
   const playerDeckTooltip = document.getElementById('player-deck-tooltip');
   if (playerDeckTooltip) playerDeckTooltip.innerHTML = `내 덱: <strong id="player-deck-count-text">${player.deck.length}</strong>장 남음`;
+
+  renderGraveyardStack(
+    document.getElementById('cpu-graveyard'),
+    document.getElementById('cpu-gy-stack'),
+    cpu.graveyard || []
+  );
+  renderGraveyardStack(
+    document.getElementById('player-graveyard'),
+    document.getElementById('player-gy-stack'),
+    player.graveyard || []
+  );
+  if (
+    graveyardViewerModal &&
+    !graveyardViewerModal.classList.contains('is-hidden') &&
+    activeGraveyardSeat !== null
+  ) {
+    renderGraveyardViewerCards(activeGraveyardSeat);
+  }
 
   // 상대 필드 보드 렌더링
   const cpuBoardEl = document.getElementById('cpu-board');
@@ -5127,18 +5435,7 @@ function handlePlayCard(cardInstanceId, tributeInstanceIds = null, chosenTarget 
         isCpu: false,
       });
     }
-    if (postDuel?.lastSpellTriggerResult && postDuel.lastSpellTriggerResult !== preTrig) {
-      const trig = postDuel.lastSpellTriggerResult;
-      const trigDef = lookupCardDef(trig.cardId);
-      if (trigDef) {
-        setTimeout(() => {
-          showCardPlayShowcase(trigDef, {
-            actorLabel: trig.fizzled ? `마법 불발 (${trigDef.name})` : (trig.ownerSeat === 1 ? '상대 함정 반응 발동!' : '내 세트 마법 발동!'),
-            isCpu: trig.ownerSeat === 1,
-          });
-        }, playedDef ? 420 : 0);
-      }
-    }
+    presentPendingSetTriggers(postDuel, null, { initialDelayMs: playedDef ? 420 : 0 });
   } catch (err) {
     document.getElementById('duel-narrative-log').textContent = `[알림] ${err.message}`;
   }
@@ -5632,7 +5929,8 @@ document.getElementById('btn-end-turn')?.addEventListener('click', () => {
   clearTargetHighlights();
   updateTurnHudLastAction('내 턴 종료');
   engine.dispatchDuelCommand({ type: 'END_TURN', seat: 0 });
-  syncRunPhaseView();
+  const postDuel = engine.getSnapshot().activeDuel;
+  presentPendingSetTriggers(postDuel, () => syncRunPhaseView());
 });
 
 // 진행 저장 후 메인 메뉴 복귀 버튼
@@ -5655,16 +5953,18 @@ document.getElementById('btn-abandon-run')?.addEventListener('click', async () =
   }
 });
 
-// 빠른 흐름 점검용 [테스트] 즉시 승리
-document.getElementById('btn-instant-win-test')?.addEventListener('click', () => {
-  const snap = engine.getSnapshot();
-  if (snap.activeDuel) {
-    audio.playDamageHit();
-    snap.activeDuel.seats[1].lp = 0;
-    engine.evaluateDuelOutcome(snap.activeDuel);
-    syncRunPhaseView();
-  }
-});
+// 빠른 흐름 점검용 [테스트] 즉시 승리 (디버그 전용)
+if (IS_DEBUG_TOOLS_ENABLED) {
+  document.getElementById('btn-instant-win-test')?.addEventListener('click', () => {
+    const snap = engine.getSnapshot();
+    if (snap.activeDuel) {
+      audio.playDamageHit();
+      snap.activeDuel.seats[1].lp = 0;
+      engine.evaluateDuelOutcome(snap.activeDuel);
+      syncRunPhaseView();
+    }
+  });
+}
 
 // ============================================================================
 // 4.5. VIEW_CHECKPOINT & 서브페이지 컨트롤러
@@ -6577,15 +6877,7 @@ function setPlayerDeckName(nextName) {
 }
 
 function sortDeckMasterFirst(cardIds, deckMasterCardId) {
-  if (!Array.isArray(cardIds)) return [];
-  if (!deckMasterCardId) return [...cardIds];
-  const masters = [];
-  const others = [];
-  for (const id of cardIds) {
-    if (id === deckMasterCardId) masters.push(id);
-    else others.push(id);
-  }
-  return [...masters, ...others];
+  return sortDeckListCardIds(cardIds, deckMasterCardId, lookupCardDef);
 }
 
 (function initEditableDeckNameUi() {
@@ -6702,7 +6994,11 @@ function renderCheckpointDeckEditorSubpage(snap) {
   const trunkCards = snap.playerTrunkCardIds || [];
   const deckMasterId = snap.playerDeckMasterCardId;
   const deckCards = sortDeckMasterFirst(rawDeckCards, deckMasterId);
-  const filteredBagCards = filterAndSortBagCardIds(trunkCards, deckEditorFilterState, lookupCardDef);
+  const filteredBagCards = filterAndSortBagCardIds(
+    trunkCards,
+    { ...deckEditorFilterState, acquisitionOrder: snap.cardAcquisitionOrder },
+    lookupCardDef
+  );
   const hasSearchQuery = Boolean(String(deckEditorFilterState.query || '').trim());
 
   updateEditorBagToolbarUi();
@@ -9134,6 +9430,7 @@ function bindPlaygroundAttackerDrag() {
 }
 
 function initSlamPlayground() {
+  if (!IS_DEBUG_TOOLS_ENABLED) return;
   const overlay = document.getElementById('overlay-slam-playground');
   const btnToggle = document.getElementById('btn-toggle-playground');
   const btnClose = document.getElementById('btn-close-playground');

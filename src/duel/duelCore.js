@@ -128,6 +128,7 @@ export function createDuel(cfg) {
     fieldSetSlots: { left: null, right: null },
     lastAttackResult: null,
     lastSpellTriggerResult: null,
+    setTriggerHistory: [],
     narrativeLog: '',
     events: [],
     maxTurns: cfg.maxTurns || DEFAULT_MAX_TURNS,
@@ -830,6 +831,16 @@ export function triggerSetSpell(duel, timing, ownerSeat, ctx = {}) {
   spell.fizzled = result !== 'resolved';
   spell.fizzleReason = spell.fizzled ? '대상이 존재하지 않아 불발' : '';
   duel.lastSpellTriggerResult = spell;
+  if (!Array.isArray(duel.setTriggerHistory)) duel.setTriggerHistory = [];
+  duel.setTriggerHistory.push({
+    seq: duel.setTriggerHistory.length + 1,
+    cardId: spell.cardId,
+    name: spell.name,
+    ownerSeat: spell.ownerSeat,
+    slotType: spell.slotType,
+    fizzled: spell.fizzled,
+    fizzleReason: spell.fizzleReason,
+  });
   emit(duel, spell.fizzled ? 'event.fizzle' : 'event.trigger', { card: spell.name }, spell.fizzled ? 'fizzle' : 'trigger', ownerSeat);
   duel.stats.spells += 1;
   return spell;

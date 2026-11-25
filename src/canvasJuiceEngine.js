@@ -51,6 +51,12 @@ export class CanvasJuiceEngine {
     this.viewHeight = 800;
     this._rafId = null;
 
+    // 사전 베이킹된 오프스크린 파티클 스프라이트 캐시 (shadowBlur/createRadialGradient 런타임 렉 제거)
+    this.bakedSparkSprites = new Map();
+    this.bakedDustSprites = new Map();
+    this.bakedOrbSprites = new Map();
+    this.particleSpritesBaked = false;
+
     // 튜너 설정 연동
     this.settings = {
       shakeMult: 1.0,
@@ -64,8 +70,131 @@ export class CanvasJuiceEngine {
   init(canvasElement) {
     this.canvas = canvasElement;
     this.ctx = canvasElement.getContext('2d');
+    this.initParticleSprites();
     this.resize();
     this.start();
+  }
+
+  _createOffscreenSprite(size, drawFn) {
+    if (typeof document === 'undefined') return null;
+    const c = document.createElement('canvas');
+    c.width = size;
+    c.height = size;
+    const g = c.getContext('2d');
+    if (!g) return null;
+    drawFn(g, size);
+    return c;
+  }
+
+  _getGlowSparkSprite(color = '#facc15') {
+    const key = String(color || '#facc15').trim().toLowerCase();
+    if (this.bakedSparkSprites.has(key)) return this.bakedSparkSprites.get(key);
+    const sprite = this._createOffscreenSprite(48, (g, size) => {
+      const mid = size * 0.5;
+      const grad = g.createRadialGradient(mid, mid, 1.5, mid, mid, mid);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.28, key);
+      grad.addColorStop(0.62, key);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, size, size);
+
+      // 외곽 감쇠를 부드럽게 유지하면서 중심 광심을 선명하게
+      g.globalCompositeOperation = 'destination-in';
+      const alphaMask = g.createRadialGradient(mid, mid, 2, mid, mid, mid);
+      alphaMask.addColorStop(0, 'rgba(0, 0, 0, 1)');
+      alphaMask.addColorStop(0.35, 'rgba(0, 0, 0, 0.9)');
+      alphaMask.addColorStop(0.7, 'rgba(0, 0, 0, 0.28)');
+      alphaMask.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      g.fillStyle = alphaMask;
+      g.fillRect(0, 0, size, size);
+      g.globalCompositeOperation = 'source-over';
+    });
+    if (sprite) this.bakedSparkSprites.set(key, sprite);
+    return sprite;
+  }
+
+  _getDustPuffSprite(r, g, b, withInner = false) {
+    const key = `${r},${g},${b}|${withInner ? '1' : '0'}`;
+    if (this.bakedDustSprites.has(key)) return this.bakedDustSprites.get(key);
+    const sprite = this._createOffscreenSprite(96, (ctx, size) => {
+      const mid = size * 0.5;
+      const rad = mid - 2;
+      const grad = ctx.createRadialGradient(mid, mid, rad * 0.15, mid, mid, rad);
+      grad.addColorStop(0, `rgba(${r}, ${g}, ${b}, 1)`);
+      grad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.6)`);
+      grad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(mid, mid, rad, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (withInner) {
+        const ir = Math.min(255, r + 20);
+        const ig = Math.min(255, g + 20);
+        const ib = Math.min(255, b + 20);
+        const innerR = rad * 0.45;
+        const innerGrad = ctx.createRadialGradient(mid + 6, mid - 5, innerR * 0.1, mid + 6, mid - 5, innerR);
+        innerGrad.addColorStop(0, `rgba(${ir}, ${ig}, ${ib}, 0.48)`);
+        innerGrad.addColorStop(1, `rgba(${ir}, ${ig}, ${ib}, 0)`);
+        ctx.fillStyle = innerGrad;
+        ctx.beginPath();
+        ctx.arc(mid + 6, mid - 5, innerR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    if (sprite) this.bakedDustSprites.set(key, sprite);
+    return sprite;
+  }
+
+  _getHeadOrbSprite(kind, coreRadius, haloColor, glowRadius) {
+    if (this.bakedOrbSprites.has(kind)) return this.bakedOrbSprites.get(kind);
+    const size = glowRadius * 2;
+    const sprite = this._createOffscreenSprite(size, (ctx, s) => {
+      const mid = s * 0.5;
+      const grad = ctx.createRadialGradient(mid, mid, coreRadius * 0.35, mid, mid, mid);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(coreRadius / mid, '#ffffff');
+      grad.addColorStop(Math.min(0.95, (coreRadius * 1.9) / mid), haloColor);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(mid, mid, mid, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    if (sprite) this.bakedOrbSprites.set(kind, sprite);
+    return sprite;
+  }
+
+  /**
+   * 플레이어 피격 먼지 구름, 타격 스파크, 관통/영혼 발광 코어 등 주요 파티클 텍스처를
+   * 게임 실행 시점에 오프스크린 스프라이트로 사전 베이킹한다.
+   */
+  initParticleSprites() {
+    if (this.particleSpritesBaked || typeof document === 'undefined') return;
+    const sparkColors = [
+      '#ffffff', '#facc15', '#fde047', '#fbbf24', '#ef4444',
+      '#f87171', '#38bdf8', '#60a5fa', '#bfdbfe', '#f472b6', '#c084fc',
+    ];
+    for (const c of sparkColors) {
+      this._getGlowSparkSprite(c);
+    }
+
+    const dustPalette = [
+      [226, 232, 240],
+      [203, 213, 225],
+      [148, 163, 184],
+      [214, 211, 209],
+      [168, 162, 158],
+    ];
+    for (const [r, g, b] of dustPalette) {
+      this._getDustPuffSprite(r, g, b, false);
+      this._getDustPuffSprite(r, g, b, true);
+    }
+
+    this._getHeadOrbSprite('soulWisp', 8, 'rgba(56, 189, 248, 0.55)', 36);
+    this._getHeadOrbSprite('piercingBolt', 11, 'rgba(239, 68, 68, 0.62)', 44);
+    this.particleSpritesBaked = true;
   }
 
   resize() {
@@ -552,17 +681,26 @@ export class CanvasJuiceEngine {
   }
 
   renderSparks(ctx) {
-    this.impactSparks.forEach((sp) => {
-      ctx.save();
-      ctx.globalAlpha = sp.alpha;
-      ctx.fillStyle = sp.color;
-      ctx.shadowColor = sp.color;
-      ctx.shadowBlur = 8;
-      ctx.beginPath();
-      ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    });
+    if (!this.impactSparks.length) return;
+    const prevAlpha = ctx.globalAlpha;
+    for (let i = 0; i < this.impactSparks.length; i += 1) {
+      const sp = this.impactSparks[i];
+      const sprite = this._getGlowSparkSprite(sp.color);
+      if (sprite) {
+        const half = Math.max(4, sp.size * 2.8);
+        ctx.globalAlpha = Math.max(0, Math.min(1, sp.alpha));
+        ctx.drawImage(sprite, sp.x - half, sp.y - half, half * 2, half * 2);
+      } else {
+        ctx.save();
+        ctx.globalAlpha = sp.alpha;
+        ctx.fillStyle = sp.color;
+        ctx.beginPath();
+        ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    ctx.globalAlpha = prevAlpha;
   }
 
   renderShards(ctx) {
@@ -625,21 +763,22 @@ export class CanvasJuiceEngine {
         }
       }
 
-      // 2. 발광 영혼 헤드 코어
-      ctx.save();
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = '#38bdf8';
-      ctx.shadowBlur = 22;
-      ctx.beginPath();
-      ctx.arc(wisp.x, wisp.y, 8, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 외부 오라
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
-      ctx.beginPath();
-      ctx.arc(wisp.x, wisp.y, 16, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      // 2. 발광 영혼 헤드 코어 (사전 베이킹된 글로우 스프라이트 사용)
+      const orbSprite = this._getHeadOrbSprite('soulWisp', 8, 'rgba(56, 189, 248, 0.55)', 36);
+      if (orbSprite) {
+        ctx.drawImage(orbSprite, wisp.x - 36, wisp.y - 36, 72, 72);
+      } else {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(wisp.x, wisp.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.beginPath();
+        ctx.arc(wisp.x, wisp.y, 16, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     });
   }
 
@@ -674,20 +813,22 @@ export class CanvasJuiceEngine {
         }
       }
 
-      // 2. 볼트 헤드
-      ctx.save();
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = '#ef4444';
-      ctx.shadowBlur = 28;
-      ctx.beginPath();
-      ctx.arc(bolt.x, bolt.y, 11, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.5)';
-      ctx.beginPath();
-      ctx.arc(bolt.x, bolt.y, 22, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+      // 2. 볼트 헤드 (사전 베이킹된 글로우 스프라이트 사용)
+      const orbSprite = this._getHeadOrbSprite('piercingBolt', 11, 'rgba(239, 68, 68, 0.62)', 44);
+      if (orbSprite) {
+        ctx.drawImage(orbSprite, bolt.x - 44, bolt.y - 44, 88, 88);
+      } else {
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(bolt.x, bolt.y, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.5)';
+        ctx.beginPath();
+        ctx.arc(bolt.x, bolt.y, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
     });
   }
 
@@ -730,35 +871,31 @@ export class CanvasJuiceEngine {
       });
     }
 
-    // 2. 아바타 주변 뭉게구름 먼지 (Volumetric Dust Clouds)
+    // 2. 아바타 주변 뭉게구름 먼지 (사전 베이킹된 텍스처 블릿으로 그라데이션 연산 제거)
     if (this.dustPuffs && this.dustPuffs.length > 0) {
-      this.dustPuffs.forEach((d) => {
-        if (d.alpha <= 0.01) return;
+      for (let i = 0; i < this.dustPuffs.length; i += 1) {
+        const d = this.dustPuffs[i];
+        if (d.alpha <= 0.01) continue;
+        const r = Math.max(1, d.radius);
+        const sprite = this._getDustPuffSprite(d.r, d.g, d.b, Boolean(d.innerPuff));
         ctx.save();
-        ctx.translate(d.x, d.y);
-        ctx.rotate(d.rotation);
-
-        // 방사형 그래디언트로 가장자리가 부드러운 먼지 구름 연출
-        const grad = ctx.createRadialGradient(0, 0, d.radius * 0.15, 0, 0, Math.max(1, d.radius));
-        grad.addColorStop(0, `rgba(${d.r}, ${d.g}, ${d.b}, ${d.alpha.toFixed(3)})`);
-        grad.addColorStop(0.5, `rgba(${d.r}, ${d.g}, ${d.b}, ${(d.alpha * 0.6).toFixed(3)})`);
-        grad.addColorStop(1, `rgba(${d.r}, ${d.g}, ${d.b}, 0)`);
-
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(0, 0, Math.max(1, d.radius), 0, Math.PI * 2);
-        ctx.fill();
-
-        // 내부 서브 퍼프 (먼지 덩어리 질감 텍스처)
-        if (d.innerPuff) {
-          ctx.fillStyle = `rgba(${Math.min(255, d.r + 20)}, ${Math.min(255, d.g + 20)}, ${Math.min(255, d.b + 20)}, ${(d.alpha * 0.45).toFixed(3)})`;
+        ctx.globalAlpha = Math.max(0, Math.min(1, d.alpha));
+        if (sprite) {
+          if (d.rotation) {
+            ctx.translate(d.x, d.y);
+            ctx.rotate(d.rotation);
+            ctx.drawImage(sprite, -r, -r, r * 2, r * 2);
+          } else {
+            ctx.drawImage(sprite, d.x - r, d.y - r, r * 2, r * 2);
+          }
+        } else {
+          ctx.fillStyle = `rgba(${d.r}, ${d.g}, ${d.b}, ${d.alpha.toFixed(3)})`;
           ctx.beginPath();
-          ctx.arc(d.innerOffsetX, d.innerOffsetY, Math.max(0.5, d.radius * 0.45), 0, Math.PI * 2);
+          ctx.arc(d.x, d.y, r, 0, Math.PI * 2);
           ctx.fill();
         }
-
         ctx.restore();
-      });
+      }
     }
   }
 
