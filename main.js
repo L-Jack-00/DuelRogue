@@ -1673,6 +1673,23 @@ function renderGraveyardViewerCards(seatIndex) {
   container.scrollLeft = 0;
 }
 
+function snapToDevicePixel(px) {
+  const dpr = (typeof window !== 'undefined' && Number(window.devicePixelRatio) > 0) ? window.devicePixelRatio : 1;
+  return Math.round(px * dpr) / dpr;
+}
+
+function positionGraveyardModalAtIntegerCenter() {
+  if (!graveyardModalCard || typeof window === 'undefined') return;
+  const w = graveyardModalCard.offsetWidth || 760;
+  const h = graveyardModalCard.offsetHeight || 220;
+  const centeredLeft = snapToDevicePixel(Math.max(8, (window.innerWidth - w) / 2));
+  const centeredTop = snapToDevicePixel(Math.max(38, (window.innerHeight - h) / 2));
+  graveyardModalCard.style.position = 'fixed';
+  graveyardModalCard.style.margin = '0';
+  graveyardModalCard.style.left = `${centeredLeft}px`;
+  graveyardModalCard.style.top = `${centeredTop}px`;
+}
+
 function openGraveyardViewer(seatIndex) {
   const snap = engine.getSnapshot();
   if (!snap.activeDuel) return;
@@ -1689,15 +1706,12 @@ function openGraveyardViewer(seatIndex) {
   hideLogCardHoverPreview();
   activeGraveyardSeat = seatIndex;
   renderGraveyardViewerCards(seatIndex);
+  openModalWithCrt(modal, { mode: 'hidden' });
 
   if (!isAlreadyOpen && graveyardModalCard) {
-    graveyardModalCard.style.position = '';
-    graveyardModalCard.style.left = '';
-    graveyardModalCard.style.top = '';
-    graveyardModalCard.style.margin = '';
+    positionGraveyardModalAtIntegerCenter();
+    fitCardNameTextBoxes(graveyardModalCard);
   }
-
-  openModalWithCrt(modal, { mode: 'hidden' });
 }
 
 function closeGraveyardViewer() {
@@ -1747,8 +1761,8 @@ function closeGraveyardViewer() {
     const dy = e.clientY - startY;
     const maxLeft = Math.max(8, window.innerWidth - graveyardModalCard.offsetWidth - 8);
     const maxTop = Math.max(38, window.innerHeight - graveyardModalCard.offsetHeight - 8);
-    const nextLeft = Math.max(8, Math.min(maxLeft, origLeft + dx));
-    const nextTop = Math.max(38, Math.min(maxTop, origTop + dy));
+    const nextLeft = snapToDevicePixel(Math.max(8, Math.min(maxLeft, origLeft + dx)));
+    const nextTop = snapToDevicePixel(Math.max(38, Math.min(maxTop, origTop + dy)));
     graveyardModalCard.style.left = `${nextLeft}px`;
     graveyardModalCard.style.top = `${nextTop}px`;
   });

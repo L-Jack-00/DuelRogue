@@ -810,12 +810,16 @@ Deno.test('묘지 맨 위 카드 즉시 표시 및 YGOPRO 스타일 드래그·�
   );
   assert(
     mainJs.includes('initGraveyardModalDragAndScroll') &&
+    mainJs.includes('snapToDevicePixel') &&
+    mainJs.includes('positionGraveyardModalAtIntegerCenter') &&
     mainJs.includes('gy-card-tile') &&
     !mainJs.includes('gy-card-desc') &&
     styleCss.includes('flex-direction: row;') &&
+    /\.gy-card-tile-frame\s*\{[\s\S]*?width:\s*100px;\s*height:\s*140px;/.test(styleCss) &&
     styleCss.includes('pointer-events: none;') &&
     alleyCss.includes('body.theme-alley .graveyard-modal-backdrop') &&
-    alleyCss.includes('display: none !important;'),
-    '묘지 상세 뷰어는 어두운 뒷배경 없이 드래그 이동 가능하며 효과 문구 없이 카드를 가로로 나열해야 합니다.'
+    alleyCss.includes('display: none !important;') &&
+    /transform:\s*none\s*!important;\s*filter:\s*none\s*!important;/.test(alleyCss),
+    '묘지 상세 뷰어는 어두운 뒷배경 없이 드래그 이동 가능하며 효과 문구 없이 선명한 정수 배율 카드들을 가로로 나열해야 합니다.'
   );
 });

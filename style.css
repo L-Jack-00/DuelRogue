@@ -1811,15 +1811,19 @@ body {
   margin: auto;
   width: min(760px, 86vw);
   max-width: 92vw;
-  background: rgba(15, 23, 42, 0.96);
+  background: rgba(15, 23, 42, 0.98);
   border: 1.5px solid #64748b;
   border-radius: 10px;
   box-shadow: 0 14px 38px rgba(0, 0, 0, 0.72);
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   pointer-events: auto;
-  animation: modal-pop-in 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: gy-modal-fade-in 0.14s ease-out;
+}
+
+@keyframes gy-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .graveyard-modal-header {
@@ -1871,7 +1875,7 @@ body {
 }
 
 .graveyard-modal-body {
-  padding: 12px 14px;
+  padding: 14px 14px 12px;
   overflow-x: auto;
   overflow-y: hidden;
   display: flex;
@@ -1879,7 +1883,10 @@ body {
   flex-wrap: nowrap;
   align-items: flex-start;
   gap: 10px;
-  min-height: 158px;
+  min-height: 172px;
+  isolation: isolate;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .empty-gy-notice {
@@ -1902,17 +1909,25 @@ body {
 
 .gy-card-tile {
   flex: 0 0 auto;
-  width: 96px;
+  width: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   cursor: pointer;
-  transition: transform 0.16s ease;
+  position: relative;
+  top: 0;
+  transform: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 .gy-card-tile:hover {
-  transform: translateY(-4px);
+  top: -3px;
+}
+
+.gy-card-tile:hover .gy-card-tile-frame {
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.72), 0 0 0 2px #38bdf8;
 }
 
 .gy-card-tile-badge {
@@ -1927,11 +1942,24 @@ body {
 }
 
 .gy-card-tile-frame {
-  width: 96px;
+  width: 100px;
+  height: 140px;
   aspect-ratio: 400 / 560;
   border-radius: 5px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+  transition: box-shadow 0.14s ease;
+}
+
+.gy-card-tile .card-composite-wrapper,
+.gy-top-card-frame .card-composite-wrapper {
+  transform: none;
+  transform-style: flat;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  image-rendering: auto;
+  transition: none;
 }
 
 .gy-card-tile.is-latest .gy-card-tile-frame {
@@ -4391,8 +4419,8 @@ body {
 
 /* 1. 묘지 (Graveyard) 영역 & 가장 최근 파괴/사용 카드 표시 */
 .graveyard-zone {
-  width: 70px;
-  height: 98px;
+  width: 72px;
+  height: 100px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px dashed #334155;
   border-radius: 6px;
